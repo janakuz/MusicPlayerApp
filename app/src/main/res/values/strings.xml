@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MusicApp</string>
+    <string name="artists">Artists</string>
+    <string name="albums">Albums</string>
+    <string name="playlists">Playlists</string>
+    <string name="tracks">Tracks</string>
+    <string name="back_button">Back</string>
+    <string name="sw">Screeching Weasel</string>
+    <string name="sw_bio">Screeching Weasel is a great band.</string>
+    <string name="release">1991</string>
+    <string name="tracksnum">14</string>
+    <string name="duration">30</string>
+    <string name="wwh">What We Hate</string>
+    <string name="s">Slogans</string>
+    <string name="gl">Guest List</string>
+    <string name="vhm">Veronica Hates Me</string>
+
+</resources>

@@ -1,0 +1,40 @@
+package com.example.musicapp.data.repository
+
+import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.entity.Track
+import kotlinx.coroutines.flow.Flow
+
+interface TrackRepository {
+
+    fun getAllTracksByName(): Flow<List<TrackInfo>>
+
+    fun getAllTracksByNameDesc(): Flow<List<TrackInfo>>
+
+    fun getAllTracksByDuration(): Flow<List<TrackInfo>>
+
+    fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>>
+
+    fun getAllTracks(orderBy: SortField, descending: Boolean): Flow<List<TrackInfo>>
+
+    fun getTrackById(id: Int): Flow<Track>
+
+    fun getTrackInfo(id: Int): Flow<TrackInfo>
+
+    fun getTracksByArtist(artistId: Int): Flow<List<TrackInfo>>
+
+    fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
+
+    suspend fun insertAll(tracks: List<Track>)
+
+    suspend fun insert(track: Track)
+
+    suspend fun update(track: Track)
+
+    suspend fun delete(track: Track)
+}
+
+
+enum class SortField{
+    TITLE,
+    DURATION
+}

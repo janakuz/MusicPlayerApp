@@ -1,0 +1,24 @@
+package com.example.musicapp.data.repository
+
+import com.example.musicapp.data.entity.Artist
+import kotlinx.coroutines.flow.Flow
+
+interface ArtistRepository {
+
+    fun getAllArtists(): Flow<List<Artist>>
+
+    fun getAllArtistsDesc(): Flow<List<Artist>>
+
+    fun getArtist(id: Int): Flow<Artist>
+
+    suspend fun insertAll(artists: List<Artist>)
+
+    suspend fun insertAll(artists: List<String>)
+
+    suspend fun insert(artist: Artist)
+
+    suspend fun update(artist: Artist)
+
+    suspend fun delete(artist: Artist)
+
+}
