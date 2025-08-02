@@ -1,5 +1,9 @@
 package com.example.musicapp.ui
 
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -39,8 +43,28 @@ fun ArtistsGrid(
         onClick = onClick)
 
     val context = LocalContext.current
+    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_AUDIO
+    } else {
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
+    }
 
-    Button(onClick = { artistViewModel.loadFromStorage(context) }) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted ->
+            if (granted) {
+//                artistViewModel.triggerScan(context, "/sdcard/Music/01 - Bloodstains (Orignal Version).mp3");
+//                artistViewModel.triggerScan(context, "/sdcard/Music/01 Kelly Burkett.mp3");
+                artistViewModel.loadFromStorage(context)
+            } else {
+                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+
+    Button(onClick = {
+        launcher.launch(permission)
+    }) {
         Text("Scan Library")
     }
 

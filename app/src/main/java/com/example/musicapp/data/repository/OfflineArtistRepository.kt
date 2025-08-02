@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 class OfflineArtistRepository(private val artistDao: ArtistDao) : ArtistRepository {
 
-    val allArtists: Flow<List<Artist>> = artistDao.getAllArtists()
+    //val allArtists: Flow<List<Artist>> = artistDao.getAllArtists()
     override fun getAllArtists(): Flow<List<Artist>> {
         return artistDao.getAllArtists()
     }
@@ -33,7 +33,7 @@ class OfflineArtistRepository(private val artistDao: ArtistDao) : ArtistReposito
         artistDao.delete(artist)
     }
 
-    override suspend fun insertAll(names: List<String>) {
+    override suspend fun insertAllString(names: List<String>) {
         val artists = names.map { Artist(name = it) }
         artistDao.insertAll(artists)
     }

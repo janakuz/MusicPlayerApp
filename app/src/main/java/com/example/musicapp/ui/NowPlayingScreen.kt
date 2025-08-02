@@ -120,8 +120,11 @@ fun NowPlayingView(
 
         track?.let {
             AlbumDetailHeader(
-                image = painterResource(it.art),
-                title = stringResource(it.title)
+                image = "",
+                title = ""
+
+//                        image = painterResource(it.art),
+  //             title = stringResource(it.title)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = stringResource(it.artist), style = MaterialTheme.typography.bodyLarge)

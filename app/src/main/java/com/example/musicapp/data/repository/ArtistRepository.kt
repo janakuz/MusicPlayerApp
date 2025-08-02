@@ -13,7 +13,7 @@ interface ArtistRepository {
 
     suspend fun insertAll(artists: List<Artist>)
 
-    suspend fun insertAll(artists: List<String>)
+    suspend fun insertAllString(artists: List<String>)
 
     suspend fun insert(artist: Artist)
 

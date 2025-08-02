@@ -1,5 +1,6 @@
 package com.example.musicapp;
 
+import android.Manifest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
@@ -8,7 +9,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 import android.content.Context;
+import android.content.pm.PackageManager
+import android.media.MediaScannerConnection
+import android.os.Build
 import android.provider.MediaStore;
+import android.util.Log
+import androidx.core.content.ContextCompat
 import com.example.musicapp.data.entity.Artist
 
 import com.example.musicapp.data.repository.ArtistRepository;
@@ -64,8 +70,24 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
     fun loadFromStorage(context: Context) {
         viewModelScope.launch {
             val names = loadArtistsFromStorage(context)
-            artistRepository.insertAll(names)
+            val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+            } else {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+            }
+            Log.d("ScanDebug", "Has permission? $hasPermission")
+            Log.d("ArtistVM", "Found ${names.size} unique artist names: $names")
+            artistRepository.insertAllString(names)
         }
+    }
+
+    fun triggerScan(context: Context, path: String) {
+        MediaScannerConnection.scanFile(
+            context,
+            arrayOf(path),
+            null,
+            null
+        )
     }
 
     suspend fun loadArtistsFromStorage(context: Context): List<String> {
@@ -75,8 +97,12 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
             MediaStore.Audio.Media.ARTIST
         )
 
+
+
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val sortOrder = "${MediaStore.Audio.Media.ARTIST} ASC"
+
+
 
         withContext(Dispatchers.IO) {
             context.contentResolver.query(
@@ -86,9 +112,12 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
                 null,
                 sortOrder
             )?.use { cursor ->
+                Log.d("ScanDebug", "test")
                 val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+                Log.d("ScanDebug", "test ${cursor.count}")
                 while (cursor.moveToNext()) {
                     val artist = cursor.getString(artistColumn)
+                    Log.d("ScanDebug", "test $artist")
                     if (!artist.isNullOrBlank()) {
                         artistSet.add(artist)
                     }
