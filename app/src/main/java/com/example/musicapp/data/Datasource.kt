@@ -24,8 +24,8 @@ object DataSource {
 //
 //    )
 //
-//    val albums = listOf(
-//        GridItem.AlbumItem(1, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration, R.string.sw),
+    val albums = listOf(
+        GridItem.AlbumItem(1, R.string.sw.toString(), R.drawable.boogada.toString(), R.string.release, R.string.tracksnum, R.string.duration, R.string.sw),
 //        GridItem.AlbumItem(2, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration,R.string.sw),
 //        GridItem.AlbumItem(3, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration,R.string.sw),
 //        GridItem.AlbumItem(4, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration,R.string.sw),
@@ -37,8 +37,8 @@ object DataSource {
 //        GridItem.AlbumItem(10, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration,R.string.sw),
 //        GridItem.AlbumItem(11, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration,R.string.sw),
 //        GridItem.AlbumItem(12, R.string.sw, R.drawable.boogada, R.string.release, R.string.tracksnum, R.string.duration,R.string.sw),
-//
-//    )
+
+    )
 
     val tracks = listOf(
         Track(1, R.string.wwh, R.drawable.cover, R.string.sw, 1, 2.2, R.string.sw, "asset:///01_making_you_cry.mp3"),

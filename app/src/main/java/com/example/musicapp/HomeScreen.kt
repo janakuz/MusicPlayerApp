@@ -134,21 +134,22 @@ topBar = {
                 AllTracksScreen(DataSource.tracks)
             }
 
-            composable("artist/{artistId}") { backStackEntry ->
-                val artistId = backStackEntry.arguments?.getString("artistId")?.toIntOrNull()
-                val artist = DataSource.artists.find { it.id == artistId }
+//            composable("artist/{artistId}") { backStackEntry ->
+//                val artistId = backStackEntry.arguments?.getString("artistId")?.toIntOrNull()
+//                val artist = DataSource.artists.find { it.id == artistId }
+//
+//                if (artist != null) {
+//                    ArtistView(name= artist.displayName,
+//                        bio = artist.description,
+//                        image = artist.imageRes,
+//                        albums = DataSource.albums,
+//                        onAlbumClick = {album ->
+//                            navController.navigate("album/${album.id}")
+//                        }
+//                    )
+//                }
+//            }
 
-                if (artist != null) {
-                    ArtistView(name= artist.displayName,
-                        bio = artist.description,
-                        image = artist.imageRes,
-                        albums = DataSource.albums,
-                        onAlbumClick = {album ->
-                            navController.navigate("album/${album.id}")
-                        }
-                    )
-                }
-            }
             composable("nowPlaying") { backStackEntry ->
                 val track by playerViewModel.currentTrack.collectAsState()
                 val tracks by playerViewModel.queue.collectAsState()
