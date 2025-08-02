@@ -17,7 +17,7 @@ import com.example.musicapp.data.entity.Track
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao
     abstract fun albumDao(): AlbumDao
-    abstract fun TrackDao(): TrackDao
+    abstract fun trackDao(): TrackDao
     abstract fun albumArtistDao(): AlbumArtistDao
 
     companion object {
