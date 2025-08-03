@@ -21,7 +21,6 @@ data class ScanUiState(
 @HiltViewModel
 class LibraryScanViewModel @Inject constructor(
     private val scanner: LibraryScanner,
-//    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
