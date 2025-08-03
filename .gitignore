@@ -14,3 +14,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.wav
+*.flac
