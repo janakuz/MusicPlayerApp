@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.NowPlayingWithQueue
+import com.example.musicapp.ui.ScanLibraryScreen
 
 enum class HomeScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -45,7 +46,8 @@ enum class HomeScreen(@StringRes val title: Int) {
     Albums(title = R.string.albums),
     Playlists(title = R.string.playlists),
     Tracks(title = R.string.tracks),
-    NowPLaying(title = R.string.app_name)
+    NowPLaying(title = R.string.app_name),
+    Scan(title=R.string.scan)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,7 +83,7 @@ fun MusicAppBar(
 fun MusicApp(playerViewModel: PlayerViewModel) {
     val navController = rememberNavController()
 
-    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks)
+    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 //    val backStackEntry by navController.currentBackStackEntryAsState()
  //   val currentScreen = HomeScreen.valueOf(
@@ -132,6 +134,10 @@ topBar = {
             }
             composable(route = HomeScreen.Tracks.name) {
                 AllTracksScreen(DataSource.tracks)
+            }
+            composable("scan") {
+                val scannerViewModel: LibraryScanViewModel = hiltViewModel()
+                ScanLibraryScreen(scannerViewModel)
             }
 
 //            composable("artist/{artistId}") { backStackEntry ->

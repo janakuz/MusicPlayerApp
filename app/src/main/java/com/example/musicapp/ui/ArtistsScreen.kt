@@ -42,31 +42,29 @@ fun ArtistsGrid(
         textStyle = MaterialTheme.typography.bodyMedium,
         onClick = onClick)
 
-    val context = LocalContext.current
-    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        android.Manifest.permission.READ_MEDIA_AUDIO
-    } else {
-        android.Manifest.permission.READ_EXTERNAL_STORAGE
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            if (granted) {
-//                artistViewModel.triggerScan(context, "/sdcard/Music/01 - Bloodstains (Orignal Version).mp3");
-//                artistViewModel.triggerScan(context, "/sdcard/Music/01 Kelly Burkett.mp3");
-                artistViewModel.loadFromStorage(context)
-            } else {
-                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
-
-    Button(onClick = {
-        launcher.launch(permission)
-    }) {
-        Text("Scan Library")
-    }
+//    val context = LocalContext.current
+//    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//        android.Manifest.permission.READ_MEDIA_AUDIO
+//    } else {
+//        android.Manifest.permission.READ_EXTERNAL_STORAGE
+//    }
+//
+//    val launcher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.RequestPermission(),
+//        onResult = { granted ->
+//            if (granted) {
+//                artistViewModel.loadFromStorage(context)
+//            } else {
+//                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+//            }
+//        }
+//    )
+//
+//    Button(onClick = {
+//        launcher.launch(permission)
+//    }) {
+//        Text("Scan Library")
+//    }
 
 }
 
