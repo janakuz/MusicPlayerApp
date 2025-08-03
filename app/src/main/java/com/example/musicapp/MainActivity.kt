@@ -15,6 +15,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DevLibraryBootstrap.ensureSampleTracksAvailable(this)
 
 //        val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
 //        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
