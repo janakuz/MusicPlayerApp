@@ -42,10 +42,10 @@ fun Grid(
         items(listItems) { item ->
             var artist = ""
             if (isAlbum) {
-                if (!showReleaseDate)
-                    artist = stringResource((item as GridItem.AlbumItem).artist)
-                else
-                    artist = stringResource((item as GridItem.AlbumItem).releaseYear)
+    //            if (!showReleaseDate)
+     //               artist = stringResource((item as GridItem.AlbumItem).artist)
+    //            else
+                    artist = (item as GridItem.AlbumItem).releaseYear
             }
             Box(    modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center) {
@@ -73,16 +73,16 @@ fun Grid(
 @Composable
 fun GridPreview() {
     MusicAppTheme {
-        Grid(
-            listItems = DataSource.albums,
-            isAlbum = true,
-            showReleaseDate = false,
-            shape = RoundedCornerShape(
-                topStart = 4.dp,
-                topEnd = 4.dp,
-                bottomStart = 4.dp,
-                bottomEnd = 4.dp),
-            textStyle = MaterialTheme.typography.bodyMedium)
+//        Grid(
+//            listItems = DataSource.albums,
+//            isAlbum = true,
+//            showReleaseDate = false,
+//            shape = RoundedCornerShape(
+//                topStart = 4.dp,
+//                topEnd = 4.dp,
+//                bottomStart = 4.dp,
+//                bottomEnd = 4.dp),
+//            textStyle = MaterialTheme.typography.bodyMedium)
     }
 
 }

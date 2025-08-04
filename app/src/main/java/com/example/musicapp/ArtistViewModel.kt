@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -41,8 +42,8 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
     private val _artistListUiState = MutableStateFlow(ArtistListUiState())
     val artistListUiState: StateFlow<ArtistListUiState> = _artistListUiState.asStateFlow()
 
-    val allArtists = artistRepository.getAllArtists().asLiveData()
-
+    private val _currentArtistUiState = MutableStateFlow(ArtistState())
+    val currentArtistUiState: StateFlow<ArtistState> = _currentArtistUiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -57,6 +58,13 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
         }
     }
 
+    fun getArtistById(id: Int){
+        viewModelScope.launch {
+            artistRepository.getArtist(id)
+                .collect { artist -> _currentArtistUiState.update { it.copy(artist = artist) } }
+        }
+    }
+
 
 //    val artistListUiState: StateFlow<ArtistListUiState> =
 //        artistRepository.getAllArtists().map { ArtistListUiState(it) }
@@ -67,66 +75,66 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
 //            )
 
 
-    fun loadFromStorage(context: Context) {
-        viewModelScope.launch {
-            val names = loadArtistsFromStorage(context)
-            val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
-            } else {
-                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-            }
-            Log.d("ScanDebug", "Has permission? $hasPermission")
-            Log.d("ArtistVM", "Found ${names.size} unique artist names: $names")
-            artistRepository.insertAllString(names)
-        }
-    }
-
-    fun triggerScan(context: Context, path: String) {
-        MediaScannerConnection.scanFile(
-            context,
-            arrayOf(path),
-            null,
-            null
-        )
-    }
-
-    suspend fun loadArtistsFromStorage(context: Context): List<String> {
-        val artistSet = mutableSetOf<String>()
-
-        val projection = arrayOf(
-            MediaStore.Audio.Media.ARTIST
-        )
-
-
-
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
-        val sortOrder = "${MediaStore.Audio.Media.ARTIST} ASC"
-
-
-
-        withContext(Dispatchers.IO) {
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selection,
-                null,
-                sortOrder
-            )?.use { cursor ->
-                Log.d("ScanDebug", "test")
-                val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-                Log.d("ScanDebug", "test ${cursor.count}")
-                while (cursor.moveToNext()) {
-                    val artist = cursor.getString(artistColumn)
-                    Log.d("ScanDebug", "test $artist")
-                    if (!artist.isNullOrBlank()) {
-                        artistSet.add(artist)
-                    }
-                }
-            }
-        }
-
-        return artistSet.toList()
-    }
+//    fun loadFromStorage(context: Context) {
+//        viewModelScope.launch {
+//            val names = loadArtistsFromStorage(context)
+//            val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+//            } else {
+//                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+//            }
+//            Log.d("ScanDebug", "Has permission? $hasPermission")
+//            Log.d("ArtistVM", "Found ${names.size} unique artist names: $names")
+//            artistRepository.insertAllString(names)
+//        }
+//    }
+//
+//    fun triggerScan(context: Context, path: String) {
+//        MediaScannerConnection.scanFile(
+//            context,
+//            arrayOf(path),
+//            null,
+//            null
+//        )
+//    }
+//
+//    suspend fun loadArtistsFromStorage(context: Context): List<String> {
+//        val artistSet = mutableSetOf<String>()
+//
+//        val projection = arrayOf(
+//            MediaStore.Audio.Media.ARTIST
+//        )
+//
+//
+//
+//        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+//        val sortOrder = "${MediaStore.Audio.Media.ARTIST} ASC"
+//
+//
+//
+//        withContext(Dispatchers.IO) {
+//            context.contentResolver.query(
+//                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+//                projection,
+//                selection,
+//                null,
+//                sortOrder
+//            )?.use { cursor ->
+//                Log.d("ScanDebug", "test")
+//                val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+//                Log.d("ScanDebug", "test ${cursor.count}")
+//                while (cursor.moveToNext()) {
+//                    val artist = cursor.getString(artistColumn)
+//                    Log.d("ScanDebug", "test $artist")
+//                    if (!artist.isNullOrBlank()) {
+//                        artistSet.add(artist)
+//                    }
+//                }
+//            }
+//        }
+//
+//        return artistSet.toList()
+//    }
 
 }
 
@@ -134,3 +142,7 @@ data class ArtistListUiState(
     val isLoading: Boolean = true,
     val artists: List<Artist> = emptyList(),
     val error: String? = null)
+
+data class ArtistState(
+    val artist: Artist? = null
+)

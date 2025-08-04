@@ -24,11 +24,23 @@ interface AlbumArtistDao {
     suspend fun delete(albumArtist: AlbumArtist)
 
     @Query("""
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, a.duration
+    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration
     FROM albums a
     JOIN album_artists aa ON aa.albumId = a.id
     JOIN artists ar ON aa.artistId = ar.id
     WHERE ar.id = :artistId
     ORDER BY a.releaseDate ASC
     """)
-    fun getAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>>}
+    fun getAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>>
+
+    @Query("""
+    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration
+    FROM albums a
+    JOIN album_artists aa ON aa.albumId = a.id
+    JOIN artists ar ON aa.artistId = ar.id
+    ORDER BY a.releaseDate ASC
+    """)
+    fun getAll(): Flow<List<AlbumInfo>>
+
+
+}

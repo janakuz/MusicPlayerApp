@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 interface AlbumArtistRepository {
     fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>>
 
+    fun getAll(): Flow<List<AlbumInfo>>
+
     suspend fun insertAll(albumArtists: List<AlbumArtist>)
 
     suspend fun insert(albumArtist: AlbumArtist)

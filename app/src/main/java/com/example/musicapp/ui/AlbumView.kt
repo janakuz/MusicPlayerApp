@@ -24,7 +24,7 @@ import com.example.musicapp.ui.theme.MusicAppTheme
 @Composable
 fun AlbumView(
     name: String,
-    artist: String,
+//    artist: String,
     releaseDate: String,
     image: String,
     tracks: List<Track>,
@@ -39,8 +39,8 @@ fun AlbumView(
         AlbumDetailHeader(image=image,
             title = name
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = artist, style = MaterialTheme.typography.bodyLarge)
+//        Spacer(modifier = Modifier.height(4.dp))
+//        Text(text = artist, style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(4.dp))
         Row(){
             Text(text = releaseDate, style = MaterialTheme.typography.bodySmall)
@@ -65,7 +65,7 @@ fun AlbumView(
 fun AlbumPreview() {
     MusicAppTheme {
         AlbumView(name= stringResource(R.string.sw),
-            artist = stringResource(R.string.sw),
+ //           artist = stringResource(R.string.sw),
             releaseDate = stringResource(R.string.release),
             image = "",
             numTracks = stringResource(R.string.tracksnum),

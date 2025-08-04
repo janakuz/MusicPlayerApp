@@ -45,6 +45,10 @@ class OfflineAlbumRepository(private val albumDao: AlbumDao) : AlbumRepository {
         albumDao.insert(album)
     }
 
+    override suspend fun insertWithReturn(album: Album): Long {
+        return albumDao.insertWithReturn(album)
+    }
+
     override suspend fun update(album: Album) {
         albumDao.update(album)
     }

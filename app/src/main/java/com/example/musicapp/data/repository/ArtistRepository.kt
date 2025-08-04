@@ -11,6 +11,8 @@ interface ArtistRepository {
 
     fun getArtist(id: Int): Flow<Artist>
 
+    suspend fun getArtistByName(name: String): Artist
+
     suspend fun insertAll(artists: List<Artist>)
 
     suspend fun insertAllString(artists: List<String>)

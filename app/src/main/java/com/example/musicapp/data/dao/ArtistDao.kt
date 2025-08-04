@@ -20,6 +20,10 @@ interface ArtistDao {
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
 
+    @Query("SELECT * FROM artists where LOWER(name)=LOWER(:name)")
+    suspend fun getArtistByName(name: String): Artist
+
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(artists: List<Artist>)
 

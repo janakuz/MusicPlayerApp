@@ -21,10 +21,10 @@ sealed class GridItem {
         override val id: Int,
         override val displayName: String,
         override val imageRes: String,
-        @StringRes val releaseYear: Int,
+        val releaseYear: String,
         @StringRes val numTracks: Int,
         @StringRes val duration: Int,
-        val artist: Int
+  //      val artist: Int
     ) : GridItem() {
   //      fun createRoute(artistId: Int) = "artist/$id"
     }

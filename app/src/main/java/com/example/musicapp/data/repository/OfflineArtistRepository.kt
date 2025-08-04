@@ -19,6 +19,10 @@ class OfflineArtistRepository(private val artistDao: ArtistDao) : ArtistReposito
         return artistDao.getArtist(id)
     }
 
+    override suspend fun getArtistByName(name: String): Artist {
+        return artistDao.getArtistByName(name)
+    }
+
     override suspend fun insertAll(artists: List<Artist>) {
         artistDao.insertAll(artists)
     }

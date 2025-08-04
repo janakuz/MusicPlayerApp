@@ -26,6 +26,8 @@ interface AlbumRepository {
 
     suspend fun insert(album: Album)
 
+    suspend fun insertWithReturn(album: Album): Long
+
     suspend fun update(album: Album)
 
     suspend fun delete(album: Album)

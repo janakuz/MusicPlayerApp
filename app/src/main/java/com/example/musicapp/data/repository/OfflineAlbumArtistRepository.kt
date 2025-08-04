@@ -10,6 +10,10 @@ class OfflineAlbumArtistRepository(private val albumArtistDao : AlbumArtistDao) 
         return albumArtistDao.getAlbumsByArtist(artistId)
     }
 
+    override fun getAll(): Flow<List<AlbumInfo>> {
+        return albumArtistDao.getAll()
+    }
+
     override suspend fun insertAll(albumArtists: List<AlbumArtist>) {
         albumArtistDao.insertAll(albumArtists)
     }

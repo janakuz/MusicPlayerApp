@@ -21,7 +21,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.ui.NowPlayingWithQueue
 import com.example.musicapp.ui.ScanLibraryScreen
 
@@ -127,8 +127,22 @@ topBar = {
                     })
             }
             composable(route = HomeScreen.Albums.name) {
-                AlbumsGrid(DataSource.albums,
-                    onClick = {album ->
+                val albumViewModel: AlbumViewModel = hiltViewModel()
+                val uiState by albumViewModel.albumListUiState.collectAsState()
+                val albums = uiState.albums
+                val albumInfos = albums.map { album ->
+                    AlbumInfo(
+                        albumId = album.id,
+                        title = album.title,
+                        releaseDate = album.releaseDate,
+                        artistName = "",
+                        image = album.image,
+                        duration = album.duration,
+                        artistId = 0
+                    )
+                }
+                AlbumsGrid(albumInfos,
+                    onClick = { album ->
                     navController.navigate("album/${album.id}")
                 })
             }
@@ -140,21 +154,21 @@ topBar = {
                 ScanLibraryScreen(scannerViewModel)
             }
 
-//            composable("artist/{artistId}") { backStackEntry ->
-//                val artistId = backStackEntry.arguments?.getString("artistId")?.toIntOrNull()
-//                val artist = DataSource.artists.find { it.id == artistId }
-//
-//                if (artist != null) {
-//                    ArtistView(name= artist.displayName,
-//                        bio = artist.description,
-//                        image = artist.imageRes,
-//                        albums = DataSource.albums,
-//                        onAlbumClick = {album ->
-//                            navController.navigate("album/${album.id}")
-//                        }
-//                    )
-//                }
-//            }
+            composable("artist/{artistId}") { backStackEntry ->
+                val artistId = backStackEntry.arguments?.getString("artistId")?.toIntOrNull()
+                val artistViewModel: ArtistViewModel = hiltViewModel()
+                val albumViewModel: AlbumViewModel = hiltViewModel()
+
+                if (artistId != null) {
+                    ArtistView(artistId,
+                        artistViewModel,
+                        albumViewModel,
+                        onAlbumClick = {album ->
+                            navController.navigate("album/${album.id}")
+                        }
+                    )
+                }
+            }
 
             composable("nowPlaying") { backStackEntry ->
                 val track by playerViewModel.currentTrack.collectAsState()
@@ -199,27 +213,27 @@ topBar = {
                 }
             }
 
-            composable("album/{albumId}") { backStackEntry ->
-                val albumId = backStackEntry.arguments?.getString("albumId")?.toIntOrNull()
-                val album = DataSource.albums.find { it.id == albumId }
-
-                if (album != null) {
-                    AlbumView(name = album.displayName,
-                        artist = stringResource(album.artist),
-                        releaseDate = stringResource(album.releaseYear),
-                        image = album.imageRes,
-                        tracks= DataSource.tracks,
-                        numTracks = album.numTracks.toString(),
-                        duration = album.duration.toString(),
-                        onTrackClick = {track ->
-                            playerViewModel.playTracks(DataSource.tracks, track)
-                            navController.navigate("nowPlaying")
-                            {
-                                launchSingleTop = true
-                            }
-                        })
-                }
-            }
+//            composable("album/{albumId}") { backStackEntry ->
+//                val albumId = backStackEntry.arguments?.getString("albumId")?.toIntOrNull()
+//                val album = DataSource.albums.find { it.id == albumId }
+//
+//                if (album != null) {
+//                    AlbumView(name = album.displayName,
+////                        artist = stringResource(album.artist),
+//                        releaseDate = album.releaseYear,
+//                        image = album.imageRes,
+//                        tracks= DataSource.tracks,
+//                        numTracks = album.numTracks.toString(),
+//                        duration = album.duration.toString(),
+//                        onTrackClick = {track ->
+//                            playerViewModel.playTracks(DataSource.tracks, track)
+//                            navController.navigate("nowPlaying")
+//                            {
+//                                launchSingleTop = true
+//                            }
+//                        })
+//                }
+//            }
 
         }
     }
