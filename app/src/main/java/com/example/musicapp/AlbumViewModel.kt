@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AlbumViewModel@Inject constructor(private val albumRepository: AlbumRepository,
+class AlbumViewModel @Inject constructor(private val albumRepository: AlbumRepository,
     private val albumArtistRepository: AlbumArtistRepository
 ) : ViewModel() {
 
@@ -30,6 +31,9 @@ class AlbumViewModel@Inject constructor(private val albumRepository: AlbumReposi
 
     private val _albumArtistListUiState = MutableStateFlow(AlbumArtistListUiState())
     val albumArtistListUiState: StateFlow<AlbumArtistListUiState> = _albumArtistListUiState.asStateFlow()
+
+    private val _currentAlbumUiState = MutableStateFlow(AlbumState())
+    val currentAlbumUiState: StateFlow<AlbumState> = _currentAlbumUiState.asStateFlow()
 
 
     init {
@@ -68,6 +72,13 @@ class AlbumViewModel@Inject constructor(private val albumRepository: AlbumReposi
         albumArtistRepository
     }
 
+    fun getAlbumById(id: Int){
+        viewModelScope.launch {
+            albumRepository.getAlbum(id)
+                .collect { album -> _currentAlbumUiState.update { it.copy(album = album) } }
+        }
+    }
+
 }
 
 data class AlbumListUiState(
@@ -79,3 +90,7 @@ data class AlbumArtistListUiState(
     val isLoading: Boolean = true,
     val albums: List<AlbumInfo> = emptyList(),
     val error: String? = null)
+
+data class AlbumState(
+    val album: Album? = null
+)

@@ -147,7 +147,8 @@ topBar = {
                 })
             }
             composable(route = HomeScreen.Tracks.name) {
-                AllTracksScreen(DataSource.tracks)
+                val trackViewModel: TrackViewModel = hiltViewModel()
+                AllTracksScreen(trackViewModel)
             }
             composable("scan") {
                 val scannerViewModel: LibraryScanViewModel = hiltViewModel()
@@ -213,27 +214,25 @@ topBar = {
                 }
             }
 
-//            composable("album/{albumId}") { backStackEntry ->
-//                val albumId = backStackEntry.arguments?.getString("albumId")?.toIntOrNull()
-//                val album = DataSource.albums.find { it.id == albumId }
-//
-//                if (album != null) {
-//                    AlbumView(name = album.displayName,
-////                        artist = stringResource(album.artist),
-//                        releaseDate = album.releaseYear,
-//                        image = album.imageRes,
-//                        tracks= DataSource.tracks,
-//                        numTracks = album.numTracks.toString(),
-//                        duration = album.duration.toString(),
-//                        onTrackClick = {track ->
-//                            playerViewModel.playTracks(DataSource.tracks, track)
-//                            navController.navigate("nowPlaying")
-//                            {
-//                                launchSingleTop = true
-//                            }
-//                        })
-//                }
-//            }
+            composable("album/{albumId}") { backStackEntry ->
+                val albumId = backStackEntry.arguments?.getString("albumId")?.toIntOrNull()
+                val trackViewModel: TrackViewModel = hiltViewModel()
+                val albumViewModel: AlbumViewModel = hiltViewModel()
+
+
+                if (albumId != null) {
+                    AlbumView(albumId,
+                        trackViewModel,
+                        albumViewModel,
+                        onTrackClick = {track ->
+              //              playerViewModel.playTracks(DataSource.tracks, track)
+                            navController.navigate("nowPlaying")
+                            {
+                                launchSingleTop = true
+                            }
+                        })
+                }
+            }
 
         }
     }

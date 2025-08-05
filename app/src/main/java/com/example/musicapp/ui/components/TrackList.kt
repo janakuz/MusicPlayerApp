@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -18,10 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -32,19 +29,18 @@ import com.example.musicapp.model.Track
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import sh.calvin.reorderable.ReorderableItem
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicapp.PlayerViewModel
+import com.example.musicapp.data.dto.TrackInfo
+import java.util.Locale
 
 
 @Composable
 fun TrackInfoRow(
-    artwork: Painter,
+    artwork: String,
     title: String,
     artist: String,
     modifier: Modifier = Modifier,
@@ -57,11 +53,11 @@ fun TrackInfoRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if(showArtwork) {
-            Image(
-                painter = artwork,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
+//            Image(
+//                painter = artwork,
+//                contentDescription = null,
+//                modifier = Modifier.size(48.dp)
+//            )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Column {
@@ -73,12 +69,12 @@ fun TrackInfoRow(
 
 @Composable
 fun TrackRow(
-    artwork: Painter,
+    artwork: String,
     title: String,
     artist: String,
     duration: String,
-    track: Track,
-    onClick: (Track) -> Unit,
+    track: TrackInfo,
+    onClick: (TrackInfo) -> Unit,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -126,18 +122,24 @@ fun TrackRow(
     }
 }
 
+fun formatDuration(durationMs: Long): String {
+    val totalSeconds = durationMs / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
+}
 
 @Composable
 fun TrackList(
-    tracks: List<Track>,
-    onClick: (Track) -> Unit,
+    tracks: List<TrackInfo>,
+    onClick: (TrackInfo) -> Unit,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
     showArtwork: Boolean = false,
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
-    reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) {from, to->{}},
+    reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to->{}},
     playerViewModel: PlayerViewModel = viewModel()
 ) {
 //    val tracks by playerViewModel.queue.collectAsState()
@@ -145,19 +147,19 @@ fun TrackList(
     val hapticFeedback = LocalHapticFeedback.current
     LazyColumn(state = state,
         ) {
-        items(tracks, key = { it.id }) { track ->
-            ReorderableItem(reorderable, key = track.id) { isDragging ->
+        items(tracks, key = { it.trackId }) { track ->
+            ReorderableItem(reorderable, key = track.trackId) { isDragging ->
                 TrackRow(
-                    artwork = painterResource(track.art),
-                    title = stringResource(track.title),
-                    artist = stringResource(track.artist),
+                    artwork = track.albumArt.toString(),
+                    title = track.title,
+                    artist = track.artistName,
                     onClick = onClick,
                     showArtwork = showArtwork,
                     showTrackNum = showTrackNum,
                     showReorderIconStart = showReorderIconStart,
                     showReorderIconEnd = showReorderIconEnd,
-                    trackNum = track.trackNum,
-                    duration = track.duration.toString(),
+                    trackNum = track.trackNum ?: 0,
+                    duration = formatDuration(track.duration),
                     track = track,
                     modifier = Modifier.
                             draggableHandle(
@@ -173,4 +175,6 @@ fun TrackList(
             }
         }
     }
+
+
 }

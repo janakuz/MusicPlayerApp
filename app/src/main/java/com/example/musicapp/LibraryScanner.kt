@@ -170,7 +170,8 @@ class LibraryScanner @Inject constructor(
                     duration = 0L,
                     mbId = null,
                     discogsId = null,
-                    releaseDate = album.year
+                    releaseDate = album.year,
+                    numTracks = 0
                 )
                 val inserted = albumRepository.insertWithReturn(new).toInt()
                 val artistId = artistRepository.getArtistByName(album.artist).id
@@ -216,19 +217,19 @@ class LibraryScanner @Inject constructor(
             val trackNumber = normalizeTrackNumber(entry.trackNumber) ?: 0
             val duration = entry.duration ?: 0L
 
-            Log.d("ImageScan", "albumartfile ${entry.albumArt != null}")
+//            Log.d("ImageScan", "albumartfile ${entry.albumArt != null}")
 
-            if (album.image == null && entry.albumArt != null){
-                val possibleCover = findCoverImageForTrackFile(entry.albumArt)
-                val fullAlbum = albumRepository.getAlbum(album.albumId).firstOrNull()
-                if (fullAlbum != null) {
-                    val updatedAlbum = fullAlbum.copy(
-                        image = possibleCover ?: album.image // preserve if already set
-                    )
-
-                    albumRepository.update(updatedAlbum)
-                }
-            }
+//            if (album.image == null && entry.albumArt != null){
+//                val possibleCover = findCoverImageForTrackFile(entry.albumArt)
+//                val fullAlbum = albumRepository.getAlbum(album.albumId).firstOrNull()
+//                if (fullAlbum != null) {
+//                    val updatedAlbum = fullAlbum.copy(
+//                        image = possibleCover ?: album.image // preserve if already set
+//                    )
+//
+//                    albumRepository.update(updatedAlbum)
+//                }
+//            }
 
             if (existing == null) {
                 val newTrack = Track(
@@ -273,12 +274,16 @@ class LibraryScanner @Inject constructor(
             trackRepository.update(t)
 
         for ((album, info) in albumMap) {
-            val toUpdate = albumRepository.getAlbum(info.albumId).firstOrNull()
+            var toUpdate = albumRepository.getAlbum(info.albumId).firstOrNull()
             if (toUpdate != null) {
                 val tracks = trackRepository.getTracksInAlbum(info.albumId).firstOrNull() ?: emptyList()
                 val total = tracks.sumOf { it.duration }
+                val numTracks = tracks.size
                 if (toUpdate.duration != total)
-                    albumRepository.update(toUpdate.copy(duration = total))
+                    toUpdate = toUpdate.copy(duration = total)
+                if (toUpdate.numTracks != numTracks)
+                    toUpdate = toUpdate.copy(numTracks = numTracks)
+                albumRepository.update(toUpdate)
             }
         }
     }

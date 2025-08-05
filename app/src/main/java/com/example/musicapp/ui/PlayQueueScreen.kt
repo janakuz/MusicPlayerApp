@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,7 +36,7 @@ fun PlayQueueScreen(tracks: List<Track>,
 
 
 
-    TrackList(visibleQueue, onClick = onTrackClick, showArtwork = true, showReorderIconEnd = true, state = lazyListState, reorderable = reorderableLazyListState, playerViewModel = playerViewModel)
+ //   TrackList(visibleQueue, onClick = onTrackClick, showArtwork = true, showReorderIconEnd = true, state = lazyListState, reorderable = reorderableLazyListState, playerViewModel = playerViewModel)
 
 }
 

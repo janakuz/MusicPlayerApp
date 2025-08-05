@@ -9,6 +9,7 @@ data class Album(
     val title: String,
     val image: String?,
     val duration: Long,
+    val numTracks: Int,
     val mbId: String?,
     val discogsId: String?,
     val releaseDate: String?

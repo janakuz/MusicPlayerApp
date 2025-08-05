@@ -8,54 +8,76 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.musicapp.AlbumViewModel
 import com.example.musicapp.R
+import com.example.musicapp.TrackViewModel
 import com.example.musicapp.data.DataSource
+import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.model.Track
 import com.example.musicapp.ui.components.TrackList
+import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
 
 @Composable
 fun AlbumView(
-    name: String,
+    albumId: Int,
+    trackViewModel: TrackViewModel,
+    albumViewModel: AlbumViewModel,
+//    name: String,
 //    artist: String,
-    releaseDate: String,
-    image: String,
-    tracks: List<Track>,
-    numTracks: String,
-    duration: String,
-    onTrackClick: (Track) -> Unit,
+//    releaseDate: String,
+//    image: String,
+//    tracks: List<Track>,
+//    numTracks: String,
+//    duration: String,
+    onTrackClick: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        AlbumDetailHeader(image=image,
-            title = name
-        )
+    LaunchedEffect(albumId) {
+        albumViewModel.getAlbumById(albumId)
+        trackViewModel.getTracksInAlbum(albumId)
+    }
+
+    val albumUiState by albumViewModel.currentAlbumUiState.collectAsState()
+    val album = albumUiState.album
+
+    val tracksUiState by trackViewModel.albumTracksUiState.collectAsState()
+    val tracks = tracksUiState.tracks
+
+    if (album != null) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            AlbumDetailHeader(
+                image = album.image.toString(),
+                title = album.title
+            )
 //        Spacer(modifier = Modifier.height(4.dp))
 //        Text(text = artist, style = MaterialTheme.typography.bodyLarge)
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(){
-            Text(text = releaseDate, style = MaterialTheme.typography.bodySmall)
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Row() {
+                Text(text = album.releaseDate.toString(), style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.width(4.dp))
 
-            Text(text = numTracks, style = MaterialTheme.typography.bodySmall)
-            Spacer(modifier = Modifier.width(4.dp))
+                Text(text = album.numTracks.toString(), style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.width(4.dp))
 
-            Text(text = duration, style = MaterialTheme.typography.bodySmall)
+                Text(text = formatDuration(album.duration), style = MaterialTheme.typography.bodySmall)
+
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            TrackList(tracks, onClick = onTrackClick, showTrackNum = true)
+
 
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        TrackList(tracks, onClick = onTrackClick, showTrackNum = true)
-
-
     }
 
 }
@@ -64,15 +86,15 @@ fun AlbumView(
 @Composable
 fun AlbumPreview() {
     MusicAppTheme {
-        AlbumView(name= stringResource(R.string.sw),
- //           artist = stringResource(R.string.sw),
-            releaseDate = stringResource(R.string.release),
-            image = "",
-            numTracks = stringResource(R.string.tracksnum),
-            duration = stringResource(R.string.duration),
-            tracks = DataSource.tracks,
-            onTrackClick = {}
-        )
+//        AlbumView(name= stringResource(R.string.sw),
+// //           artist = stringResource(R.string.sw),
+//            releaseDate = stringResource(R.string.release),
+//            image = "",
+//            numTracks = stringResource(R.string.tracksnum),
+//            duration = stringResource(R.string.duration),
+//            tracks = DataSource.tracks,
+//            onTrackClick = {}
+//        )
     }
 
 }
