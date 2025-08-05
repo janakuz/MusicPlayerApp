@@ -145,7 +145,7 @@ class LibraryScanner @Inject constructor(
         val albums = entries.map {  entry ->
             val title = entry.albumTitle.toString()
             val artist = entry.artistName.toString()
-            AlbumKey(title.lowercase(), artist.lowercase(), entry.releaseDate) }.distinct()
+            AlbumKey(title, artist, entry.releaseDate) }.distinct()
         val existing = albumArtistRepository.getAll().firstOrNull() ?: emptyList()
         val existingByKey = existing.associateBy { AlbumKey(it.title.lowercase(), it.artistName.lowercase(), it.releaseDate?.lowercase()) }
 
@@ -153,7 +153,6 @@ class LibraryScanner @Inject constructor(
 
    //     val toInsert = mutableListOf<Album>()
         val toInsertAlbumArtist = mutableListOf<AlbumArtist>()
-
         for (album in albums) {
             val key = AlbumKey(
                 album.title.lowercase(),
@@ -175,6 +174,15 @@ class LibraryScanner @Inject constructor(
                 )
                 val inserted = albumRepository.insertWithReturn(new).toInt()
                 val artistId = artistRepository.getArtistByName(album.artist).id
+                result[key] = AlbumInfo(
+                    albumId = inserted,
+                    title = new.title,
+                    releaseDate = new.releaseDate,
+                    artistName = album.artist,
+                    artistId = artistId,
+                    image = new.image,
+                    duration = new.duration
+                )
                 toInsertAlbumArtist += AlbumArtist(
                     artistId = artistId,
                     albumId = inserted
@@ -185,6 +193,7 @@ class LibraryScanner @Inject constructor(
         if (toInsertAlbumArtist.isNotEmpty()) {
             albumArtistRepository.insertAll(toInsertAlbumArtist)
         }
+
 
         return result
     }
@@ -210,7 +219,10 @@ class LibraryScanner @Inject constructor(
                 null
             }
 
+
             if (artist == null || album == null) continue // skip if missing mapping
+
+
 
             val existing = existingByUri[entry.fileUri]
             val title = entry.title ?: "Unknown"
@@ -267,6 +279,7 @@ class LibraryScanner @Inject constructor(
                 }
             }
         }
+
 
         if (toInsert.isNotEmpty())
             trackRepository.insertAll(toInsert)
