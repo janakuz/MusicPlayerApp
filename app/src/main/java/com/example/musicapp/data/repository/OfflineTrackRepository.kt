@@ -26,6 +26,10 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
         }
     }
 
+    override fun getAllTracksFull(): Flow<List<Track>> {
+        return trackDao.getAllTracksFull()
+    }
+
     override fun getTrackById(id: Int): Flow<Track> =
         trackDao.getTrack(id)
 

@@ -1,20 +1,29 @@
 package com.example.musicapp
 
+import android.app.Application
 import android.content.ContentUris
 import android.content.Context
+import android.media.MediaScannerConnection
 import android.provider.MediaStore
+import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
+import dagger.hilt.android.internal.Contexts.getApplication
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
+import kotlin.toString
 
 class LibraryScanner @Inject constructor(
     private val artistRepository: ArtistRepository,
@@ -33,7 +42,7 @@ class LibraryScanner @Inject constructor(
         val albums = extractAlbums(audioEntries)
   //      albumRepository.insertAll(albums)
 
-  //      val tracks = buildTracks(audioEntries)
+        val tracks = buildTracks(audioEntries, artists, albums)
   //      trackRepository.insertAll(tracks)
     }
 
@@ -66,6 +75,7 @@ class LibraryScanner @Inject constructor(
                 val albumCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
                 val durationCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
                 val trackCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+                val dataCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
                 val yearCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
 
                 while (cursor.moveToNext()) {
@@ -78,6 +88,7 @@ class LibraryScanner @Inject constructor(
                     val album = cursor.getString(albumCol)
                     val duration = cursor.getLong(durationCol).takeIf { it > 0 }
                     val trackNum = cursor.getInt(trackCol).takeIf { it > 0 }
+                    val filePath = cursor.getString(dataCol)
                     val year = cursor.getString(yearCol)
 
                     list += RawAudioEntry(
@@ -87,7 +98,7 @@ class LibraryScanner @Inject constructor(
                         albumTitle = album,
                         duration = duration ?: 0L,
                         trackNumber = trackNum ?: 0,
-                        albumArt = null,
+                        albumArt = filePath,
                         releaseDate = year
 
                     )
@@ -134,7 +145,7 @@ class LibraryScanner @Inject constructor(
         val albums = entries.map {  entry ->
             val title = entry.albumTitle.toString()
             val artist = entry.artistName.toString()
-            AlbumKey(title, artist, entry.releaseDate) }.distinct()
+            AlbumKey(title.lowercase(), artist.lowercase(), entry.releaseDate) }.distinct()
         val existing = albumArtistRepository.getAll().firstOrNull() ?: emptyList()
         val existingByKey = existing.associateBy { AlbumKey(it.title.lowercase(), it.artistName.lowercase(), it.releaseDate?.lowercase()) }
 
@@ -177,23 +188,148 @@ class LibraryScanner @Inject constructor(
         return result
     }
 
-//    fun findCoverImageForTrackFile(trackFilePath: String): String? {
-//        val parent = File(trackFilePath).parentFile ?: return null
-//        val candidates = listOf("cover.jpg", "folder.jpg", "front.jpg", "album.jpg")
-//        for (name in candidates) {
-//            val f = File(parent, name)
-//            if (f.exists() && f.canRead()) {
-//                return f.absolutePath // store this in Album.image
-//            }
-//        }
-//        return null
-//    }
+    private suspend fun buildTracks(
+        entries: List<RawAudioEntry>,
+        artistMap: Map<String, Artist>,
+        albumMap: Map<AlbumKey, AlbumInfo>
+    ) {
+        val existingTracks = trackRepository.getAllTracksFull().firstOrNull() ?: emptyList()
+        val existingByUri = existingTracks.associateBy { it.fileUri }
 
-//    val possibleCover = findCoverImageForTrackFile(trackFilePath)
-//    val album = existingAlbum.copy(
-//        image = possibleCover ?: existingAlbum.image // preserve if already set
-//    )
-//    albumRepo.update(album)
+        val toInsert = mutableListOf<Track>()
+        val toUpdate = mutableListOf<Track>()
+
+
+        for (entry in entries) {
+            val artist = entry.artistName?.let { artistMap[it] }
+            val album = if (entry.albumTitle != null && entry.artistName != null) {
+                val key = AlbumKey(entry.albumTitle.lowercase(), entry.artistName.lowercase(), entry.releaseDate)
+                albumMap[key]
+            } else {
+                null
+            }
+
+            if (artist == null || album == null) continue // skip if missing mapping
+
+            val existing = existingByUri[entry.fileUri]
+            val title = entry.title ?: "Unknown"
+            val trackNumber = normalizeTrackNumber(entry.trackNumber) ?: 0
+            val duration = entry.duration ?: 0L
+
+            Log.d("ImageScan", "albumartfile ${entry.albumArt != null}")
+
+            if (album.image == null && entry.albumArt != null){
+                val possibleCover = findCoverImageForTrackFile(entry.albumArt)
+                val fullAlbum = albumRepository.getAlbum(album.albumId).firstOrNull()
+                if (fullAlbum != null) {
+                    val updatedAlbum = fullAlbum.copy(
+                        image = possibleCover ?: album.image // preserve if already set
+                    )
+
+                    albumRepository.update(updatedAlbum)
+                }
+            }
+
+            if (existing == null) {
+                val newTrack = Track(
+                    title = title,
+                    albumId = album.albumId,
+                    artistId = artist.id,
+                    duration = duration,
+                    plays = 0,
+                    mbId = null,
+                    lyrics = null,
+                    trackNumber = trackNumber,
+                    lastPlayed = null,
+                    fileUri = entry.fileUri,
+                    valence = null,
+                    energy = null,
+                    key = null,
+                    bpm = null
+                )
+                toInsert += newTrack
+            } else {
+                if (existing.title != title ||
+                    existing.albumId != album.albumId ||
+                    existing.artistId != artist.id ||
+                    existing.duration != duration ||
+                    existing.trackNumber != trackNumber
+                ) {
+                    val updatedTrack = existing.copy(
+                        title = title,
+                        albumId = album.albumId,
+                        artistId = artist.id,
+                        duration = duration,
+                        trackNumber = trackNumber
+                    )
+                    toUpdate += updatedTrack
+                }
+            }
+        }
+
+        if (toInsert.isNotEmpty())
+            trackRepository.insertAll(toInsert)
+        for (t in toUpdate)
+            trackRepository.update(t)
+
+        for ((album, info) in albumMap) {
+            val toUpdate = albumRepository.getAlbum(info.albumId).firstOrNull()
+            if (toUpdate != null) {
+                val tracks = trackRepository.getTracksInAlbum(info.albumId).firstOrNull() ?: emptyList()
+                val total = tracks.sumOf { it.duration }
+                if (toUpdate.duration != total)
+                    albumRepository.update(toUpdate.copy(duration = total))
+            }
+        }
+    }
+
+    fun findCoverImageForTrackFile(trackFilePath: String): String? {
+        val parentDir = File(trackFilePath).parentFile ?: return null
+        Log.d("ImageScan", trackFilePath)
+        Log.d("ImageScan", parentDir.name)
+        val imageExtensions = listOf("jpg", "jpeg", "png")
+
+        Log.d("ImageScan", parentDir.listFiles().joinToString())
+
+
+//        MediaScannerConnection.scanFile(
+//            context,
+//            arrayOf(parentDir.absolutePath),
+//            null
+//        ) { path, uri ->
+//            Log.d("ImageScan", "Scanned $path: $uri")
+//        }
+
+        val possibleCovers = parentDir.listFiles()?.filter { file ->
+            imageExtensions.any { ext -> file.name.endsWith(".$ext", ignoreCase = true) }
+        } ?: emptyList()
+
+        Log.d("ImageScan", possibleCovers.map { file -> file.name }.joinToString())
+
+        val prioritizedCovers = possibleCovers.sortedBy { file ->
+            when {
+                file.name.contains("cover", ignoreCase = true) -> 0
+                file.name.contains("folder", ignoreCase = true) -> 1
+                else -> 2
+            }
+        }
+        val chosenCover = prioritizedCovers.firstOrNull()
+
+        Log.d("ImageScan", "$chosenCover.name")
+
+        if (chosenCover != null && chosenCover.canRead()) {
+            return chosenCover.absolutePath // store this in Album.image
+        }
+
+        return null
+    }
+
+    fun normalizeTrackNumber(rawTrackNumber: Int?): Int? {
+        if (rawTrackNumber == null) return null
+        return if (rawTrackNumber >= 1000) rawTrackNumber % 1000 else rawTrackNumber
+    }
+
+
 
 }
 

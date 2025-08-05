@@ -99,4 +99,10 @@ interface TrackDao {
         ORDER BY t.trackNumber ASC
         """)
     fun getAllTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
+
+    @Query("""
+        SELECT * 
+        FROM tracks
+        """)
+    fun getAllTracksFull(): Flow<List<Track>>
 }

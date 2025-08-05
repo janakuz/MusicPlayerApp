@@ -42,5 +42,14 @@ interface AlbumArtistDao {
     """)
     fun getAll(): Flow<List<AlbumInfo>>
 
+    @Query("""
+    SELECT a.*
+    FROM albums a
+    JOIN album_artists aa ON aa.albumId = a.id
+    WHERE aa.artistId = :artistId
+    ORDER BY a.releaseDate ASC
+    """)
+    fun getAlbumsByArtistFull(artistId: Int): Flow<List<Album>>
+
 
 }

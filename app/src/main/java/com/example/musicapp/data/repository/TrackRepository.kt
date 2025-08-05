@@ -16,6 +16,8 @@ interface TrackRepository {
 
     fun getAllTracks(orderBy: SortField, descending: Boolean): Flow<List<TrackInfo>>
 
+    fun getAllTracksFull(): Flow<List<Track>>
+
     fun getTrackById(id: Int): Flow<Track>
 
     fun getTrackInfo(id: Int): Flow<TrackInfo>
