@@ -24,7 +24,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("playlistId"), Index("trackId")]
 )
-class PlaylistTracks(
+data class PlaylistTracks(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val playlistId: Int,
     val trackId: Int,

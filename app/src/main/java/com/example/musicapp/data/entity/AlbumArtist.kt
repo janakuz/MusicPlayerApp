@@ -24,7 +24,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("artistId"), Index("albumId")]
 )
-class AlbumArtist(
+data class AlbumArtist(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val artistId: Int,
     val albumId: Int

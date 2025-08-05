@@ -13,7 +13,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("albumId"), Index("artistId")]
 )
-class Track(
+data class Track(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
     val albumId: Int,
@@ -25,9 +25,9 @@ class Track(
     val trackNumber: Int?,
     val lastPlayed: Long?,
     val fileUri: String,
-    val valence: Int,
-    val energy: Int,
-    val key: String,
-    val bpm: Int
+    val valence: Int?,
+    val energy: Int?,
+    val key: String?,
+    val bpm: Int?
 
 )

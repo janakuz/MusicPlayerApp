@@ -24,7 +24,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("trackId"), Index("moodId")]
 )
-class TrackMood(
+data class TrackMood(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val trackId: Int,
     val moodId: Int

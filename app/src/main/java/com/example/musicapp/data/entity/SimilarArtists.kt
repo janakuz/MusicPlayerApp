@@ -24,7 +24,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("artist1Id"), Index("artist2Id")]
 )
-class SimilarArtists(
+data class SimilarArtists(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val artist1Id: Int,
     val artist2Id: Int,

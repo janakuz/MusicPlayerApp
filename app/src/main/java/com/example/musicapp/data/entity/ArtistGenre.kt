@@ -24,7 +24,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("artistId"), Index("genreId")]
 )
-class ArtistGenre(
+data class ArtistGenre(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val artistId: Int,
     val genreId: Int
