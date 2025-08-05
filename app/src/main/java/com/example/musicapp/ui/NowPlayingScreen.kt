@@ -1,8 +1,12 @@
 package com.example.musicapp.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -27,28 +31,22 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicapp.data.DataSource
-import com.example.musicapp.model.Track
 import com.example.musicapp.ui.theme.MusicAppTheme
-import com.example.musicapp.R
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicapp.PlayerViewModel
+import com.example.musicapp.data.dto.TrackInfo
 import kotlinx.coroutines.launch
 
 @Composable
 fun NowPlayingView(
-    name: String = "",
-    artist: String = "",
-    image: Painter = painterResource(R.drawable.cover),
-    track1: Track = DataSource.tracks.get(0),
+//    name: String = "",
+//    artist: String = "",
+//    image: Painter = painterResource(R.drawable.cover),
+    track1: TrackInfo,
     playerViewModel: PlayerViewModel,
-    tracks: List<Track> = DataSource.tracks,
+    tracks: List<TrackInfo>,
     modifier: Modifier = Modifier,
     onQueueClick: Any
 ){
@@ -70,43 +68,6 @@ fun NowPlayingView(
         }
     }
 
-    // Safe polling loop
- //   LaunchedEffect(controller) {
- //       while (true) {
-//            if (controller != null && controller!!.isPlaying) {
-//                position = controller!!.currentPosition
-//                duration = controller!!.duration
-//            }
- //           controller?.let {
- //               position = it.currentPosition
- //               duration = it.duration
- //           }
- //           delay(500)
-  //      }
-  //  }
-
- //   LaunchedEffect(Unit) {
-    //    val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-   //     val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
-   //     controllerFuture.addListener(
-      //      {
-    //            val controller = controllerFuture.get()
-    //            mediaController = controller
-
-                // Load and play test file
-    //            playerViewModel.playTrack("asset:///03_guest_list.mp3".toUri())
-    //            isPlaying = true
-
-    //            while (true) {
-     //               position = controller?.currentPosition ?: 0
-    //               duration = controller?.duration ?: 0
-                 //   delay(500)
-       //         }
-        //    },
-       //     ContextCompat.getMainExecutor(context)
-       // )
-  //  }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -127,9 +88,9 @@ fun NowPlayingView(
   //             title = stringResource(it.title)
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = stringResource(it.artist), style = MaterialTheme.typography.bodyLarge)
+            Text(text = it.artistName, style = MaterialTheme.typography.bodyLarge)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = stringResource(it.album), style = MaterialTheme.typography.bodyMedium)
+            Text(text = it.albumTitle, style = MaterialTheme.typography.bodyMedium)
         }
         Spacer(Modifier.height(32.dp))
 
@@ -191,7 +152,12 @@ fun NowPlayingView(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlayingWithQueue(playerViewModel: PlayerViewModel, onTrackClick: (Track) -> Unit) {
+fun NowPlayingWithQueue(
+    playerViewModel: PlayerViewModel,
+    track: TrackInfo?,
+    tracks1: List<TrackInfo>,
+    onTrackClick: (TrackInfo) -> Unit
+) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState()
 
@@ -201,12 +167,21 @@ fun NowPlayingWithQueue(playerViewModel: PlayerViewModel, onTrackClick: (Track) 
     BottomSheetScaffold(
         scaffoldState = sheetState,
         sheetContent = {
-            PlayQueueScreen(tracks, onTrackClick, playerViewModel)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                PlayQueueScreen(tracks1, onTrackClick, playerViewModel)
+            }
         },
         sheetPeekHeight = 0.dp,
         content = {
             NowPlayingView(
                 playerViewModel = playerViewModel,
+                tracks = tracks1,
+                track1 = track!!,
                 onQueueClick = {
                     scope.launch {
                         sheetState.bottomSheetState.expand()
@@ -221,14 +196,14 @@ fun NowPlayingWithQueue(playerViewModel: PlayerViewModel, onTrackClick: (Track) 
 @Composable
 fun NowPlayingPreview() {
     MusicAppTheme {
-        NowPlayingView(
-            name= stringResource(R.string.sw),
-            artist = stringResource(R.string.sw),
-            playerViewModel = viewModel(),
-            onQueueClick = {
-
-            }
-        )
+//        NowPlayingView(
+//            name= stringResource(R.string.sw),
+//            artist = stringResource(R.string.sw),
+//            playerViewModel = viewModel(),
+//            onQueueClick = {
+//
+//            }
+//        )
     }
 
 }

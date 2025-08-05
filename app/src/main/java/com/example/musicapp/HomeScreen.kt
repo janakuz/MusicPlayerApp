@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -26,7 +27,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.musicapp.data.DataSource
 import com.example.musicapp.ui.AlbumsGrid
 import com.example.musicapp.ui.AllTracksScreen
 import com.example.musicapp.ui.ArtistView
@@ -37,8 +37,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.dto.AlbumInfo
+import com.example.musicapp.ui.NowPlayingView
 import com.example.musicapp.ui.NowPlayingWithQueue
 import com.example.musicapp.ui.ScanLibraryScreen
+import kotlinx.coroutines.launch
 
 enum class HomeScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -174,37 +176,34 @@ topBar = {
             composable("nowPlaying") { backStackEntry ->
                 val track by playerViewModel.currentTrack.collectAsState()
                 val tracks by playerViewModel.queue.collectAsState()
-
                 val scope = rememberCoroutineScope()
                 val sheetState = rememberBottomSheetScaffoldState()
 
-
                 if (track != null) {
 
-                    NowPlayingWithQueue(playerViewModel, onTrackClick = {track ->
-                        playerViewModel.playTracks(DataSource.tracks, track)
+                    NowPlayingWithQueue(playerViewModel, track, tracks, onTrackClick = {track ->
+                        playerViewModel.playTracks(tracks, track)
                         navController.navigate("nowPlaying")
                         {
                             launchSingleTop = true
                         }
                     }, )
 
-//                    NowPlayingView(
+ //                   NowPlayingView(
 //                        name = stringResource(track!!.album),
-//                        artist = stringResource(track!!.artist),
-//                        image = painterResource(track!!.art),
-//                        track1 = track!!,
-//                        playerViewModel = playerViewModel,
-//                        tracks = tracks,
-//                        onQueueClick = {
-//                            scope.launch {
-//                                sheetState.bottomSheetState.expand()
-//                            }
-//                        }
+  //                      artist = stringResource(track!!.artist),
+    //                    image = painterResource(track!!.art),
+  //                      track1 = track!!,
+ //                       playerViewModel = playerViewModel,
+ //                       tracks = tracks,
+  //                      onQueueClick = {
+ //                           scope.launch {
+   //                             sheetState.bottomSheetState.expand()
+  //                          }
+  //                      }
 //                    )
                 }
                 else {
-                    // Optionally show a loading spinner or placeholder
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -219,18 +218,32 @@ topBar = {
                 val trackViewModel: TrackViewModel = hiltViewModel()
                 val albumViewModel: AlbumViewModel = hiltViewModel()
 
-
                 if (albumId != null) {
-                    AlbumView(albumId,
-                        trackViewModel,
-                        albumViewModel,
-                        onTrackClick = {track ->
-              //              playerViewModel.playTracks(DataSource.tracks, track)
-                            navController.navigate("nowPlaying")
-                            {
-                                launchSingleTop = true
-                            }
-                        })
+                    LaunchedEffect(albumId) {
+                        albumViewModel.getAlbumById(albumId)
+                        trackViewModel.getTracksInAlbum(albumId)
+                    }
+
+
+                    val tracksUiState by trackViewModel.albumTracksUiState.collectAsState()
+                    val tracks = tracksUiState.tracks
+
+                    val albumUiState by albumViewModel.currentAlbumUiState.collectAsState()
+                    val album = albumUiState.album
+
+
+                    if (album != null) {
+                        AlbumView(
+                            album,
+                            tracks,
+                            onTrackClick = { track ->
+                                playerViewModel.playTracks(tracks, track)
+                                navController.navigate("nowPlaying")
+                                {
+                                    launchSingleTop = true
+                                }
+                            })
+                    }
                 }
             }
 

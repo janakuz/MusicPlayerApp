@@ -21,6 +21,7 @@ import com.example.musicapp.R
 import com.example.musicapp.TrackViewModel
 import com.example.musicapp.data.DataSource
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.entity.Album
 import com.example.musicapp.model.Track
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
@@ -28,9 +29,10 @@ import com.example.musicapp.ui.theme.MusicAppTheme
 
 @Composable
 fun AlbumView(
-    albumId: Int,
-    trackViewModel: TrackViewModel,
-    albumViewModel: AlbumViewModel,
+    album: Album,
+    tracks: List<TrackInfo>,
+//    trackViewModel: TrackViewModel,
+//    albumViewModel: AlbumViewModel,
 //    name: String,
 //    artist: String,
 //    releaseDate: String,
@@ -41,43 +43,31 @@ fun AlbumView(
     onTrackClick: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){
-    LaunchedEffect(albumId) {
-        albumViewModel.getAlbumById(albumId)
-        trackViewModel.getTracksInAlbum(albumId)
-    }
 
-    val albumUiState by albumViewModel.currentAlbumUiState.collectAsState()
-    val album = albumUiState.album
-
-    val tracksUiState by trackViewModel.albumTracksUiState.collectAsState()
-    val tracks = tracksUiState.tracks
-
-    if (album != null) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AlbumDetailHeader(
-                image = album.image.toString(),
-                title = album.title
-            )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AlbumDetailHeader(
+            image = album.image.toString(),
+            title = album.title
+        )
 //        Spacer(modifier = Modifier.height(4.dp))
 //        Text(text = artist, style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row() {
-                Text(text = album.releaseDate.toString(), style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Row() {
+            Text(text = album.releaseDate.toString(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.width(4.dp))
 
-                Text(text = album.numTracks.toString(), style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.width(4.dp))
+            Text(text = album.numTracks.toString(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.width(4.dp))
 
-                Text(text = formatDuration(album.duration), style = MaterialTheme.typography.bodySmall)
-
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            TrackList(tracks, onClick = onTrackClick, showTrackNum = true)
-
+            Text(text = formatDuration(album.duration), style = MaterialTheme.typography.bodySmall)
 
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        TrackList(tracks, onClick = onTrackClick, showTrackNum = true)
+
+
     }
 
 }

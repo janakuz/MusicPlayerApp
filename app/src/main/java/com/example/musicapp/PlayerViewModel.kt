@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.common.Player
+import com.example.musicapp.data.dto.TrackInfo
 import kotlinx.coroutines.delay
 
 
@@ -29,11 +30,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 //        private set
     val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
 
-    private val _queue = MutableStateFlow<List<Track>>(emptyList())
-    val queue: StateFlow<List<Track>> = _queue.asStateFlow()
+    private val _queue = MutableStateFlow<List<TrackInfo>>(emptyList())
+    val queue: StateFlow<List<TrackInfo>> = _queue.asStateFlow()
 
-    private val _currentTrack = MutableStateFlow<Track?>(null)
-    val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
+    private val _currentTrack = MutableStateFlow<TrackInfo?>(null)
+    val currentTrack: StateFlow<TrackInfo?> = _currentTrack.asStateFlow()
 
 
     private val _position = MutableStateFlow(0L)
@@ -55,7 +56,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 controller.addListener(object : Player.Listener {
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         val mediaId = mediaItem?.mediaId?.toIntOrNull()
-                        val matchingTrack = _queue.value.find { it.id == mediaId }
+                        val matchingTrack = _queue.value.find { it.trackId == mediaId }
                         _currentTrack.value = matchingTrack
                     }
                 })
@@ -81,7 +82,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun playTrack(uri: Uri) {
         val mediaItem = MediaItem.Builder()
-            .setUri("asset:///03_guest_list.mp3".toUri()) // OR raw resource URI
+            .setUri("asset:///03_guest_list.mp3".toUri())
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle("Test Track")
@@ -96,24 +97,24 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun playTracks(tracks: List<Track>, selectedTrack: Track){
+    fun playTracks(tracks: List<TrackInfo>, selectedTrack: TrackInfo){
         _queue.value = tracks
         _currentTrack.value = selectedTrack
 
         val mediaItems = tracks.map { track ->
             MediaItem.Builder()
-                .setUri(track.file.toUri()) // could be a file path, content URI, or raw resource
-                .setMediaId(track.id.toString())
+                .setUri(track.fileUri.toUri())
+                .setMediaId(track.trackId.toString())
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle(track.title.toString())
-                        .setArtist(track.artist.toString())
+                        .setArtist(track.artistName.toString())
                         .build()
                 )
                 .build()
         }
 
-        val startIndex = tracks.indexOfFirst { it.id == selectedTrack.id }
+        val startIndex = tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
 
         mediaController.value?.apply {
             setMediaItems(mediaItems, startIndex, 0L)
@@ -151,13 +152,12 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         Log.d("tag", _queue.value.toString())
     }
 
-    fun updateQueue(newQueue: List<Track>) {
+    fun updateQueue(newQueue: List<TrackInfo>) {
         Log.d("tag", newQueue.toString())
         val currentMediaId = mediaController.value?.currentMediaItem?.mediaId?.toIntOrNull()
-        val currentTrack = newQueue.find { it.id == currentMediaId }
-        val newIndex = newQueue.indexOfFirst { it.id == currentMediaId }
+        val currentTrack = newQueue.find { it.trackId == currentMediaId }
+        val newIndex = newQueue.indexOfFirst { it.trackId == currentMediaId }
 
-        // If somehow not found, just fallback to 0
         val safeIndex = if (newIndex >= 0) newIndex else 0
 
         _queue.value = newQueue
@@ -165,12 +165,12 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
         val mediaItems = newQueue.map { track ->
             MediaItem.Builder()
-                .setUri(track.file.toUri())
-                .setMediaId(track.id.toString())
+                .setUri(track.fileUri.toUri())
+                .setMediaId(track.trackId.toString())
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle(track.title.toString())
-                        .setArtist(track.artist.toString())
+                        .setArtist(track.artistName.toString())
                         .build()
                 )
                 .build()

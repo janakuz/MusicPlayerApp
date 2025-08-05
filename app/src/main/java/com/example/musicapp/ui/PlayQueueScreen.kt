@@ -1,5 +1,6 @@
 package com.example.musicapp.ui
 
+import android.util.Log
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -10,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicapp.PlayerViewModel
 import com.example.musicapp.data.DataSource
+import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.model.Track
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.theme.MusicAppTheme
@@ -18,11 +20,14 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 
 @Composable
-fun PlayQueueScreen(tracks: List<Track>,
-                    onTrackClick: (Track) -> Unit,
+fun PlayQueueScreen(tracks: List<TrackInfo>,
+                    onTrackClick: (TrackInfo) -> Unit,
                     playerViewModel: PlayerViewModel){
     val lazyListState = rememberLazyListState()
     var visibleQueue by remember { mutableStateOf(tracks.toList()) }
+    Log.d("PlayQueue", "tracks: ${tracks.size}")
+    Log.d("PlayQueue", "queue: ${visibleQueue.size}")
+    Log.d("PlayQueue", "IDs: ${visibleQueue.map { it.trackId }}")
 
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
         visibleQueue = visibleQueue.toMutableList().apply {
@@ -36,7 +41,7 @@ fun PlayQueueScreen(tracks: List<Track>,
 
 
 
- //   TrackList(visibleQueue, onClick = onTrackClick, showArtwork = true, showReorderIconEnd = true, state = lazyListState, reorderable = reorderableLazyListState, playerViewModel = playerViewModel)
+    TrackList(visibleQueue, onClick = onTrackClick, showArtwork = true, showReorderIconEnd = true, state = lazyListState, reorderable = reorderableLazyListState, playerViewModel = playerViewModel)
 
 }
 
@@ -44,6 +49,6 @@ fun PlayQueueScreen(tracks: List<Track>,
 @Composable
 fun PlayQueuePreview() {
     MusicAppTheme {
-        PlayQueueScreen(DataSource.tracks, {}, viewModel())
+      //  PlayQueueScreen(DataSource.tracks, {}, viewModel())
     }
 }
