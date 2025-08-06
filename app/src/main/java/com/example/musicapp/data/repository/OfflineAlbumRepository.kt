@@ -4,9 +4,16 @@ import com.example.musicapp.data.dao.AlbumDao
 import com.example.musicapp.data.dto.TrackInfo
 import kotlinx.coroutines.flow.Flow
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.service.DiscogsApiService
+import com.example.musicapp.data.service.LastfmApiService
+import com.example.musicapp.data.service.MusicbrainzApiService
 
 
-class OfflineAlbumRepository(private val albumDao: AlbumDao) : AlbumRepository {
+class OfflineAlbumRepository(
+    private val albumDao: AlbumDao,
+    private val musicbrainzApiService: MusicbrainzApiService,
+    private val discogsApiService: DiscogsApiService,
+    private val lastfmApiService: LastfmApiService) : AlbumRepository {
 
     override fun getAllAlbumsByName(): Flow<List<Album>> =
         albumDao.getAllAlbumsByName()
@@ -36,6 +43,18 @@ class OfflineAlbumRepository(private val albumDao: AlbumDao) : AlbumRepository {
 
     override fun getAlbum(id: Int): Flow<Album> =
         albumDao.getAlbum(id)
+
+    override suspend fun findAlbumMB(query: String) : String {
+        return musicbrainzApiService.findAlbum(query)
+    }
+
+    override suspend fun findAlbumDG(query: String): String {
+        return discogsApiService.findAlbum(query)
+    }
+
+    override suspend fun findAlbumLFM(artist: String, album: String): String {
+        return lastfmApiService.findAlbum(artist = artist, album = album)
+    }
 
     override suspend fun insertAll(albums: List<Album>) {
         albumDao.insertAll(albums)

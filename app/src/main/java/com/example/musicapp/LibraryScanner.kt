@@ -1,12 +1,9 @@
 package com.example.musicapp
 
-import android.app.Application
 import android.content.ContentUris
 import android.content.Context
-import android.media.MediaScannerConnection
 import android.provider.MediaStore
 import android.util.Log
-import androidx.compose.ui.platform.LocalContext
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
@@ -16,9 +13,7 @@ import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
-import dagger.hilt.android.internal.Contexts.getApplication
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -31,6 +26,7 @@ class LibraryScanner @Inject constructor(
     private val albumArtistRepository: AlbumArtistRepository,
     private val trackRepository: TrackRepository
 ) {
+
 
     suspend fun scanAll(context: Context) {
         val audioEntries = queryMediaStore(context) // returns raw metadata for files
@@ -148,6 +144,42 @@ class LibraryScanner @Inject constructor(
             AlbumKey(title, artist, entry.releaseDate) }.distinct()
         val existing = albumArtistRepository.getAll().firstOrNull() ?: emptyList()
         val existingByKey = existing.associateBy { AlbumKey(it.title.lowercase(), it.artistName.lowercase(), it.releaseDate?.lowercase()) }
+        Log.d("TestAPI", "here1")
+
+
+        val testAlbum = albums[0]
+        val testQuery = "release:${testAlbum.title} artist:${testAlbum.artist} date:${testAlbum.year}"
+        val testQuery2 = testAlbum.title
+
+        Log.d("TestAPI", testQuery)
+
+        Log.d("TestAPI", BuildConfig.USER_AGENT)
+
+        val res = albumRepository.findAlbumMB(testQuery)
+        val res2 = albumRepository.findAlbumDG(testQuery2)
+        Log.d("TestAPI", res.toString())
+        Log.d("TestAPI", res2.toString())
+
+        Log.d("TestAPI", "API call 1 succeeded")
+
+
+        try {
+            val res3 = albumRepository.findAlbumLFM(testAlbum.artist, testAlbum.title)
+            Log.d("TestAPI", res3.toString())
+
+        } catch (e: Exception) {
+            Log.e("TestAPI", "API call failed", e)
+            Log.d("TestAPI", e.message.toString())
+            Log.e("TestAPI", "API call failed", e.cause)
+        }
+
+
+   //     val res = albumRepository.findALbumMB(testQuery)
+        Log.d("TestAPI", "here")
+
+    //    Log.d("TestAPI", res.toString())
+
+
 
         val result = mutableMapOf<AlbumKey, AlbumInfo>()
 

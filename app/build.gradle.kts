@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +9,11 @@ plugins {
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
 }
+
+
+val apikeyPropertiesFile = rootProject.file("secrets.properties")
+val apikeyProperties = Properties()
+apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
 
 android {
     namespace = "com.example.musicapp"
@@ -18,7 +26,22 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        android.buildFeatures.buildConfig = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "DISCOGS_KEY", apikeyProperties.getProperty("DISCOGS_KEY"))
+        buildConfigField("String", "DISCOGS_SECRET", apikeyProperties.getProperty("DISCOGS_SECRET"))
+        buildConfigField("String", "LASTFM_KEY", apikeyProperties.getProperty("LASTFM_KEY"))
+        buildConfigField("String", "LASTFM_SECRET", apikeyProperties.getProperty("LASTFM_SECRET"))
+        buildConfigField("String", "SPOTIFY_ID", apikeyProperties.getProperty("SPOTIFY_ID"))
+        buildConfigField("String", "SPOTIFY_SECRET", apikeyProperties.getProperty("SPOTIFY_SECRET"))
+        buildConfigField("String", "USER_AGENT", apikeyProperties.getProperty("USER_AGENT"))
+
+
+    }
+
+    buildFeatures{
+        buildConfig = true
     }
 
     buildTypes {
@@ -62,6 +85,11 @@ dependencies {
     implementation("androidx.media3:media3-session:1.7.1")
     implementation("androidx.media3:media3-exoplayer:1.7.1")
     implementation("sh.calvin.reorderable:reorderable:2.5.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+// Retrofit with Scalar Converter
+    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     //   implementation(libs.androidx.navigation.compose.jvmstubs)
     implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")
     implementation("androidx.room:room-common-jvm:2.7.2")

@@ -1,6 +1,5 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Album
 import kotlinx.coroutines.flow.Flow
 
@@ -21,6 +20,13 @@ interface AlbumRepository {
     fun getAllAlbums(orderBy: SortFieldAlbum, descending: Boolean): Flow<List<Album>>
 
     fun getAlbum(id: Int): Flow<Album>
+
+    suspend fun findAlbumMB(query: String) : String
+
+    suspend fun findAlbumDG(query: String) : String
+
+    suspend fun findAlbumLFM(artist: String, album: String) : String
+
 
     suspend fun insertAll(albums: List<Album>)
 
