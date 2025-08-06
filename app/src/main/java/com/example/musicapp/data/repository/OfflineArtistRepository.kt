@@ -1,10 +1,19 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dao.ArtistDao
+import com.example.musicapp.data.dto.ArtistDicogsResponse
+import com.example.musicapp.data.dto.ArtistMBResponse
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.service.DiscogsApiService
+import com.example.musicapp.data.service.LastfmApiService
+import com.example.musicapp.data.service.MusicbrainzApiService
 import kotlinx.coroutines.flow.Flow
 
-class OfflineArtistRepository(private val artistDao: ArtistDao) : ArtistRepository {
+class OfflineArtistRepository(
+    private val artistDao: ArtistDao,
+    private val musicbrainzApiService: MusicbrainzApiService,
+    private val discogsApiService: DiscogsApiService,
+    private val lastfmApiService: LastfmApiService) : ArtistRepository {
 
     //val allArtists: Flow<List<Artist>> = artistDao.getAllArtists()
     override fun getAllArtists(): Flow<List<Artist>> {
@@ -21,6 +30,18 @@ class OfflineArtistRepository(private val artistDao: ArtistDao) : ArtistReposito
 
     override suspend fun getArtistByName(name: String): Artist {
         return artistDao.getArtistByName(name)
+    }
+
+    override suspend fun getArtistMusicbrainzInfo(mbid: String): ArtistMBResponse {
+        return musicbrainzApiService.getArtist(mbid)
+    }
+
+    override suspend fun getArtistImage(discogsId: String): String {
+        return discogsApiService.getImages(discogsId).images[0].resourceUrl
+    }
+
+    override suspend fun getArtistBio(mbid: String): String {
+        return lastfmApiService.getArtistInfo(mbid = mbid).artist.bio.content
     }
 
     override suspend fun insertAll(artists: List<Artist>) {

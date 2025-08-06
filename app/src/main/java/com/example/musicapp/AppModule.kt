@@ -16,6 +16,7 @@ import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
@@ -66,6 +67,10 @@ object AppModule {
     @Retention(AnnotationRetention.BINARY)
     annotation class LastfmRetrofit
 
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class CoverArtArchiveRetrofit
+
 //    @Qualifier
 //    @Retention(AnnotationRetention.BINARY)
 //    annotation class SpotifyRetrofit
@@ -86,8 +91,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideArtistRepository(artistDao: ArtistDao): ArtistRepository {
-        return OfflineArtistRepository(artistDao)
+    fun provideArtistRepository(
+        artistDao: ArtistDao,
+        musicbrainzApiService: MusicbrainzApiService,
+        discogsApiService: DiscogsApiService,
+        lastfmApiService: LastfmApiService): ArtistRepository {
+        return OfflineArtistRepository(artistDao, musicbrainzApiService, discogsApiService, lastfmApiService)
     }
 
     @Provides
@@ -142,9 +151,26 @@ object AppModule {
             .build()
 
     @Provides
+    @CoverArtArchiveRetrofit
+    @Singleton
+    fun provideCoverArtArchiveRetrofit(@MusicBrainzClient okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://coverartarchive.org/")
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
+
+    @Provides
     @Singleton
     fun provideMusicbrainzApiService(@MusicBrainzRetrofit retrofit: Retrofit): MusicbrainzApiService {
         return retrofit.create(MusicbrainzApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCoverArtArchiveApiService(@CoverArtArchiveRetrofit retrofit: Retrofit): CoverArtArchiveApiService {
+        return retrofit.create(CoverArtArchiveApiService::class.java)
     }
 
     @Provides
@@ -202,9 +228,8 @@ object AppModule {
     @Singleton
     fun provideAlbumRepository(albumDao: AlbumDao,
                                musicbrainzApiService: MusicbrainzApiService,
-                               discogsApiService: DiscogsApiService,
-                               lastfmApiService: LastfmApiService): AlbumRepository {
-        return OfflineAlbumRepository(albumDao, musicbrainzApiService, discogsApiService, lastfmApiService)
+                               coverArtArchiveApiService: CoverArtArchiveApiService): AlbumRepository {
+        return OfflineAlbumRepository(albumDao, musicbrainzApiService, coverArtArchiveApiService)
     }
 
     @Provides

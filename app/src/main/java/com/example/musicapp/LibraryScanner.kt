@@ -14,6 +14,7 @@ import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -149,23 +150,45 @@ class LibraryScanner @Inject constructor(
 
         val testAlbum = albums[0]
         val testQuery = "release:${testAlbum.title} artist:${testAlbum.artist} date:${testAlbum.year}"
-        val testQuery2 = testAlbum.title
+    //    val testQuery2 = testAlbum.title
 
         Log.d("TestAPI", testQuery)
 
         Log.d("TestAPI", BuildConfig.USER_AGENT)
 
         val res = albumRepository.findAlbumMB(testQuery)
-        val res2 = albumRepository.findAlbumDG(testQuery2)
-        Log.d("TestAPI", res.toString())
-        Log.d("TestAPI", res2.toString())
+        val artistmbid = res.releases[0].artistCredit[0].artist.id
+        delay(1000)
+        val ares = artistRepository.getArtistMusicbrainzInfo(artistmbid)
+        Log.d("TestAPI", ares.id)
+        if (ares.urlRelations != null){
+            Log.d("TestAPI", ares.urlRelations.size.toString())
+            val discogs = ares.urlRelations.find { it.type.equals("discogs") }
+            Log.d("TestAPI", discogs.toString())
+            if (discogs != null && discogs.url != null) {
+                val discogsLink = discogs.url.resource.toString().split("/")
+                val discogsId = discogsLink[discogsLink.size-1]
+                val url = artistRepository.getArtistImage(discogsId)
+                Log.d("TestAPI", url)
 
-        Log.d("TestAPI", "API call 1 succeeded")
+            }
+        }
+
+        val bio = artistRepository.getArtistBio(artistmbid)
+
+        Log.d("TestAPI", bio)
+    //    val res2 = albumRepository.findAlbumDG(testQuery2)
+        Log.d("TestAPI", res.releases[0].date.toString())
+     //   Log.d("TestAPI", res2.toString())
+
+        val albumart = albumRepository.getAlbumArt(res.releases[0].id)
+
+        Log.d("TestAPI", albumart)
 
 
         try {
-            val res3 = albumRepository.findAlbumLFM(testAlbum.artist, testAlbum.title)
-            Log.d("TestAPI", res3.toString())
+       //     val res3 = albumRepository.findAlbumLFM(testAlbum.artist, testAlbum.title)
+      //      Log.d("TestAPI", res3.toString())
 
         } catch (e: Exception) {
             Log.e("TestAPI", "API call failed", e)
