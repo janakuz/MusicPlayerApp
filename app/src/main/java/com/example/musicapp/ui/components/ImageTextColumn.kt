@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.model.GridItem
 
@@ -40,6 +42,7 @@ fun ImageWithTextColumn(
     albumArtist: String = "",
     onClick: ((GridItem) -> Unit)? = null
 ) {
+    Log.d("AlbumImage", image)
     Column(
         modifier = modifier
             .then(if (onClick != null) Modifier.clickable {
@@ -54,6 +57,7 @@ fun ImageWithTextColumn(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(image)
                     .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentDescription = null,
                 modifier = imageModifier

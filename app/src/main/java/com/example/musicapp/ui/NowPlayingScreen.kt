@@ -81,8 +81,8 @@ fun NowPlayingView(
 
         track?.let {
             AlbumDetailHeader(
-                image = "",
-                title = ""
+                image = track!!.albumArt.toString(),
+                title = track!!.title
 
 //                        image = painterResource(it.art),
   //             title = stringResource(it.title)

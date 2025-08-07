@@ -140,7 +140,8 @@ topBar = {
                         artistName = "",
                         image = album.image,
                         duration = album.duration,
-                        artistId = 0
+                        artistId = 0,
+                        label = album.label
                     )
                 }
                 AlbumsGrid(albumInfos,
@@ -150,7 +151,14 @@ topBar = {
             }
             composable(route = HomeScreen.Tracks.name) {
                 val trackViewModel: TrackViewModel = hiltViewModel()
-                AllTracksScreen(trackViewModel)
+                val tracksUIState by trackViewModel.tracksUiState.collectAsState()
+                val tracks = tracksUIState.tracks
+                AllTracksScreen(
+                    tracks,
+                onClick = {
+                    track -> playerViewModel.playTracks(tracks, track)
+                    navController.navigate("nowPlaying")
+                })
             }
             composable("scan") {
                 val scannerViewModel: LibraryScanViewModel = hiltViewModel()

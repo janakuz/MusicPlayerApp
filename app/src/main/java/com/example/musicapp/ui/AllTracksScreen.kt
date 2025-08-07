@@ -8,13 +8,12 @@ import com.example.musicapp.data.DataSource
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.theme.MusicAppTheme
 import androidx.compose.runtime.getValue
+import com.example.musicapp.data.dto.TrackInfo
 
 
 @Composable
-fun AllTracksScreen(trackViewModel: TrackViewModel){
-    val tracksUIState by trackViewModel.tracksUiState.collectAsState()
-    val tracks = tracksUIState.tracks
-    TrackList(tracks, onClick = {}, showArtwork = true)
+fun AllTracksScreen(tracks: List<TrackInfo>, onClick: (TrackInfo) -> Unit){
+    TrackList(tracks, onClick = onClick, showArtwork = true)
 
 }
 

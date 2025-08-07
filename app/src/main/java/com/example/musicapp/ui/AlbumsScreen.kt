@@ -1,5 +1,6 @@
 package com.example.musicapp.ui
 
+import android.util.Log
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ fun AlbumsGrid(
      //       artist = 0
         )
     }
+
 
     Grid(
         listItems = items,
