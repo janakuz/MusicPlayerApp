@@ -11,6 +11,7 @@ data class Album(
     val duration: Long,
     val numTracks: Int,
     val mbId: String?,
+    val label: String?,
     val discogsId: String?,
     val releaseDate: String?
 )

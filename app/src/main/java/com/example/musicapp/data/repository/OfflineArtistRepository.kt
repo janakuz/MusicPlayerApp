@@ -28,8 +28,12 @@ class OfflineArtistRepository(
         return artistDao.getArtist(id)
     }
 
-    override suspend fun getArtistByName(name: String): Artist {
+    override suspend fun getArtistByName(name: String): List<Artist> {
         return artistDao.getArtistByName(name)
+    }
+
+    override suspend fun getArtistByMbid(mbId: String): Artist? {
+        return artistDao.getArtistByMbid(mbId)
     }
 
     override suspend fun getArtistMusicbrainzInfo(mbid: String): ArtistMBResponse {
@@ -49,6 +53,10 @@ class OfflineArtistRepository(
     }
 
     override suspend fun insert(artist: Artist) = artistDao.insert(artist)
+
+    override suspend fun insertWithReturn(artist: Artist): Long {
+        return artistDao.insertWithReturn(artist)
+    }
 
     override suspend fun update(artist: Artist) {
         artistDao.update(artist)

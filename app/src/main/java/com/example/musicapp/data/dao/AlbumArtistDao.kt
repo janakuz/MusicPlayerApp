@@ -6,9 +6,11 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.musicapp.data.dto.AlbumIdWithArtist
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
+import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.entity.Track
 import kotlinx.coroutines.flow.Flow
 
@@ -50,6 +52,22 @@ interface AlbumArtistDao {
     ORDER BY a.releaseDate ASC
     """)
     fun getAlbumsByArtistFull(artistId: Int): Flow<List<Album>>
+
+    @Query("""
+    SELECT ar.*
+    FROM artists ar
+    JOIN album_artists aa ON aa.artistId = ar.id
+    WHERE aa.albumId = :albumId
+    ORDER BY ar.name ASC
+    """)
+    fun getAllAlbumArtists(albumId: Int): List<Artist>
+
+    @Query("""
+    SELECT ar.*, aa.albumId AS albumId
+    FROM album_artists aa
+    INNER JOIN artists ar ON aa.artistId = ar.id
+""")
+    suspend fun getAllAlbumArtistsWithArtistInfo(): List<AlbumIdWithArtist>
 
 
 }

@@ -51,7 +51,7 @@ class OfflineAlbumRepository(
     }
 
     override suspend fun getAlbumArt(mbid: String): String {
-        return coverArtArchiveApiService.getAlbumImage(mbid).images[0].image
+        return coverArtArchiveApiService.getAlbumImage(mbid).images[0].image.replace("http://", "https://")
     }
 
     override suspend fun insertAll(albums: List<Album>) {

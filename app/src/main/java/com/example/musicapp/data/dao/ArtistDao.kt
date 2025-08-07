@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
 import kotlinx.coroutines.flow.Flow
 
@@ -21,7 +22,10 @@ interface ArtistDao {
     fun getArtist(id: Int): Flow<Artist>
 
     @Query("SELECT * FROM artists where LOWER(name)=LOWER(:name)")
-    suspend fun getArtistByName(name: String): Artist
+    suspend fun getArtistByName(name: String): List<Artist>
+
+    @Query("SELECT * FROM artists where mbId=:mbId")
+    suspend fun getArtistByMbid(mbId: String): Artist?
 
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -29,6 +33,10 @@ interface ArtistDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(artist: Artist)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertWithReturn(artist: Artist): Long
+
 
     @Update
     suspend fun update(artist: Artist)

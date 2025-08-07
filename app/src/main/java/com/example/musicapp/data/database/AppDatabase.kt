@@ -15,7 +15,7 @@ import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.entity.Track
 import java.util.concurrent.Executors
 
-@Database(entities = [Artist::class, Album::class, Track::class, AlbumArtist::class], version = 3)
+@Database(entities = [Artist::class, Album::class, Track::class, AlbumArtist::class], version = 4)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao
     abstract fun albumDao(): AlbumDao

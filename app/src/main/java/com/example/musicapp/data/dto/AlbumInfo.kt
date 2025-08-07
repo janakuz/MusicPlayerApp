@@ -7,5 +7,6 @@ data class AlbumInfo(
     val artistName: String,
     val artistId: Int,
     val image: String?,
+    val label: String?,
     val duration: Long
 )
