@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.dto.AlbumInfo
+import com.example.musicapp.ui.NowPlayingBar
 import com.example.musicapp.ui.NowPlayingView
 import com.example.musicapp.ui.NowPlayingWithQueue
 import com.example.musicapp.ui.ScanLibraryScreen
@@ -93,24 +94,34 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
  //   )
 
     Scaffold(
-topBar = {
-    val selectedTabIndex = tabs.indexOfFirst { it.name == currentRoute }.takeIf { it >= 0 } ?: 0
-    TabRow(selectedTabIndex = selectedTabIndex) {
-        tabs.forEachIndexed { index, screen ->
-            Tab(
-                text = { Text(stringResource(screen.title)) },
-                selected = index == selectedTabIndex,
-                onClick = {
-                    navController.navigate(screen.name) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+        topBar = {
+            val selectedTabIndex = tabs.indexOfFirst { it.name == currentRoute }.takeIf { it >= 0 } ?: 0
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, screen ->
+                    Tab(
+                        text = { Text(stringResource(screen.title)) },
+                        selected = index == selectedTabIndex,
+                        onClick = {
+                            navController.navigate(screen.name) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
-            )
+            }
+        },
+
+        bottomBar = {
+            if (currentRoute != "nowPlaying") {
+                NowPlayingBar(
+                    playerViewModel = playerViewModel,
+                    onClick = { navController.navigate("nowPlaying") }
+                )
+            }
         }
-    }
-}
+
     ) {
 
         innerPadding ->

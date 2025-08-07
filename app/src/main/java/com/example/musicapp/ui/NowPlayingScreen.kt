@@ -55,7 +55,8 @@ fun NowPlayingView(
     val controller by playerViewModel.controller.collectAsState()
     val track by playerViewModel.currentTrack.collectAsState()
     val tracks by playerViewModel.queue.collectAsState()
-    var isPlaying by remember { mutableStateOf(false) }
+    var isPlaying by playerViewModel.isPlaying
+//    var isPlaying by remember { mutableStateOf(false) }
     val position by playerViewModel.position.collectAsState()
     val duration by playerViewModel.duration.collectAsState()
 
@@ -64,7 +65,7 @@ fun NowPlayingView(
     LaunchedEffect(controller) {
         if (controller != null) {
 //            playerViewModel.playTracks(tracks,track)
-            isPlaying = true
+ //           isPlaying = true
         }
     }
 

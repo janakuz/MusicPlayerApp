@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -43,6 +44,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration
 
+    val isPlaying: MutableState<Boolean> = mutableStateOf(false)
+
     init {
         viewModelScope.launch {
             val context = getApplication<Application>()
@@ -53,6 +56,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 val controller = controllerFuture.get()
                 mediaController.value = controller
 
+
                 controller.addListener(object : Player.Listener {
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         val mediaId = mediaItem?.mediaId?.toIntOrNull()
@@ -60,6 +64,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                         _currentTrack.value = matchingTrack
                     }
                 })
+
+                controller.addListener(object: Player.Listener{
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        this@PlayerViewModel.isPlaying.value = isPlaying
+                    }
+
+                }
+                )
 
 
 
@@ -100,6 +112,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun playTracks(tracks: List<TrackInfo>, selectedTrack: TrackInfo){
         _queue.value = tracks
         _currentTrack.value = selectedTrack
+        isPlaying.value = true
 
         val mediaItems = tracks.map { track ->
             MediaItem.Builder()
