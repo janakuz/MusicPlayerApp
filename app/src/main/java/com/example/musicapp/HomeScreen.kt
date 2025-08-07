@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -103,7 +105,8 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                         selected = index == selectedTabIndex,
                         onClick = {
                             navController.navigate(screen.name) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                popUpTo(screen.name)
+//                                popUpTo(navController.graph.startDestinationId) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -196,31 +199,27 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                 val track by playerViewModel.currentTrack.collectAsState()
                 val tracks by playerViewModel.queue.collectAsState()
                 val scope = rememberCoroutineScope()
-                val sheetState = rememberBottomSheetScaffoldState()
+                val sheetState = rememberModalBottomSheetState()
 
                 if (track != null) {
-
-                    NowPlayingWithQueue(playerViewModel, track, tracks, onTrackClick = {track ->
-                        playerViewModel.playTracks(tracks, track)
-                        navController.navigate("nowPlaying")
-                        {
-                            launchSingleTop = true
-                        }
-                    }, )
-
- //                   NowPlayingView(
-//                        name = stringResource(track!!.album),
-  //                      artist = stringResource(track!!.artist),
-    //                    image = painterResource(track!!.art),
-  //                      track1 = track!!,
- //                       playerViewModel = playerViewModel,
- //                       tracks = tracks,
-  //                      onQueueClick = {
- //                           scope.launch {
-   //                             sheetState.bottomSheetState.expand()
-  //                          }
-  //                      }
-//                    )
+//                    ModalBottomSheet(
+//                        onDismissRequest = {
+//                            scope.launch { sheetState.hide() }
+//                        },
+//                        sheetState = sheetState,
+//                    ) {
+                        NowPlayingWithQueue(
+                            playerViewModel, track, tracks,
+                            onTrackClick = { track ->
+                                playerViewModel.playTracks(tracks, track)
+                                navController.navigate("nowPlaying")
+                                {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onBack = { navController.popBackStack() }
+                        )
+  //                  }
                 }
                 else {
                     Box(

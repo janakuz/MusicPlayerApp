@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.material3.Slider
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -157,7 +158,8 @@ fun NowPlayingWithQueue(
     playerViewModel: PlayerViewModel,
     track: TrackInfo?,
     tracks1: List<TrackInfo>,
-    onTrackClick: (TrackInfo) -> Unit
+    onTrackClick: (TrackInfo) -> Unit,
+    onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState()
@@ -166,6 +168,16 @@ fun NowPlayingWithQueue(
 
 
     BottomSheetScaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Now Playing") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        },
         scaffoldState = sheetState,
         sheetContent = {
             Box(
