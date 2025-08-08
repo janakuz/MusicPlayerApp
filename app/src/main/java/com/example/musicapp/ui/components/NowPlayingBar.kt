@@ -1,4 +1,4 @@
-package com.example.musicapp.ui
+package com.example.musicapp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.example.musicapp.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
@@ -35,13 +35,11 @@ fun NowPlayingBar(
     playerViewModel: PlayerViewModel,
     onClick: () -> Unit
 ) {
-    val controller by playerViewModel.controller.collectAsState()
-
     val track by playerViewModel.currentTrack.collectAsState()
     var isPlaying by playerViewModel.isPlaying
 
 
-    if (track == null) return // Don’t show if nothing is playing
+    if (track == null) return
 
     Row(
         modifier = Modifier

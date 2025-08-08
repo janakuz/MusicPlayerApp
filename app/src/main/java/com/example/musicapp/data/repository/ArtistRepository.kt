@@ -1,9 +1,6 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.ArtistDicogsResponse
 import com.example.musicapp.data.dto.ArtistMBResponse
-import com.example.musicapp.data.dto.DiscogsImage
-import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
 import kotlinx.coroutines.flow.Flow
 

@@ -1,13 +1,11 @@
-package com.example.musicapp
+package com.example.musicapp.ui.viewmodels
 
 import android.app.Application
 import android.content.ComponentName
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -16,19 +14,18 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.example.musicapp.model.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.common.Player
+import com.example.musicapp.PlaybackService
 import com.example.musicapp.data.dto.TrackInfo
 import kotlinx.coroutines.delay
 
 
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
     private val mediaController = MutableStateFlow<MediaController?>(null)
-//        private set
     val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
 
     private val _queue = MutableStateFlow<List<TrackInfo>>(emptyList())
@@ -155,14 +152,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeTrackAt(index: Int) {
         _queue.value = _queue.value.toMutableList().apply { removeAt(index) }
-    }
-
-    fun moveTrack(from: Int, to: Int) {
-        Log.d("tag", "$from $to")
-        _queue.value = _queue.value.toMutableList().apply {
-            add(to, removeAt(from))
-        }
-        Log.d("tag", _queue.value.toString())
     }
 
     fun updateQueue(newQueue: List<TrackInfo>) {

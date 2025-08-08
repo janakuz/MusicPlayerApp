@@ -1,4 +1,4 @@
-package com.example.musicapp.ui
+package com.example.musicapp.ui.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,21 +8,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicapp.AlbumViewModel
-import com.example.musicapp.R
-import com.example.musicapp.TrackViewModel
-import com.example.musicapp.data.DataSource
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Album
-import com.example.musicapp.model.Track
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
@@ -33,13 +24,6 @@ fun AlbumView(
     tracks: List<TrackInfo>,
 //    trackViewModel: TrackViewModel,
 //    albumViewModel: AlbumViewModel,
-//    name: String,
-//    artist: String,
-//    releaseDate: String,
-//    image: String,
-//    tracks: List<Track>,
-//    numTracks: String,
-//    duration: String,
     onTrackClick: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){

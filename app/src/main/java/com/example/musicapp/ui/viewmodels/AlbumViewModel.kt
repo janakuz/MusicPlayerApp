@@ -1,10 +1,9 @@
-package com.example.musicapp
+package com.example.musicapp.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

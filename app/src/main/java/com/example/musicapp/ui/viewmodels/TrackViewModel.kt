@@ -1,12 +1,8 @@
-package com.example.musicapp
+package com.example.musicapp.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Track
-import com.example.musicapp.data.repository.AlbumArtistRepository
-import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

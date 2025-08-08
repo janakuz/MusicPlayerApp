@@ -1,6 +1,5 @@
 package com.example.musicapp.model
 
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 
 sealed class GridItem {
@@ -14,7 +13,6 @@ sealed class GridItem {
         override val imageRes: String,
         val description: String
     ) : GridItem() {
-//        fun createRoute(artistId: Int) = "artist/$id"
     }
 
     data class AlbumItem(
@@ -24,8 +22,6 @@ sealed class GridItem {
         val releaseYear: String,
         @StringRes val numTracks: Int,
         @StringRes val duration: Int,
-  //      val artist: Int
     ) : GridItem() {
-  //      fun createRoute(artistId: Int) = "artist/$id"
     }
 }

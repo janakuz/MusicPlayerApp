@@ -11,14 +11,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,21 +27,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.musicapp.ui.AlbumsGrid
-import com.example.musicapp.ui.AllTracksScreen
-import com.example.musicapp.ui.ArtistView
-import com.example.musicapp.ui.AlbumView
-import com.example.musicapp.ui.ArtistsGrid
+import com.example.musicapp.ui.screens.AlbumsGrid
+import com.example.musicapp.ui.screens.AllTracksScreen
+import com.example.musicapp.ui.screens.ArtistView
+import com.example.musicapp.ui.screens.AlbumView
+import com.example.musicapp.ui.screens.ArtistsGrid
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.dto.AlbumInfo
-import com.example.musicapp.ui.NowPlayingBar
-import com.example.musicapp.ui.NowPlayingView
-import com.example.musicapp.ui.NowPlayingWithQueue
-import com.example.musicapp.ui.ScanLibraryScreen
-import kotlinx.coroutines.launch
+import com.example.musicapp.ui.components.NowPlayingBar
+import com.example.musicapp.ui.screens.NowPlayingWithQueue
+import com.example.musicapp.ui.screens.ScanLibraryScreen
+import com.example.musicapp.ui.viewmodels.AlbumViewModel
+import com.example.musicapp.ui.viewmodels.ArtistViewModel
+import com.example.musicapp.ui.viewmodels.LibraryScanViewModel
+import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.TrackViewModel
 
 enum class HomeScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -90,10 +91,6 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-//    val backStackEntry by navController.currentBackStackEntryAsState()
- //   val currentScreen = HomeScreen.valueOf(
- //       backStackEntry?.destination?.route ?: HomeScreen.Start.name
- //   )
 
     Scaffold(
         topBar = {
@@ -106,7 +103,6 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                         onClick = {
                             navController.navigate(screen.name) {
                                 popUpTo(screen.name)
-//                                popUpTo(navController.graph.startDestinationId) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -137,7 +133,6 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                 val artistViewModel: ArtistViewModel = hiltViewModel()
 
                 ArtistsGrid(artistViewModel,
-                    //uiState.artistList,
                     onClick = {artist ->
                 navController.navigate("artist/${artist.id}")
                     })
@@ -202,12 +197,6 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                 val sheetState = rememberModalBottomSheetState()
 
                 if (track != null) {
-//                    ModalBottomSheet(
-//                        onDismissRequest = {
-//                            scope.launch { sheetState.hide() }
-//                        },
-//                        sheetState = sheetState,
-//                    ) {
                         NowPlayingWithQueue(
                             playerViewModel, track, tracks,
                             onTrackClick = { track ->
@@ -219,7 +208,6 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                             },
                             onBack = { navController.popBackStack() }
                         )
-  //                  }
                 }
                 else {
                     Box(
@@ -268,12 +256,3 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
         }
     }
 }
-
-
-//@Preview(showBackground = true)
-//@Composable
-//fun MusicAppPreview() {
-//    MusicAppTheme {
-//        MusicApp()
-//    }
-//}

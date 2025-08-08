@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "track_moods",
-//    primaryKeys = ["artistId", "albumId"],
     foreignKeys = [
         ForeignKey(
             entity = Track::class,

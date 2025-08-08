@@ -1,13 +1,9 @@
-package com.example.musicapp.ui
+package com.example.musicapp.ui.screens
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.musicapp.TrackViewModel
-import com.example.musicapp.data.DataSource
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.theme.MusicAppTheme
-import androidx.compose.runtime.getValue
 import com.example.musicapp.data.dto.TrackInfo
 
 

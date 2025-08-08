@@ -1,4 +1,4 @@
-package com.example.musicapp.ui
+package com.example.musicapp.ui.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +16,9 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicapp.AlbumViewModel
-import com.example.musicapp.ArtistViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.musicapp.ui.viewmodels.AlbumViewModel
+import com.example.musicapp.ui.viewmodels.ArtistViewModel
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.model.GridItem
 import com.example.musicapp.ui.theme.MusicAppTheme
@@ -42,10 +43,6 @@ fun ArtistView(
     id: Int,
     artistViewModel: ArtistViewModel,
     albumViewModel: AlbumViewModel,
-//    name: String,
-//    bio: String,
-//    image: String,
-//    albums: List<GridItem.AlbumItem>,
     modifier: Modifier = Modifier,
     onAlbumClick: ((GridItem) -> Unit)? = null){
 
@@ -88,11 +85,11 @@ fun ArtistView(
 @Composable
 fun ArtistPreview() {
     MusicAppTheme {
-//        ArtistView(name= stringResource(R.string.sw),
-//            bio = stringResource(R.string.sw_bio),
-//            image = "",
-//            albums = DataSource.albums
-//        )
+        ArtistView(
+            id = 1,
+            artistViewModel = viewModel(),
+            albumViewModel = viewModel()
+        )
     }
 
 }

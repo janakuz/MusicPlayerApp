@@ -16,11 +16,6 @@ data class ArtistMBResponse(
     @SerializedName("relations") val urlRelations: List<UrlRelation>?
 )
 
-
-//data class Area(
-//    val name: String?
-//)
-
 data class Tag(
     val name: String,
     val count: Int

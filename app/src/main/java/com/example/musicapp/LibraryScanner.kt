@@ -17,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
-import java.io.File
 import javax.inject.Inject
 import kotlin.toString
 import kotlin.collections.groupBy
@@ -31,19 +30,12 @@ class LibraryScanner @Inject constructor(
 
 
     suspend fun scanAll(context: Context) {
-        val audioEntries = queryMediaStore(context) // returns raw metadata for files
-
-        // group/normalize
- //       val artists = extractArtists(audioEntries)
- //       artistRepository.insertAll(artists)
+        val audioEntries = queryMediaStore(context)
 
         val albumsAndArtists = extractAlbumsAndArtists(audioEntries)
         val albums = albumsAndArtists.first
-        val artists = albumsAndArtists.second
-  //      albumRepository.insertAll(albums)
 
-        val tracks = buildTracks(audioEntries, artists, albums)
-  //      trackRepository.insertAll(tracks)
+        val tracks = buildTracks(audioEntries, albums)
     }
 
 
@@ -149,42 +141,8 @@ class LibraryScanner @Inject constructor(
         val existingAlbums = albumArtistRepository.getAll().firstOrNull() ?: emptyList()
         val existingAlbumsByKey = existingAlbums.associateBy { AlbumKey(it.title.lowercase(), it.artistName.lowercase(), it.releaseDate?.lowercase()) }
 
-//        val names = entries.mapNotNull { it.artistName?.takeIf { it.isNotBlank() } }.distinct()
-//        val existingArtists = artistRepository.getAllArtists()
-//            .firstOrNull() ?: emptyList()
-//        val existingArtistsByName = existingArtists.associateBy { it.name.lowercase() }
 
         val resultArtists = mutableMapOf<String, Artist>()
-
-        val toInsert = mutableListOf<Artist>()
-
-//
-//        val testAlbum = albums[0]
-//        val testQuery = "release:${testAlbum.title} artist:${testAlbum.artist} date:${testAlbum.year}"
-//
-//        val res = albumRepository.findAlbumMB(testQuery)
-//        val artistmbid = res.releases[0].artistCredit[0].artist.id
-//        delay(1000)
-//        val ares = artistRepository.getArtistMusicbrainzInfo(artistmbid)
-//        Log.d("TestAPI", ares.id)
-//        if (ares.urlRelations != null){
-//            Log.d("TestAPI", ares.urlRelations.size.toString())
-//            val discogs = ares.urlRelations.find { it.type.equals("discogs") }
-//            Log.d("TestAPI", discogs.toString())
-//            if (discogs != null && discogs.url != null) {
-//                val discogsLink = discogs.url.resource.toString().split("/")
-//                val discogsId = discogsLink[discogsLink.size-1]
-//                val url = artistRepository.getArtistImage(discogsId)
-//                Log.d("TestAPI", url)
-//
-//            }
-//        }
-
-//        val bio = artistRepository.getArtistBio(artistmbid)
-
-//        val albumart = albumRepository.getAlbumArt(res.releases[0].id)
-
-
         val resultAlbums = mutableMapOf<AlbumKey, AlbumInfo>()
 
         val toInsertAlbumArtist = mutableListOf<AlbumArtist>()
@@ -297,7 +255,6 @@ class LibraryScanner @Inject constructor(
 
     private suspend fun buildTracks(
         entries: List<RawAudioEntry>,
-        artistMap: Map<String, Artist>,
         albumMap: Map<AlbumKey, AlbumInfo>
     ) {
         val existingTracks = trackRepository.getAllTracksFull().firstOrNull() ?: emptyList()
@@ -306,16 +263,11 @@ class LibraryScanner @Inject constructor(
         val toInsert = mutableListOf<Track>()
         val toUpdate = mutableListOf<Track>()
 
-        Log.d("ScanTracks", "before repo call")
-
         val allAlbumArtists = albumArtistRepository.getAllWithArtistInfo()
         val albumArtistsByAlbum: Map<Int, List<Artist>> = allAlbumArtists
             .groupBy { it.albumId }
             .mapValues { (_, group) -> group.map { it.artist } }
 
-        Log.d("ScanTracks", "after repo call ${entries.size}")
-        Log.d("ScanTracks", "${albumMap.keys.joinToString()}")
-        Log.d("ScanTracks", "${albumMap.values.joinToString()}")
 
         for (entry in entries) {
             val album = if (entry.albumTitle != null && entry.artistName != null) {
@@ -325,19 +277,13 @@ class LibraryScanner @Inject constructor(
                 null
             }
 
-            Log.d("ScanTracks", "${entry.albumTitle} ${album==null}")
 
             if (album == null || albumArtistsByAlbum == null) continue
 
-            Log.d("ScanTracks", albumArtistsByAlbum.get(album.albumId)?.get(0)?.name ?: "not found")
-
             val possibleArtists: List<Artist> = albumArtistsByAlbum[album.albumId] ?: emptyList()
 
-            Log.d("ScanTracks", possibleArtists.size.toString())
- //           val possibleArtists = albumArtistRepository.getAllAlbumArtists(album.albumId)
             if (possibleArtists.isEmpty()) continue
             val artist = possibleArtists.find { it.id == album.artistId }
-            Log.d("ScanTracks", "${artist == null}")
 
             if (artist == null) continue
 
@@ -347,20 +293,6 @@ class LibraryScanner @Inject constructor(
             val title = entry.title ?: "Unknown"
             val trackNumber = normalizeTrackNumber(entry.trackNumber) ?: 0
             val duration = entry.duration ?: 0L
-
-//            Log.d("ImageScan", "albumartfile ${entry.albumArt != null}")
-
-//            if (album.image == null && entry.albumArt != null){
-//                val possibleCover = findCoverImageForTrackFile(entry.albumArt)
-//                val fullAlbum = albumRepository.getAlbum(album.albumId).firstOrNull()
-//                if (fullAlbum != null) {
-//                    val updatedAlbum = fullAlbum.copy(
-//                        image = possibleCover ?: album.image // preserve if already set
-//                    )
-//
-//                    albumRepository.update(updatedAlbum)
-//                }
-//            }
 
             if (existing == null) {
                 val newTrack = Track(
@@ -419,47 +351,6 @@ class LibraryScanner @Inject constructor(
                 albumRepository.update(toUpdate)
             }
         }
-    }
-
-    fun findCoverImageForTrackFile(trackFilePath: String): String? {
-        val parentDir = File(trackFilePath).parentFile ?: return null
-        Log.d("ImageScan", trackFilePath)
-        Log.d("ImageScan", parentDir.name)
-        val imageExtensions = listOf("jpg", "jpeg", "png")
-
-        Log.d("ImageScan", parentDir.listFiles().joinToString())
-
-
-//        MediaScannerConnection.scanFile(
-//            context,
-//            arrayOf(parentDir.absolutePath),
-//            null
-//        ) { path, uri ->
-//            Log.d("ImageScan", "Scanned $path: $uri")
-//        }
-
-        val possibleCovers = parentDir.listFiles()?.filter { file ->
-            imageExtensions.any { ext -> file.name.endsWith(".$ext", ignoreCase = true) }
-        } ?: emptyList()
-
-        Log.d("ImageScan", possibleCovers.map { file -> file.name }.joinToString())
-
-        val prioritizedCovers = possibleCovers.sortedBy { file ->
-            when {
-                file.name.contains("cover", ignoreCase = true) -> 0
-                file.name.contains("folder", ignoreCase = true) -> 1
-                else -> 2
-            }
-        }
-        val chosenCover = prioritizedCovers.firstOrNull()
-
-        Log.d("ImageScan", "$chosenCover.name")
-
-        if (chosenCover != null && chosenCover.canRead()) {
-            return chosenCover.absolutePath // store this in Album.image
-        }
-
-        return null
     }
 
     fun normalizeTrackNumber(rawTrackNumber: Int?): Int? {

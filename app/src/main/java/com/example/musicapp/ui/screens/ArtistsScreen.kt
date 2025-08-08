@@ -1,19 +1,12 @@
-package com.example.musicapp.ui
+package com.example.musicapp.ui.screens
 
-import android.os.Build
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.musicapp.ArtistViewModel
+import com.example.musicapp.ui.viewmodels.ArtistViewModel
 import com.example.musicapp.model.GridItem
 import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.theme.MusicAppTheme
@@ -23,7 +16,6 @@ import com.example.musicapp.ui.theme.MusicAppTheme
 @Composable
 fun ArtistsGrid(
     artistViewModel: ArtistViewModel,
-//    artists: List<Artist>,
     onClick: ((GridItem) -> Unit)? = null
 ){
     val uiState by artistViewModel.artistListUiState.collectAsState()

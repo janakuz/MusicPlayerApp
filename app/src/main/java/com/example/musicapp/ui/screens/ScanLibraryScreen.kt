@@ -1,5 +1,6 @@
-package com.example.musicapp.ui
+package com.example.musicapp.ui.screens
 
+import android.Manifest
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,10 +10,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.LibraryScanViewModel
+import com.example.musicapp.ui.viewmodels.LibraryScanViewModel
 import androidx.compose.runtime.getValue
 
 
@@ -27,9 +27,9 @@ fun ScanLibraryScreen(viewModel: LibraryScanViewModel = hiltViewModel()) {
 
             val context = LocalContext.current
             val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                android.Manifest.permission.READ_MEDIA_AUDIO
+                Manifest.permission.READ_MEDIA_AUDIO
             } else {
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE
             }
 
             val launcher = rememberLauncherForActivityResult(
@@ -49,8 +49,5 @@ fun ScanLibraryScreen(viewModel: LibraryScanViewModel = hiltViewModel()) {
                 Text("Scan Library")
             }
         }
-//        uiState.error?.let {
-//            Text("Error: $it", color = Color.Red)
-//        }
     }
 }

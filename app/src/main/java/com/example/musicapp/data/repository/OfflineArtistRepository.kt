@@ -15,7 +15,6 @@ class OfflineArtistRepository(
     private val discogsApiService: DiscogsApiService,
     private val lastfmApiService: LastfmApiService) : ArtistRepository {
 
-    //val allArtists: Flow<List<Artist>> = artistDao.getAllArtists()
     override fun getAllArtists(): Flow<List<Artist>> {
         return artistDao.getAllArtists()
     }
