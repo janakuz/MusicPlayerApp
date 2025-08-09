@@ -121,9 +121,7 @@ fun NowPlayingView(
 @Composable
 fun NowPlayingWithQueue(
     playerViewModel: PlayerViewModel,
-    track: TrackInfo?,
-    tracks1: List<TrackInfo>,
-    onTrackClick: (TrackInfo) -> Unit,
+    onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -151,7 +149,7 @@ fun NowPlayingWithQueue(
                     .fillMaxHeight()
                     .background(MaterialTheme.colorScheme.surface)
             ) {
-                PlayQueueScreen(tracks1, onTrackClick, playerViewModel)
+                PlayQueueScreen(tracks, {track -> onTrackClick(track, tracks)}, playerViewModel)
             }
         },
         sheetPeekHeight = 0.dp,

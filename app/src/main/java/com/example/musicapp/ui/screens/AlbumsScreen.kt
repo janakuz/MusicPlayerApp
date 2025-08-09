@@ -3,18 +3,20 @@ package com.example.musicapp.ui.screens
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicapp.data.dto.AlbumInfo
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.model.GridItem
 import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.theme.MusicAppTheme
-
+import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
+import androidx.compose.runtime.getValue
+import com.example.musicapp.data.dto.AlbumInfo
 
 
 @Composable
 fun AlbumsGrid(
-//    albumViewModel: AlbumViewModel,
     albums: List<AlbumInfo>,
     showReleaseDate: Boolean = false,
     onClick: ((GridItem) -> Unit)? = null
@@ -27,10 +29,8 @@ fun AlbumsGrid(
             releaseYear = album.releaseDate.orEmpty(),
             numTracks = 0,
             duration = album.duration.toInt(),
-     //       artist = 0
         )
     }
-
 
     Grid(
         listItems = items,
@@ -45,6 +45,15 @@ fun AlbumsGrid(
         onClick = onClick)
 }
 
+
+@Composable
+fun AllAlbumsScreen(onClick: (GridItem) -> Unit) {
+    val viewModel: AllAlbumsViewModel = hiltViewModel()
+    val albumsState by viewModel.albumListUiState.collectAsState()
+    val albums = albumsState.albums
+
+    AlbumsGrid(albums, showReleaseDate = false, onClick = onClick)
+}
 
 
 @Preview(showBackground = true)
