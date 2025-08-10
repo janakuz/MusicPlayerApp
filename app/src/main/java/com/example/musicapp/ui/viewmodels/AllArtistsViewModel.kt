@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
-class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRepository
+class AllArtistsViewModel @Inject constructor(private val artistRepository: ArtistRepository
 ) : ViewModel() {
 
     companion object {
@@ -26,9 +26,6 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
 
     private val _artistListUiState = MutableStateFlow(ArtistListUiState())
     val artistListUiState: StateFlow<ArtistListUiState> = _artistListUiState.asStateFlow()
-
-    private val _currentArtistUiState = MutableStateFlow(ArtistState())
-    val currentArtistUiState: StateFlow<ArtistState> = _currentArtistUiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -43,20 +40,9 @@ class ArtistViewModel @Inject constructor(private val artistRepository: ArtistRe
         }
     }
 
-    fun getArtistById(id: Int){
-        viewModelScope.launch {
-            artistRepository.getArtist(id)
-                .collect { artist -> _currentArtistUiState.update { it.copy(artist = artist) } }
-        }
-    }
-
 }
 
 data class ArtistListUiState(
     val isLoading: Boolean = true,
     val artists: List<Artist> = emptyList(),
     val error: String? = null)
-
-data class ArtistState(
-    val artist: Artist? = null
-)

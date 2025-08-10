@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -16,12 +15,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.musicapp.ui.viewmodels.AlbumViewModel
-import com.example.musicapp.ui.viewmodels.ArtistViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.model.GridItem
 import com.example.musicapp.ui.theme.MusicAppTheme
+import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 
 @Composable
 fun AlbumDetailHeader(
@@ -40,22 +38,16 @@ fun AlbumDetailHeader(
 
 @Composable
 fun ArtistView(
-    id: Int,
-    artistViewModel: ArtistViewModel,
-    albumViewModel: AlbumViewModel,
     modifier: Modifier = Modifier,
     onAlbumClick: ((GridItem) -> Unit)? = null){
 
-    LaunchedEffect(id) {
-        artistViewModel.getArtistById(id)
-        albumViewModel.getAlbumsByArtist(id)
-    }
+    val artistDetailViewModel: ArtistDetailViewModel = hiltViewModel()
 
-    val albumUiState by albumViewModel.albumArtistListUiState.collectAsState()
-    val albums = albumUiState.albums
-
-    val artistUiState by artistViewModel.currentArtistUiState.collectAsState()
+    val artistUiState by artistDetailViewModel.currentArtistUiState.collectAsState()
     val artist = artistUiState.artist
+
+    val albumsState by artistDetailViewModel.albumListUiState.collectAsState()
+    val albums = albumsState.albums
 
     if (artist != null) {
 
@@ -74,7 +66,9 @@ fun ArtistView(
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
+
             AlbumsGrid(albums, showReleaseDate = true, onClick = onAlbumClick)
+
 
         }
     }
@@ -86,9 +80,6 @@ fun ArtistView(
 fun ArtistPreview() {
     MusicAppTheme {
         ArtistView(
-            id = 1,
-            artistViewModel = viewModel(),
-            albumViewModel = viewModel()
         )
     }
 

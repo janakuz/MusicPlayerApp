@@ -8,50 +8,63 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.entity.Album
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
+import com.example.musicapp.ui.viewmodels.AlbumDetailViewModel
 
 @Composable
 fun AlbumView(
-    album: Album,
-    tracks: List<TrackInfo>,
-//    trackViewModel: TrackViewModel,
-//    albumViewModel: AlbumViewModel,
-    onTrackClick: (TrackInfo) -> Unit,
+    onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
     modifier: Modifier = Modifier
 ){
+    val albumDetailViewModel: AlbumDetailViewModel = hiltViewModel()
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        AlbumDetailHeader(
-            image = album.image.toString(),
-            title = album.title
-        )
-//        Spacer(modifier = Modifier.height(4.dp))
-//        Text(text = artist, style = MaterialTheme.typography.bodyLarge)
-        Spacer(modifier = Modifier.height(4.dp))
-        Row() {
-            Text(text = album.releaseDate.toString(), style = MaterialTheme.typography.bodySmall)
-            Spacer(modifier = Modifier.width(4.dp))
+    val albumUiState by albumDetailViewModel.currentAlbumUiState.collectAsState()
+    val album = albumUiState.album
 
-            Text(text = album.numTracks.toString(), style = MaterialTheme.typography.bodySmall)
-            Spacer(modifier = Modifier.width(4.dp))
+    val tracksUiState by albumDetailViewModel.albumTracksUiState.collectAsState()
+    val tracks = tracksUiState.tracks
 
-            Text(text = formatDuration(album.duration), style = MaterialTheme.typography.bodySmall)
+    if (album != null) {
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            AlbumDetailHeader(
+                image = album.image.toString(),
+                title = album.title
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row() {
+                Text(
+                    text = album.releaseDate.toString(),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(text = album.numTracks.toString(), style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = formatDuration(album.duration),
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            TrackList(tracks, onClick = {track -> onTrackClick(track, tracks)}, showTrackNum = true)
+
 
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        TrackList(tracks, onClick = onTrackClick, showTrackNum = true)
-
-
     }
 
 }
