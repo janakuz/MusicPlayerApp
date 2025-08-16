@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.all
+import org.gradle.kotlin.dsl.testImplementation
+import org.gradle.kotlin.dsl.testRuntimeOnly
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -63,6 +66,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -102,11 +106,33 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     kapt("androidx.hilt:hilt-compiler:1.2.0")
     implementation("io.coil-kt:coil-compose:2.5.0")
-    testImplementation(libs.junit)
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.0")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+//    testImplementation(libs.junit)
+//    testImplementation(kotlin("test"))
+//    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+//    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+//    testImplementation("io.mockk:mockk:1.13.8")
+//    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+//    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+//    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+//    androidTestImplementation(platform("androidx.compose:compose-bom:2025.01.00"))
+//    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+//
+//    debugImplementation("androidx.compose.ui:ui-tooling")
+//    debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
