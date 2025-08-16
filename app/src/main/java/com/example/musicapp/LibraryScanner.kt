@@ -5,6 +5,8 @@ import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
 import com.example.musicapp.data.dto.AlbumInfo
+import com.example.musicapp.data.dto.ArtistMBResponse
+import com.example.musicapp.data.dto.Release
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
 import com.example.musicapp.data.entity.Artist
@@ -101,45 +103,42 @@ class LibraryScanner @Inject constructor(
     }
 
 
-    private suspend fun extractArtists(entries: List<RawAudioEntry>): Map<String, Artist> {
-        val names = entries.mapNotNull { it.artistName?.takeIf { it.isNotBlank() } }.distinct()
-        val existing = artistRepository.getAllArtists()
-            .firstOrNull() ?: emptyList()
-        val existingByName = existing.associateBy { it.name.lowercase() }
-
-        val result = mutableMapOf<String, Artist>()
-
-        val toInsert = mutableListOf<Artist>()
-        for (name in names) {
-            val key = name.lowercase()
-            val existingArtist = existingByName[key]
-            if (existingArtist != null) {
-                result[name] = existingArtist
-            } else {
-                val new = Artist(name = name)
-                toInsert += new
-            }
-        }
-        if (toInsert.isNotEmpty()) {
-            artistRepository.insertAll(toInsert)
-        }
-
-        val updated = artistRepository.getAllArtists().firstOrNull() ?: emptyList()
-        for (artist in updated) {
-            result[artist.name] = artist
-        }
-
-        return result
-    }
+//    private suspend fun extractArtists(entries: List<RawAudioEntry>): Map<String, Artist> {
+//        val names = entries.mapNotNull { it.artistName?.takeIf { it.isNotBlank() } }.distinct()
+//        val existing = artistRepository.getAllArtists()
+//            .firstOrNull() ?: emptyList()
+//        val existingByName = existing.associateBy { it.name.lowercase() }
+//
+//        val result = mutableMapOf<String, Artist>()
+//
+//        val toInsert = mutableListOf<Artist>()
+//        for (name in names) {
+//            val key = name.lowercase()
+//            val existingArtist = existingByName[key]
+//            if (existingArtist != null) {
+//                result[name] = existingArtist
+//            } else {
+//                val new = Artist(name = name)
+//                toInsert += new
+//            }
+//        }
+//        if (toInsert.isNotEmpty()) {
+//            artistRepository.insertAll(toInsert)
+//        }
+//
+//        val updated = artistRepository.getAllArtists().firstOrNull() ?: emptyList()
+//        for (artist in updated) {
+//            result[artist.name] = artist
+//        }
+//
+//        return result
+//    }
 
 
     private suspend fun extractAlbumsAndArtists(entries: List<RawAudioEntry>): Pair<Map<AlbumKey, AlbumInfo>, Map<String, Artist>> {
-        val albums = entries.map {  entry ->
-            val title = entry.albumTitle.toString()
-            val artist = entry.artistName.toString()
-            AlbumKey(title, artist, entry.releaseDate) }.distinct()
+        val albums = getAlbumKeys(entries)
         val existingAlbums = albumArtistRepository.getAll().firstOrNull() ?: emptyList()
-        val existingAlbumsByKey = existingAlbums.associateBy { AlbumKey(it.title.lowercase(), it.artistName.lowercase(), it.releaseDate?.lowercase()) }
+        val existingAlbumsByKey = getExistingAlbumKeys(existingAlbums)
 
 
         val resultArtists = mutableMapOf<String, Artist>()
@@ -156,31 +155,11 @@ class LibraryScanner @Inject constructor(
             if (existingAlbum != null) {
                 resultAlbums[key] = existingAlbum
             } else {
-                var newAlbum = Album(
-                    title = album.title,
-                    image = null,
-                    duration = 0L,
-                    mbId = null,
-                    discogsId = null,
-                    releaseDate = album.year,
-                    label = null,
-                    numTracks = 0
-                )
-                val testQuery = "release:${album.title} artist:${album.artist} date:${album.year}"
-                val mbAlbumSearch = albumRepository.findAlbumMB(testQuery)
-                val mbAlbum = mbAlbumSearch.releases[0]
-
-                val albumArt = albumRepository.getAlbumArt(mbAlbum.id)
-
-                var labelName = ""
-                if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) {
-                    labelName = mbAlbum.labelInfo[0].label!!.name
-                }
-                newAlbum = newAlbum.copy(mbId = mbAlbum.id, image = albumArt, label = labelName)
-
+                val mbAlbum = getMbAlbumData(album)
+                var newAlbum = createNewAlbum(mbAlbum, album)
                 val inserted = albumRepository.insertWithReturn(newAlbum).toInt()
 
-                val artistMbid = mbAlbumSearch.releases[0].artistCredit[0].artist.id
+                val artistMbid = mbAlbum.artistCredit[0].artist.id
                 delay(1000)
                 val mbArtist = artistRepository.getArtistMusicbrainzInfo(artistMbid)
                 val artist = artistRepository.getArtistByMbid(mbArtist.id)
@@ -202,30 +181,8 @@ class LibraryScanner @Inject constructor(
                         label = newAlbum.label
                     )
                 } else {
-                    var artistImage = ""
-                    var discogsId = ""
-                    if (mbArtist.urlRelations != null) {
-                        val discogs = mbArtist.urlRelations.find { it.type.equals("discogs") }
-                        if (discogs != null && discogs.url != null) {
-                            val discogsLink = discogs.url.resource.toString().split("/")
-                            discogsId = discogsLink[discogsLink.size - 1]
-                            artistImage = artistRepository.getArtistImage(discogsId)
-                        }
-
-                    }
-
-                    val bio = artistRepository.getArtistBio(artistMbid)
-
-                    val newArtist = Artist(
-                        name = album.artist,
-                        bio = bio,
-                        mbId = artistMbid,
-                        image = artistImage,
-                        discogsId = discogsId
-                    )
-
+                    val newArtist = createNewArtist(mbArtist, artistMbid, album)
                     val insertedArtist = artistRepository.insertWithReturn(newArtist).toInt()
-
 
                     resultAlbums[key] = AlbumInfo(
                         albumId = inserted,
@@ -251,6 +208,84 @@ class LibraryScanner @Inject constructor(
 
 
         return Pair(resultAlbums, resultArtists)
+    }
+
+    private suspend fun createNewArtist(mbArtist: ArtistMBResponse, artistMbid: String, album: AlbumKey): Artist{
+        var artistImage = ""
+        var discogsId = ""
+        if (mbArtist.urlRelations != null) {
+            val discogs = mbArtist.urlRelations.find { it.type.equals("discogs") }
+            if (discogs != null && discogs.url != null) {
+                val discogsLink = discogs.url.resource.toString().split("/")
+                discogsId = discogsLink[discogsLink.size - 1]
+                artistImage = artistRepository.getArtistImage(discogsId)
+            }
+
+        }
+
+        val bio = artistRepository.getArtistBio(artistMbid)
+
+        val newArtist = Artist(
+            name = album.artist,
+            bio = bio,
+            mbId = artistMbid,
+            image = artistImage,
+            discogsId = discogsId
+        )
+
+        return newArtist
+
+    }
+
+    private suspend fun createNewAlbum(
+        mbAlbum: Release,
+        album: AlbumKey
+    ): Album {
+        val albumArt = albumRepository.getAlbumArt(mbAlbum.id)
+
+        var labelName = ""
+        if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) {
+            labelName = mbAlbum.labelInfo[0].label!!.name
+        }
+
+        var newAlbum = Album(
+            title = album.title,
+            image = albumArt,
+            duration = 0L,
+            mbId = mbAlbum.id,
+            discogsId = null,
+            releaseDate = album.year,
+            label = labelName,
+            numTracks = 0
+        )
+        return newAlbum
+    }
+
+    private suspend fun getMbAlbumData(album: AlbumKey): Release {
+        val testQuery = "release:${album.title} artist:${album.artist} date:${album.year}"
+        val mbAlbumSearch = albumRepository.findAlbumMB(testQuery)
+        val mbAlbum = mbAlbumSearch.releases[0]
+        return mbAlbum
+    }
+
+    private fun getExistingAlbumKeys(existingAlbums: List<AlbumInfo>): Map<AlbumKey, AlbumInfo> {
+        val existingAlbumsByKey = existingAlbums.associateBy {
+            AlbumKey(
+                it.title.lowercase(),
+                it.artistName.lowercase(),
+                it.releaseDate?.lowercase()
+            )
+        }
+        return existingAlbumsByKey
+    }
+
+    private fun getAlbumKeys(entries: List<RawAudioEntry>): List<AlbumKey> {
+        val albums = entries.map { entry ->
+            val title = entry.albumTitle.toString()
+            val artist = entry.artistName.toString()
+            AlbumKey(title, artist, entry.releaseDate)
+        }.distinct()
+        return albums
     }
 
     private suspend fun buildTracks(
@@ -353,9 +388,11 @@ class LibraryScanner @Inject constructor(
         }
     }
 
-    fun normalizeTrackNumber(rawTrackNumber: Int?): Int? {
-        if (rawTrackNumber == null) return null
-        return if (rawTrackNumber >= 1000) rawTrackNumber % 1000 else rawTrackNumber
+    companion object {
+        fun normalizeTrackNumber(rawTrackNumber: Int?): Int? {
+            if (rawTrackNumber == null) return null
+            return if (rawTrackNumber >= 1000) rawTrackNumber % 1000 else rawTrackNumber
+        }
     }
 
 
