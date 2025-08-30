@@ -10,12 +10,12 @@ import com.example.musicapp.data.repository.TrackRepository
 
 
 class LibraryScannerTest {
-    val libraryScanner: LibraryScanner = LibraryScanner(
-        artistRepository = mockk<ArtistRepository>(),
-        albumRepository = mockk<AlbumRepository>(),
-        albumArtistRepository = mockk<AlbumArtistRepository>(),
-        trackRepository = mockk<TrackRepository>()
-    )
+//    val libraryScanner: LibraryScanner = LibraryScanner(
+//        artistRepository = mockk<ArtistRepository>(),
+//        albumRepository = mockk<AlbumRepository>(),
+//        albumArtistRepository = mockk<AlbumArtistRepository>(),
+//        trackRepository = mockk<TrackRepository>()
+//    )
 
     @Test
     fun testNormalizeTrackNumberSmall() {
