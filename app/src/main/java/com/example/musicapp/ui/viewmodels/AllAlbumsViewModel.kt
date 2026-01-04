@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,13 +28,16 @@ class AllAlbumsViewModel @Inject constructor(
     private val _albumListUiState = MutableStateFlow(AlbumListUiState())
     val albumListUiState: StateFlow<AlbumListUiState> = _albumListUiState.asStateFlow()
 
+    private val sortOption = MutableStateFlow(SortOption())
+
+
     init {
         getAllAlbums()
     }
 
     fun getAllAlbums(){
         viewModelScope.launch {
-            albumRepository.getAllAlbumsByName()
+            albumRepository.getAllAlbums(sortOption.value)
                 .onStart { _albumListUiState.update { it.copy(isLoading = true) } }
                 .catch { e ->
                     _albumListUiState.update { it.copy(error = e.message, isLoading = false) }
@@ -60,6 +64,23 @@ class AllAlbumsViewModel @Inject constructor(
         }
         return albumInfos
     }
+
+    fun setSort(option: SortOption) {
+        sortOption.value = option
+        sortAlbums()
+    }
+
+    fun sortAlbums(){
+        viewModelScope.launch {
+            albumRepository.getAllAlbums(sortOption.value)
+                .onStart { _albumListUiState.update { it.copy(isLoading = true) } }
+                .catch { e ->
+                    _albumListUiState.update { it.copy(error = e.message, isLoading = false) }
+                }
+                .collect { albums -> _albumListUiState.update { it.copy(albums = toAlbumInfo(albums), isLoading = false, error = null) } }
+        }
+    }
+
 
 }
 

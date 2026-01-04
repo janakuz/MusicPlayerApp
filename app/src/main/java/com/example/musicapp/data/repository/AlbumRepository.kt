@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface AlbumRepository {
@@ -18,7 +19,7 @@ interface AlbumRepository {
 
     fun getAllAlbumsByDurationDesc(): Flow<List<Album>>
 
-    fun getAllAlbums(orderBy: SortFieldAlbum, descending: Boolean): Flow<List<Album>>
+    fun getAllAlbums(orderBy: SortOption): Flow<List<Album>>
 
     fun getAlbum(id: Int): Flow<Album>
 

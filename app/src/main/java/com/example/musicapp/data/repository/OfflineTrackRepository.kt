@@ -3,6 +3,8 @@ package com.example.musicapp.data.repository
 import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.SortField
 import kotlinx.coroutines.flow.Flow
 
 class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
@@ -19,10 +21,11 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
     override fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>> =
         trackDao.getAllTracksByDurationDesc()
 
-    override fun getAllTracks(orderBy: SortField, descending: Boolean): Flow<List<TrackInfo>> {
-        return when (orderBy) {
-            SortField.TITLE -> if (descending) trackDao.getAllTracksByNameDesc() else trackDao.getAllTracksByName()
-            SortField.DURATION -> if (descending) trackDao.getAllTracksByDurationDesc() else trackDao.getAllTracksByDuration()
+    override fun getAllTracks(orderBy: SortOption): Flow<List<TrackInfo>> {
+        return when (orderBy.field) {
+            SortField.NAME -> if (orderBy.ascending) trackDao.getAllTracksByName() else trackDao.getAllTracksByNameDesc()
+            SortField.DURATION -> if (orderBy.ascending) trackDao.getAllTracksByDuration() else trackDao.getAllTracksByDurationDesc()
+            SortField.RELEASE_DATE -> TODO() //shouldn't happen
         }
     }
 

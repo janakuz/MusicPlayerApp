@@ -1,6 +1,7 @@
 package com.example.musicapp
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -8,17 +9,23 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.screens.AllTracksScreen
 import com.example.musicapp.ui.screens.ArtistView
 import com.example.musicapp.ui.screens.AlbumView
 import com.example.musicapp.ui.screens.AllArtistsScreen
 import com.example.musicapp.ui.components.NowPlayingBar
+import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.screens.AllAlbumsScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.ScanLibraryScreen
@@ -34,6 +41,19 @@ enum class HomeScreen(@StringRes val title: Int) {
     Scan(title=R.string.scan)
 }
 
+enum class LibraryScreen {
+    ARTISTS, ALBUMS, TRACKS, ALBUM_DETAIL, OTHER
+}
+
+fun routeToLibraryScreen(route: String?): LibraryScreen =
+    when {
+        route?.startsWith(HomeScreen.Artists.name) == true -> LibraryScreen.ARTISTS
+        route?.startsWith(HomeScreen.Albums.name) == true -> LibraryScreen.ALBUMS
+        route?.startsWith(HomeScreen.Tracks.name) == true -> LibraryScreen.TRACKS
+        route?.startsWith("artist/{artistId}") == true -> LibraryScreen.ALBUM_DETAIL
+        else -> LibraryScreen.OTHER
+    }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicApp(playerViewModel: PlayerViewModel) {
@@ -41,23 +61,44 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    var artistSort by remember { mutableStateOf<SortOption?>(null) }
+    var albumSort by remember { mutableStateOf<SortOption?>(null) }
+    var trackSort by remember { mutableStateOf<SortOption?>(null) }
+    var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
+
 
     Scaffold(
         topBar = {
-            val selectedTabIndex = tabs.indexOfFirst { it.name == currentRoute }.takeIf { it >= 0 } ?: 0
-            TabRow(selectedTabIndex = selectedTabIndex) {
-                tabs.forEachIndexed { index, screen ->
-                    Tab(
-                        text = { Text(stringResource(screen.title)) },
-                        selected = index == selectedTabIndex,
-                        onClick = {
-                            navController.navigate(screen.name) {
-                                popUpTo(screen.name)
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+            Column {
+                LibraryTopBar(
+                    currentScreen = routeToLibraryScreen(currentRoute),
+                    onSearchClick = { },
+                    onSortClick = { sort ->
+                        when (currentRoute) {
+                            HomeScreen.Artists.name -> artistSort = sort
+                            HomeScreen.Albums.name -> albumSort = sort
+                            HomeScreen.Tracks.name -> trackSort = sort
+                            "artist/{artistId}" -> artistDetailSort = sort
                         }
-                    )
+                    },
+                    onMenuClick = { }
+                )
+                val selectedTabIndex =
+                    tabs.indexOfFirst { it.name == currentRoute }.takeIf { it >= 0 } ?: 0
+                TabRow(selectedTabIndex = selectedTabIndex) {
+                    tabs.forEachIndexed { index, screen ->
+                        Tab(
+                            text = { Text(stringResource(screen.title)) },
+                            selected = index == selectedTabIndex,
+                            onClick = {
+                                navController.navigate(screen.name) {
+                                    popUpTo(screen.name)
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
                 }
             }
         },
@@ -81,6 +122,7 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
         ) {
             composable(route = HomeScreen.Artists.name) {
                 AllArtistsScreen(
+                    sortRequest = artistSort,
                     onClick = {artist ->
                         navController.navigate("artist/${artist.id}")
                     })
@@ -88,6 +130,7 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
 
             composable(route = HomeScreen.Albums.name) {
                 AllAlbumsScreen(
+                    sortRequest = albumSort,
                     onClick = { album ->
                         navController.navigate("album/${album.id}")
                 })
@@ -95,9 +138,10 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
 
             composable(route = HomeScreen.Tracks.name) {
                 AllTracksScreen(
-                onClick = {
-                    track, tracks -> playerViewModel.playTracks(tracks, track)
-                    navController.navigate("nowPlaying")
+                    sortRequest = trackSort,
+                    onClick = {
+                        track, tracks -> playerViewModel.playTracks(tracks, track)
+                        navController.navigate("nowPlaying")
                 })
             }
 
@@ -109,7 +153,8 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                 ArtistView(
                     onAlbumClick = {album ->
                         navController.navigate("album/${album.id}")
-                    }
+                    },
+                    sortRequest = artistDetailSort
                 )
             }
 
@@ -141,3 +186,4 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
         }
     }
 }
+

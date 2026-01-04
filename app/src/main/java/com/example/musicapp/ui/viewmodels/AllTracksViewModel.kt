@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,9 @@ class AllTracksViewModel @Inject constructor(private val trackRepository: TrackR
     private val _tracksUiState = MutableStateFlow(TracksUiState())
     val tracksUiState: StateFlow<TracksUiState> = _tracksUiState.asStateFlow()
 
+    private val sortOption = MutableStateFlow(SortOption())
+
+
     init {
         viewModelScope.launch {
             trackRepository.getAllTracksByName()
@@ -36,6 +40,23 @@ class AllTracksViewModel @Inject constructor(private val trackRepository: TrackR
                 }
         }
     }
+
+    fun setSort(option: SortOption) {
+        sortOption.value = option
+        sortTracks()
+    }
+
+    fun sortTracks(){
+        viewModelScope.launch {
+            trackRepository.getAllTracks(sortOption.value)
+                .onStart { _tracksUiState.update { it.copy(isLoading = true) } }
+                .catch { e ->
+                    _tracksUiState.update { it.copy(error = e.message, isLoading = false) }
+                }
+                .collect { tracks -> _tracksUiState.update { it.copy(tracks = tracks, isLoading = false, error = null) } }
+        }
+    }
+
 }
 
 data class TracksUiState(

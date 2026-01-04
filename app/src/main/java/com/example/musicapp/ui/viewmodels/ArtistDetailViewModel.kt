@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.ui.components.SortField
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +41,14 @@ class ArtistDetailViewModel @Inject constructor(
     private val _albumListUiState = MutableStateFlow(AlbumListUiState())
     val albumListUiState: StateFlow<AlbumListUiState> = _albumListUiState.asStateFlow()
 
+    private val sortOption = MutableStateFlow(
+        SortOption(
+            field = SortField.RELEASE_DATE,
+            ascending = true
+    ))
+
+
+
     init {
         viewModelScope.launch {
             val artistJob = launch {
@@ -59,9 +69,9 @@ class ArtistDetailViewModel @Inject constructor(
         }
     }
 
-    fun getAlbumsByArtist(artistId: Int){
+    fun getAlbumsByArtist(artistId: Int) {
         viewModelScope.launch {
-            albumArtistRepository.getAllAlbumsByArtist(artistId)
+            albumArtistRepository.getAllAlbumsByArtistSorted(artistId, sortOption.value)
                 .onStart { _albumListUiState.update { it.copy(isLoading = true) } }
                 .catch { e ->
                     _albumListUiState.update { it.copy(error = e.message, isLoading = false) }
@@ -77,6 +87,26 @@ class ArtistDetailViewModel @Inject constructor(
                 }
         }
     }
+
+    fun setSort(option: SortOption) {
+        sortOption.value = option
+        getAlbumsByArtist(artistId)
+    }
+
+
+
+//        fun sortAlbums(){
+//            viewModelScope.launch {
+//                albumRepository.getAllAlbums(sortOption.value)
+//                    .onStart { _albumListUiState.update { it.copy(isLoading = true) } }
+//                    .catch { e ->
+//                        _albumListUiState.update { it.copy(error = e.message, isLoading = false) }
+//                    }
+//                    .collect { albums -> _albumListUiState.update { it.copy(albums = toAlbumInfo(albums), isLoading = false, error = null) } }
+//            }
+//        }
+
+
 }
 
 data class ArtistState(

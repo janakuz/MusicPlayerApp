@@ -23,10 +23,24 @@ interface AlbumDao {
     @Delete
     suspend fun delete(album: Album)
 
-    @Query("SELECT * FROM albums ORDER BY title ASC")
+    @Query("SELECT * FROM albums ORDER BY " +
+            "CASE " +
+            "WHEN title LIKE 'The %' THEN SUBSTR(title, 5)" +
+            "WHEN title LIKE 'A %' THEN SUBSTR(title, 3)" +
+            "WHEN title LIKE 'An %' THEN SUBSTR(title, 4)" +
+            "WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)" +
+            "ELSE title " +
+            "END COLLATE NOCASE ASC")
     fun getAllAlbumsByName(): Flow<List<Album>>
 
-    @Query("SELECT * FROM albums ORDER BY title DESC")
+    @Query("SELECT * FROM albums ORDER BY " +
+            "CASE " +
+            "WHEN title LIKE 'The %' THEN SUBSTR(title, 5)" +
+            "WHEN title LIKE 'A %' THEN SUBSTR(title, 3)" +
+            "WHEN title LIKE 'An %' THEN SUBSTR(title, 4)" +
+            "WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)" +
+            "ELSE title " +
+            "END COLLATE NOCASE DESC")
     fun getAllAlbumsByNameDesc(): Flow<List<Album>>
 
     @Query("SELECT * FROM albums ORDER BY releaseDate ASC")

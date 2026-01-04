@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.model.GridItem
+import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 
@@ -39,9 +41,18 @@ fun AlbumDetailHeader(
 @Composable
 fun ArtistView(
     modifier: Modifier = Modifier,
-    onAlbumClick: ((GridItem) -> Unit)? = null){
+    onAlbumClick: ((GridItem) -> Unit)? = null,
+    sortRequest: SortOption?
+){
 
     val artistDetailViewModel: ArtistDetailViewModel = hiltViewModel()
+
+    LaunchedEffect(sortRequest) {
+        sortRequest?.let {
+            artistDetailViewModel.setSort(it)
+        }
+    }
+
 
     val artistUiState by artistDetailViewModel.currentArtistUiState.collectAsState()
     val artist = artistUiState.artist
@@ -79,8 +90,8 @@ fun ArtistView(
 @Composable
 fun ArtistPreview() {
     MusicAppTheme {
-        ArtistView(
-        )
+        val albumArtistSort = null
+        ArtistView(sortRequest = albumArtistSort)
     }
 
 }
