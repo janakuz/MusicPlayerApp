@@ -3,17 +3,25 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -23,6 +31,7 @@ import javax.inject.Inject
 class ArtistDetailViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumArtistRepository: AlbumArtistRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
     ) : ViewModel() {
 
@@ -33,82 +42,46 @@ class ArtistDetailViewModel @Inject constructor(
     private val artistId: Int = savedStateHandle.get<String>("artistId")?.toInt()
         ?: throw IllegalStateException("artistId not found in SavedStateHandle")
 
-
-    private val _currentArtistUiState = MutableStateFlow(ArtistState())
-    val currentArtistUiState: StateFlow<ArtistState> = _currentArtistUiState.asStateFlow()
-
-
-    private val _albumListUiState = MutableStateFlow(AlbumListUiState())
-    val albumListUiState: StateFlow<AlbumListUiState> = _albumListUiState.asStateFlow()
-
-    private val sortOption = MutableStateFlow(
-        SortOption(
-            field = SortField.RELEASE_DATE,
-            ascending = true
-    ))
-
-
-
-    init {
-        viewModelScope.launch {
-            val artistJob = launch {
-                getArtistById(artistId)
-            }
-            val albumsJob = launch {
-                getAlbumsByArtist(artistId)
-            }
-
-            joinAll(artistJob, albumsJob)
-        }
-    }
-
-    fun getArtistById(id: Int){
-        viewModelScope.launch {
-            artistRepository.getArtist(id)
-                .collect { artist -> _currentArtistUiState.update { it.copy(artist = artist) } }
-        }
-    }
-
-    fun getAlbumsByArtist(artistId: Int) {
-        viewModelScope.launch {
-            albumArtistRepository.getAllAlbumsByArtistSorted(artistId, sortOption.value)
-                .onStart { _albumListUiState.update { it.copy(isLoading = true) } }
-                .catch { e ->
-                    _albumListUiState.update { it.copy(error = e.message, isLoading = false) }
-                }
-                .collect { list ->
-                    _albumListUiState.update {
-                        it.copy(
-                            albums = list,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                }
-        }
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val artistDetailUiState: StateFlow<ArtistDetailUiState> = combine(
+        userPreferencesRepository.artistAlbumsSortOption,
+        flowOf(artistId)
+    ) { sort, id ->
+        Pair(id, sort)
+    }.flatMapLatest { (id, sort) ->
+        combine(
+            artistRepository.getArtist(id),
+            albumArtistRepository.getAllAlbumsByArtistSorted(id, sort)
+        ) { artist, albums ->
+            ArtistDetailUiState(
+                artist = artist,
+                albums = albums,
+                isLoading = false
+            )
+        }.onStart { emit(ArtistDetailUiState(isLoading = true)) }
+            .catch { e -> emit(ArtistDetailUiState(error = e.message, isLoading = false)) }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ArtistDetailUiState(isLoading = true)
+    )
 
     fun setSort(option: SortOption) {
-        sortOption.value = option
-        getAlbumsByArtist(artistId)
+        viewModelScope.launch {
+            userPreferencesRepository.updateArtistAlbumsSort(option)
+        }
     }
-
-
-
-//        fun sortAlbums(){
-//            viewModelScope.launch {
-//                albumRepository.getAllAlbums(sortOption.value)
-//                    .onStart { _albumListUiState.update { it.copy(isLoading = true) } }
-//                    .catch { e ->
-//                        _albumListUiState.update { it.copy(error = e.message, isLoading = false) }
-//                    }
-//                    .collect { albums -> _albumListUiState.update { it.copy(albums = toAlbumInfo(albums), isLoading = false, error = null) } }
-//            }
-//        }
-
 
 }
 
-data class ArtistState(
-    val artist: Artist? = null
+data class ArtistDetailUiState(
+    val artist: Artist? = null,
+    val albums: List<AlbumInfo> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
+
+
+//data class ArtistState(
+//    val artist: Artist? = null
+//)

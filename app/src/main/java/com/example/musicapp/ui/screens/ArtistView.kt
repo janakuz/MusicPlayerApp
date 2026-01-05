@@ -54,11 +54,10 @@ fun ArtistView(
     }
 
 
-    val artistUiState by artistDetailViewModel.currentArtistUiState.collectAsState()
-    val artist = artistUiState.artist
+    val artistDetailUiState by artistDetailViewModel.artistDetailUiState.collectAsState()
+    val artist = artistDetailUiState.artist
+    val albums = artistDetailUiState.albums
 
-    val albumsState by artistDetailViewModel.albumListUiState.collectAsState()
-    val albums = albumsState.albums
 
     if (artist != null) {
 
