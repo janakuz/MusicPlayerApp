@@ -23,6 +23,13 @@ class OfflineArtistRepository(
         return artistDao.getAllArtistsDesc()
     }
 
+    override fun getAllArtistsSorted(ascending: Boolean): Flow<List<Artist>> {
+        when(ascending){
+            true -> return artistDao.getAllArtistsSortedAsc();
+            false -> return artistDao.getAllArtistsSortedDesc();
+        }
+    }
+
     override fun getArtist(id: Int): Flow<Artist> {
         return artistDao.getArtist(id)
     }

@@ -5,10 +5,13 @@ import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface AlbumArtistRepository {
     fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>>
+
+    fun getAllAlbumsByArtistSorted(artistId: Int, oredrBy: SortOption): Flow<List<AlbumInfo>>
 
     fun getAllAlbumsByArtistFull(artistId: Int): Flow<List<Album>>
 

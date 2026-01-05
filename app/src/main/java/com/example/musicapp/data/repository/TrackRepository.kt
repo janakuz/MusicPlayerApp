@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Track
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface TrackRepository {
@@ -14,7 +15,7 @@ interface TrackRepository {
 
     fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>>
 
-    fun getAllTracks(orderBy: SortField, descending: Boolean): Flow<List<TrackInfo>>
+    fun getAllTracks(orderBy: SortOption): Flow<List<TrackInfo>>
 
     fun getAllTracksFull(): Flow<List<Track>>
 

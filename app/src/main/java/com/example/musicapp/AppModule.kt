@@ -2,6 +2,11 @@ package com.example.musicapp
 
 import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
@@ -15,7 +20,9 @@ import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
 import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
+import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
@@ -240,6 +247,21 @@ object AppModule {
     @Singleton
     fun provideAlbumArtistRepository(albumArtistDao: AlbumArtistDao): AlbumArtistRepository {
         return OfflineAlbumArtistRepository(albumArtistDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create (
+            produceFile = {
+                context.preferencesDataStoreFile("preference_file")
+            }
+        )
+
+    @Provides
+    @Singleton
+    fun provideUserPreferencesRepository(dataStore: DataStore<Preferences>): UserPreferencesRepository {
+        return OfflineUserPreferencesRepository(dataStore)
     }
 
 }

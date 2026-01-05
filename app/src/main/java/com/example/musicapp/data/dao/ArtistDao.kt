@@ -18,6 +18,27 @@ interface ArtistDao {
     @Query("SELECT * FROM artists ORDER BY name DESC")
     fun getAllArtistsDesc(): Flow<List<Artist>>
 
+    @Query("SELECT * FROM artists ORDER BY " +
+            "CASE " +
+            "WHEN name LIKE 'The %' THEN SUBSTR(name, 5)" +
+            "WHEN name LIKE 'A %' THEN SUBSTR(name, 3)" +
+            "WHEN name LIKE 'An %' THEN SUBSTR(name, 4)" +
+            "WHEN name GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(name, 2)" +
+            "ELSE name " +
+            "END COLLATE NOCASE ASC")
+    fun getAllArtistsSortedAsc(): Flow<List<Artist>>
+
+    @Query("SELECT * FROM artists ORDER BY " +
+            "CASE " +
+            "WHEN name LIKE 'The %' THEN SUBSTR(name, 5)" +
+            "WHEN name LIKE 'A %' THEN SUBSTR(name, 3)" +
+            "WHEN name LIKE 'An %' THEN SUBSTR(name, 4)" +
+            "WHEN name LIKE '[^a-zA-Z0-9]%' THEN SUBSTR(name, 2)" +
+            "ELSE name " +
+            "END COLLATE NOCASE DESC")
+    fun getAllArtistsSortedDesc(): Flow<List<Artist>>
+
+
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
 

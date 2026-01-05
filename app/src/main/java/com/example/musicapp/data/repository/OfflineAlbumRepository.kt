@@ -10,6 +10,8 @@ import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
+import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.SortField
 
 
 class OfflineAlbumRepository(
@@ -35,11 +37,11 @@ class OfflineAlbumRepository(
     override fun getAllAlbumsByDurationDesc(): Flow<List<Album>> =
         albumDao.getAllAlbumsByDurationDesc()
 
-    override fun getAllAlbums(orderBy: SortFieldAlbum, descending: Boolean): Flow<List<Album>> {
-        return when (orderBy) {
-            SortFieldAlbum.TITLE -> if (descending) albumDao.getAllAlbumsByNameDesc() else albumDao.getAllAlbumsByName()
-            SortFieldAlbum.DURATION -> if (descending) albumDao.getAllAlbumsByDurationDesc() else albumDao.getAllAlbumsByDuration()
-            SortFieldAlbum.RELEASE_DATE -> if (descending) albumDao.getAllAlbumsByReleaseDateDesc() else albumDao.getAllAlbumsByReleaseDate()
+    override fun getAllAlbums(orderBy: SortOption): Flow<List<Album>> {
+        return when (orderBy.field) {
+            SortField.NAME -> if (orderBy.ascending) albumDao.getAllAlbumsByName() else albumDao.getAllAlbumsByNameDesc()
+            SortField.DURATION -> if (orderBy.ascending) albumDao.getAllAlbumsByDuration() else albumDao.getAllAlbumsByDurationDesc()
+            SortField.RELEASE_DATE -> if (orderBy.ascending) albumDao.getAllAlbumsByReleaseDate() else albumDao.getAllAlbumsByReleaseDateDesc()
         }
     }
 

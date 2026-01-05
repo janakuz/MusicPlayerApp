@@ -4,38 +4,53 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AllTracksViewModel @Inject constructor(private val trackRepository: TrackRepository,
+class AllTracksViewModel @Inject constructor(
+    private val trackRepository: TrackRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    private val _tracksUiState = MutableStateFlow(TracksUiState())
-    val tracksUiState: StateFlow<TracksUiState> = _tracksUiState.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val tracksUiState: StateFlow<TracksUiState> = userPreferencesRepository.trackSortOption
+        .flatMapLatest { option ->
+            trackRepository.getAllTracks(option)
+                .map { tracks -> TracksUiState(tracks = tracks, isLoading = false) }
+                .onStart { emit(TracksUiState(isLoading = true))  }
+                .catch { e -> emit(TracksUiState(error = e.message, isLoading = false)) }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = TracksUiState(isLoading = true)
+        )
 
-    init {
+
+    fun setSort(option: SortOption) {
         viewModelScope.launch {
-            trackRepository.getAllTracksByName()
-                .onStart { _tracksUiState.update { it.copy(isLoading = true) } }
-                .catch { e ->
-                    _tracksUiState.update { it.copy(error = e.message, isLoading = false) }
-                }
-                .collect { list ->
-                    _tracksUiState.update { it.copy(tracks = list, isLoading = false, error = null) }
-                }
+            userPreferencesRepository.updateTrackSort(option)
         }
     }
+
 }
 
 data class TracksUiState(

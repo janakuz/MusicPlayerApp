@@ -30,8 +30,14 @@ interface TrackDao {
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
-        ORDER BY title ASC
-        """)
+        ORDER BY 
+        CASE 
+            WHEN t.title LIKE 'The %' THEN SUBSTR(t.title, 5)
+            WHEN t.title LIKE 'A %' THEN SUBSTR(t.title, 3)
+            WHEN t.title LIKE 'An %' THEN SUBSTR(t.title, 4)
+            WHEN t.title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(t.title, 2)
+            ELSE t.title 
+        END COLLATE NOCASE ASC""")
     fun getAllTracksByName(): Flow<List<TrackInfo>>
 
     @Query("""
@@ -40,8 +46,14 @@ interface TrackDao {
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
-        ORDER BY title DESC
-        """)
+        ORDER BY 
+        CASE 
+            WHEN t.title LIKE 'The %' THEN SUBSTR(t.title, 5)
+            WHEN t.title LIKE 'A %' THEN SUBSTR(t.title, 3)
+            WHEN t.title LIKE 'An %' THEN SUBSTR(t.title, 4)
+            WHEN t.title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(t.title, 2)
+            ELSE t.title 
+        END COLLATE NOCASE DESC""")
     fun getAllTracksByNameDesc(): Flow<List<TrackInfo>>
 
     @Query("""
