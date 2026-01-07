@@ -21,7 +21,7 @@ import java.util.concurrent.Executors
 
 @Database(
     entities = [Artist::class, Album::class, Track::class, AlbumArtist::class, QueueItem::class],
-    version = 5,
+    version = 6,
     exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao

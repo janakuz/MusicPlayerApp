@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -133,7 +132,10 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                     sortRequest = artistSort,
                     onClick = {artist ->
                         navController.navigate("artist/${artist.id}")
-                    })
+                    },
+                    onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
+                    onAddToQueue = { artist -> playerViewModel.addToQueueArtist(artist.id) }
+                )
             }
 
             composable(route = HomeScreen.Albums.name) {
@@ -141,7 +143,10 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                     sortRequest = albumSort,
                     onClick = { album ->
                         navController.navigate("album/${album.id}")
-                })
+                    },
+                    onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
+                    onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
+                )
             }
 
             composable(route = HomeScreen.Tracks.name) {
@@ -150,7 +155,14 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                     onClick = {
                         track, tracks -> playerViewModel.playTracks(tracks, track)
                         navController.navigate("nowPlaying")
-                })
+                    },
+                    onPlayNext = {
+                        track -> playerViewModel.playNext(track)
+                    },
+                    onAddToQueue = {
+                        track -> playerViewModel.addToQueue(track)
+                    }
+                )
             }
 
             composable("scan") {
@@ -162,7 +174,9 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                     onAlbumClick = {album ->
                         navController.navigate("album/${album.id}")
                     },
-                    sortRequest = artistDetailSort
+                    sortRequest = artistDetailSort,
+                    onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
+                    onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
                 )
             }
 
@@ -170,8 +184,8 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
             composable("nowPlaying") { backStackEntry ->
                  NowPlayingWithQueue(
                      playerViewModel,
-                     onTrackClick = { track, tracks ->
-                         playerViewModel.playTracks(tracks, track)
+                     onTrackClick = { track ->
+                         playerViewModel.playTrack(track)
                          navController.navigate("nowPlaying")
                          {
                              launchSingleTop = true
@@ -188,7 +202,10 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                         {
                             launchSingleTop = true
                         }
-                    })
+                    },
+                    onPlayNext = { track -> playerViewModel.playNext(track)},
+                    onAddToQueue = { track -> playerViewModel.addToQueue(track)}
+                )
             }
 
         }

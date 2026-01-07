@@ -9,12 +9,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.AllTracksViewModel
 
 
 @Composable
-fun AllTracksScreen(onClick: (TrackInfo, List<TrackInfo>) -> Unit, sortRequest: SortOption?){
+fun AllTracksScreen(
+    onClick: (TrackInfo, List<TrackInfo>) -> Unit,
+    onPlayNext: (TrackInfo) -> Unit,
+    onAddToQueue: (TrackInfo) -> Unit,
+    sortRequest: SortOption?){
     val trackViewModel: AllTracksViewModel = hiltViewModel()
 
     LaunchedEffect(sortRequest) {
@@ -27,7 +32,14 @@ fun AllTracksScreen(onClick: (TrackInfo, List<TrackInfo>) -> Unit, sortRequest: 
     val tracksUIState by trackViewModel.tracksUiState.collectAsState()
     val tracks = tracksUIState.tracks
 
-    TrackList(tracks, onClick = {track -> onClick(track, tracks)}, showArtwork = true)
+    val visualTracks = tracks.map { track -> VisualTrack(key = track.trackId, data = track) }
+
+    TrackList(
+        visualTracks,
+        onClick = {track -> onClick(track.data, tracks)},
+        onPlayNext = onPlayNext,
+        onAddToQueue = onAddToQueue,
+        showArtwork = true)
 
 }
 

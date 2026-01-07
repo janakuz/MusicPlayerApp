@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.data.dto.TrackInfo
@@ -84,7 +87,7 @@ fun NowPlayingView(
                     playerViewModel.skipToPrevious()
                 }
             }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Previous")
+                Icon(Icons.Default.SkipPrevious, contentDescription = "Previous")
             }
 
 
@@ -107,7 +110,7 @@ fun NowPlayingView(
                     playerViewModel.skipToNext()
                 }
             }) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                Icon(Icons.Default.SkipNext, contentDescription = "Next")
             }
         }
     }
@@ -119,7 +122,7 @@ fun NowPlayingView(
 @Composable
 fun NowPlayingWithQueue(
     playerViewModel: PlayerViewModel,
-    onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
+    onTrackClick: (PlayQueueItemUUID) -> Unit,
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -147,7 +150,12 @@ fun NowPlayingWithQueue(
                     .fillMaxHeight()
                     .background(MaterialTheme.colorScheme.surface)
             ) {
-                PlayQueueScreen(tracks, {track -> onTrackClick(track, tracks)}, playerViewModel)
+                PlayQueueScreen(
+                    tracks,
+                    {track -> onTrackClick(PlayQueueItemUUID(queueId = track.key.toString(), track=track.data))},
+                    onPlayNext = { track -> playerViewModel.playNext(track) },
+                    onAddToQueue = { track -> playerViewModel.addToQueue(track)},
+                    playerViewModel)
             }
         },
         sheetPeekHeight = 0.dp,

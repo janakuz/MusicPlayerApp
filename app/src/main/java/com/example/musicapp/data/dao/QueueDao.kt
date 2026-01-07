@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 interface QueueDao {
 
     @Query("""
-        SELECT q.orderIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT q.orderIndex, q.uuid, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
         FROM play_queue q
         JOIN tracks t on q.trackId=t.id

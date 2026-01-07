@@ -106,12 +106,29 @@ object AppModule {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""DROP TABLE IF EXISTS play_queue;""")
+                db.execSQL("""
+            CREATE TABLE IF NOT EXISTS play_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                uuid TEXT NOT NULL,
+                trackId INTEGER NOT NULL, 
+                orderIndex INTEGER NOT NULL,
+                FOREIGN KEY(trackId) REFERENCES tracks(id) ON UPDATE CASCADE ON DELETE CASCADE 
+            )
+        """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_play_queue_trackId ON play_queue (trackId)")
+            }
+        }
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "music_app_db"
         )
             .addMigrations(MIGRATION_4_5)
+            .addMigrations(MIGRATION_5_6)
             .build()
     }
 

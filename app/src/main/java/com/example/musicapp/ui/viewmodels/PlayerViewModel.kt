@@ -1,12 +1,8 @@
 package com.example.musicapp.ui.viewmodels
 
-import android.R
 import android.content.ComponentName
 import android.content.Context
-import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -21,31 +17,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.common.Player
 import com.example.musicapp.PlaybackService
-import com.example.musicapp.data.dto.QueueItemFull
+import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.QueueItem
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor (
     @ApplicationContext private val context: Context,
-    private val playQueueRepository: PlayQueueRepository
+    private val playQueueRepository: PlayQueueRepository,
+    private val trackRepository: TrackRepository,
 ) : ViewModel() {
     private val mediaController = MutableStateFlow<MediaController?>(null)
     val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
 
-    private val _queue = MutableStateFlow<List<TrackInfo>>(emptyList())
-    val queue: StateFlow<List<TrackInfo>> = _queue.asStateFlow()
+    private val _queue = MutableStateFlow<List<PlayQueueItemUUID>>(emptyList())
+    val queue: StateFlow<List<PlayQueueItemUUID>> = _queue.asStateFlow()
 
     private val _currentTrack = MutableStateFlow<TrackInfo?>(null)
     val currentTrack: StateFlow<TrackInfo?> = _currentTrack.asStateFlow()
@@ -87,7 +81,7 @@ class PlayerViewModel @Inject constructor (
                     val currentSession = playQueueRepository.currentSession.first()
 
                     if (savedQueue.isNotEmpty()) {
-                        _queue.value = savedQueue.map { item -> item.trackInfo }
+                        _queue.value = savedQueue.map { item -> PlayQueueItemUUID(queueId = item.uuid, track = item.trackInfo) }
 
                         val mediaItems = savedQueue.map { toMediaItem(it.trackInfo) }
                         val startIndex =
@@ -105,7 +99,7 @@ class PlayerViewModel @Inject constructor (
                         val currentIndex = controller.currentMediaItemIndex
                         val tracks = _queue.value
                         if (currentIndex in tracks.indices) {
-                            _currentTrack.value = tracks[currentIndex]
+                            _currentTrack.value = tracks[currentIndex].track
                         }
 
                         updatePlaybackSession()
@@ -173,18 +167,24 @@ class PlayerViewModel @Inject constructor (
         }
     }
 
-    fun updateQueue(newQueue: List<TrackInfo>){
-        val controller = mediaController.value ?: return
-        _queue.value = newQueue
-
-        val mediaItems = newQueue.map { toMediaItem(it) }
-        val currentIndex = controller.currentMediaItemIndex
-        val currentPos = controller.currentPosition
-
-        controller.setMediaItems(mediaItems, currentIndex, currentPos)
+    fun updateQueue(newQueue: List<PlayQueueItemUUID>){
+//        val controller = mediaController.value ?: return
+//        _queue.value = newQueue
+//
+//        val mediaItems = newQueue.map { toMediaItem(it) }
+//        val currentIndex = controller.currentMediaItemIndex
+//        val currentPos = controller.currentPosition
+//
+//        controller.setMediaItems(mediaItems, currentIndex, currentPos)
 
         viewModelScope.launch {
-            playQueueRepository.replaceQueue(newQueue.mapIndexed { index, track -> QueueItem(trackId = track.trackId, orderIndex = index ) })
+            playQueueRepository.replaceQueue(newQueue.mapIndexed { index, track ->
+                QueueItem(
+                    uuid = track.queueId,
+                    trackId = track.track.trackId,
+                    orderIndex = index
+                )
+            })
         }
     }
 
@@ -200,35 +200,122 @@ class PlayerViewModel @Inject constructor (
 
         controller.moveMediaItem(fromIndex, toIndex)
 
+        updateQueue(currentList)
+
+//        viewModelScope.launch {
+//            val entities = currentList.mapIndexed { index, track ->
+//                QueueItem(
+//                    trackId = track.trackId,
+//                    orderIndex = index
+//                )
+//            }
+//            playQueueRepository.replaceQueue(entities)
+//        }
+    }
+
+    fun playNext(track: TrackInfo) {
+        val controller = mediaController.value ?: return
+        val nextIndex = controller.currentMediaItemIndex + 1
+
+        controller.addMediaItem(nextIndex, toMediaItem(track))
+
+        val newList = _queue.value.toMutableList().apply { add(nextIndex, PlayQueueItemUUID(track = track)) }
+        _queue.value = newList
+        updateQueue(newList)
+    }
+
+    fun addToQueue(track: TrackInfo) {
+        val controller = mediaController.value ?: return
+
+        controller.addMediaItem(toMediaItem(track))
+
+        val newList = _queue.value.toMutableList().apply { add(PlayQueueItemUUID(track = track)) }
+        _queue.value = newList
+        updateQueue(newList)
+    }
+
+    fun playNextList(tracks: List<TrackInfo>) {
+        val controller = mediaController.value ?: return
+        val nextIndex = controller.currentMediaItemIndex + 1
+
+        controller.addMediaItems(nextIndex, tracks.map { track -> toMediaItem(track) })
+        val newList = _queue.value.toMutableList().apply { addAll(nextIndex, tracks.map { track -> PlayQueueItemUUID(track = track) }) }
+        _queue.value = newList
+        updateQueue(newList)
+    }
+
+    fun addToQueueList(tracks: List<TrackInfo>){
+        val controller = mediaController.value ?: return
+
+        controller.addMediaItems(tracks.map { track -> toMediaItem(track) })
+
+        val newList = _queue.value.toMutableList().apply { addAll(tracks.map { track -> PlayQueueItemUUID(track = track) }) }
+        _queue.value = newList
+        updateQueue(newList)
+    }
+
+    fun playNextAlbum(albumId: Int){
         viewModelScope.launch {
-            val entities = currentList.mapIndexed { index, track ->
-                QueueItem(
-                    trackId = track.trackId,
-                    orderIndex = index
-                )
-            }
-            playQueueRepository.replaceQueue(entities)
+            val tracks = trackRepository.getTracksInAlbum(albumId).first()
+
+            playNextList(tracks)
         }
     }
 
+    fun addToQueueAlbum(albumId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksInAlbum(albumId).first()
+
+            addToQueueList(tracks)
+        }
+    }
+
+
+    fun playNextArtist(artistId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByArtist(artistId).first()
+
+            playNextList(tracks)
+        }
+    }
+
+    fun addToQueueArtist(artistId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByArtist(artistId).first()
+
+            addToQueueList(tracks)
+        }
+    }
+
+
+    fun playTrack(track: PlayQueueItemUUID){
+        val controller = mediaController.value ?: return
+        val trackIndex = _queue.value.indexOf(track)
+        controller.seekTo(trackIndex, 0L)
+        _currentTrack.value = _queue.value[trackIndex].track
+        controller.prepare()
+        controller.play()
+    }
+
+
     fun playTracks(tracks: List<TrackInfo>, selectedTrack: TrackInfo){
-        _queue.value = tracks
+        _queue.value = tracks.map { track -> PlayQueueItemUUID(track = track) }
         _currentTrack.value = selectedTrack
         _isPlaying.value = true
 
-//        val mediaItems = tracks.map { track ->
-//            toMediaItem(track)
-//        }
-//
-//        val startIndex = tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
+        val mediaItems = tracks.map { track ->
+            toMediaItem(track)
+        }
 
-//        mediaController.value?.apply {
-//            setMediaItems(mediaItems, startIndex, 0L)
-//            prepare()
-//            play()
-//        }
+        val startIndex = tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
 
-        updateQueue(tracks)
+        mediaController.value?.apply {
+            setMediaItems(mediaItems, startIndex, 0L)
+            prepare()
+            play()
+        }
+
+        updateQueue(tracks.map { track -> PlayQueueItemUUID(track = track) })
     }
 
     fun toMediaItem(track: TrackInfo): MediaItem {
@@ -268,7 +355,14 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun removeTrackAt(index: Int) {
-        _queue.value = queue.value.toMutableList().apply { removeAt(index) }
+        val controller = mediaController.value ?: return
+        val currentList = _queue.value.toMutableList()
+        if (index in currentList.indices) {
+            controller.removeMediaItem(index)
+            currentList.removeAt(index)
+            _queue.value = currentList
+            updateQueue(currentList)
+        }
     }
 
 }

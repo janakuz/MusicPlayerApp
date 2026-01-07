@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
+import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.entity.Album
 import com.example.musicapp.model.GridItem
 
 
@@ -24,6 +26,8 @@ fun Grid(
     listItems: List<GridItem>,
     shape: Shape,
     isAlbum: Boolean,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     showReleaseDate: Boolean = false,
@@ -34,6 +38,9 @@ fun Grid(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
     ) {
+
+
+
         items(listItems, key = {it.id}) { item ->
             var artist = ""
             if (isAlbum) {
@@ -42,7 +49,7 @@ fun Grid(
     //            else
                     artist = (item as GridItem.AlbumItem).releaseYear
             }
-            Box(    modifier = Modifier.fillMaxWidth(),
+            Box( modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center) {
                 ImageWithTextColumn(
                     image = item.imageRes,
@@ -53,6 +60,8 @@ fun Grid(
                     albumArtist = artist,
                     textStyle = textStyle,
                     onClick = onClick,
+                    onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
                     item = item
                 )
             }
