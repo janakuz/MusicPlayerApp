@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.components.SortField
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 
@@ -31,28 +32,28 @@ class OfflineUserPreferencesRepository(private val dataStore: DataStore<Preferen
             field = SortField.valueOf(prefs[ARTIST_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[ARTIST_SORT_ASC] ?: true
         )
-    }
+    }.distinctUntilChanged()
 
     override val albumSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[ALBUM_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[ALBUM_SORT_ASC] ?: true
         )
-    }
+    }.distinctUntilChanged()
 
     override val trackSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[TRACK_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[TRACK_SORT_ASC] ?: true
         )
-    }
+    }.distinctUntilChanged()
 
     override val artistAlbumsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[ARTIST_ALBUMS_SORT_FIELD] ?: SortField.RELEASE_DATE.name),
             ascending = prefs[ARTIST_ALBUMS_SORT_ASC] ?: true
         )
-    }
+    }.distinctUntilChanged()
 
 
     override suspend fun updateArtistSort(option: SortOption) {
