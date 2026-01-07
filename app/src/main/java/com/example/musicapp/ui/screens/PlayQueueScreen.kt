@@ -28,10 +28,19 @@ fun PlayQueueScreen(tracks: List<TrackInfo>,
         visibleQueue = visibleQueue.toMutableList().apply {
             add(to.index, removeAt(from.index))
         }
-        playerViewModel.updateQueue(visibleQueue)
+//        playerViewModel.updateQueue(visibleQueue)
+        playerViewModel.moveTrack(from.index, to.index)
     }
 
-    TrackList(visibleQueue, onClick = onTrackClick, showArtwork = true, showReorderIconEnd = true, state = lazyListState, reorderable = reorderableLazyListState, playerViewModel = playerViewModel)
+    TrackList(
+        visibleQueue,
+        onClick = onTrackClick,
+        showArtwork = true,
+        showReorderIconEnd = true,
+        state = lazyListState,
+        reorderable = reorderableLazyListState,
+    //    playerViewModel = playerViewModel
+    )
 
 }
 

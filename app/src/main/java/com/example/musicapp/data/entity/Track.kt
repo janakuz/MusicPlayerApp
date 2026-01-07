@@ -29,5 +29,4 @@ data class Track(
     val energy: Int?,
     val key: String?,
     val bpm: Int?
-
 )

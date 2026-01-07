@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -104,17 +105,24 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
         },
 
         bottomBar = {
-            if (currentRoute != "nowPlaying") {
+//            AnimatedVisibility(
+//                visible = currentRoute != "nowPlaying",
+//                enter = slideInVertically(initialOffsetY = { it }),
+//                exit = slideOutVertically(targetOffsetY = { it })
+//            ) {// }
+//            if (currentRoute != "nowPlaying") {
                 NowPlayingBar(
                     playerViewModel = playerViewModel,
+                    currentRoute = currentRoute,
                     onClick = { navController.navigate("nowPlaying") }
                 )
             }
-        }
+//        }
 
     ) {
 
         innerPadding ->
+
         NavHost(
             navController = navController,
             startDestination = HomeScreen.Artists.name,

@@ -29,6 +29,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
@@ -57,8 +58,9 @@ fun TrackInfoRow(
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(artwork)
-                        .crossfade(true)
+                        .crossfade(false)
                         .diskCachePolicy(CachePolicy.ENABLED)
+                        .placeholderMemoryCacheKey(artwork)
                         .build(),
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
@@ -153,10 +155,7 @@ fun TrackList(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to->{}},
-    playerViewModel: PlayerViewModel = viewModel()
 ) {
-//    val tracks by playerViewModel.queue.collectAsState()
- //   var list by remember { mutableStateOf<List<Track>>(tracks) }
     val hapticFeedback = LocalHapticFeedback.current
     LazyColumn(state = state,
         ) {

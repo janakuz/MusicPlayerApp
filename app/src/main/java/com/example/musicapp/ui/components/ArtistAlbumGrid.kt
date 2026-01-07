@@ -34,7 +34,7 @@ fun Grid(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
     ) {
-        items(listItems) { item ->
+        items(listItems, key = {it.id}) { item ->
             var artist = ""
             if (isAlbum) {
     //            if (!showReleaseDate)

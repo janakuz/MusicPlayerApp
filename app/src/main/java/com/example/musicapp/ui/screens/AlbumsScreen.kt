@@ -1,5 +1,7 @@
 package com.example.musicapp.ui.screens
 
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,7 +47,8 @@ fun AlbumsGrid(
             bottomStart = 4.dp,
             bottomEnd = 4.dp),
         textStyle = MaterialTheme.typography.bodyMedium,
-        onClick = onClick)
+        onClick = onClick
+    )
 }
 
 

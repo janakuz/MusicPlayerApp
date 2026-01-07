@@ -56,6 +56,7 @@ fun ImageWithTextColumn(
                     .data(image)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .placeholderMemoryCacheKey(image)
                     .build(),
                 contentDescription = null,
                 modifier = imageModifier

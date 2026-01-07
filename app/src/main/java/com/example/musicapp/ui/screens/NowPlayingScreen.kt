@@ -43,7 +43,7 @@ fun NowPlayingView(
     playerViewModel: PlayerViewModel,
 ){
     val track by playerViewModel.currentTrack.collectAsState()
-    var isPlaying by playerViewModel.isPlaying
+    val isPlaying by playerViewModel.isPlaying.collectAsState()
     val position by playerViewModel.position.collectAsState()
     val duration by playerViewModel.duration.collectAsState()
 
@@ -80,7 +80,7 @@ fun NowPlayingView(
 
         Row {
             IconButton(onClick = {
-                if (playerViewModel.controller.value?.hasPreviousMediaItem() == true) {
+                if (playerViewModel.hasPrevMediaItem() == true) {
                     playerViewModel.skipToPrevious()
                 }
             }) {
@@ -89,8 +89,7 @@ fun NowPlayingView(
 
 
             Button(onClick = {
-                playerViewModel.controller.value?.pause()
-                isPlaying = false
+                playerViewModel.togglePlayback()
             }, enabled = isPlaying) {
                 Text("Pause")
             }
@@ -98,14 +97,13 @@ fun NowPlayingView(
             Spacer(Modifier.width(16.dp))
 
             Button(onClick = {
-                playerViewModel.controller.value?.play()
-                isPlaying = true
+                playerViewModel.togglePlayback()
             }, enabled = !isPlaying) {
                 Text("Play")
             }
 
             IconButton(onClick = {
-                if (playerViewModel.controller.value?.hasNextMediaItem() == true) {
+                if (playerViewModel.hasNextMediaItem() == true) {
                     playerViewModel.skipToNext()
                 }
             }) {
