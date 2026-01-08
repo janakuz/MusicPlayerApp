@@ -16,5 +16,6 @@ data class QueueItem(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val uuid: String,
     val trackId: Int,
-    val orderIndex: Int
+    val orderIndex: Int,
+    val shuffledIndex: Int?
 )

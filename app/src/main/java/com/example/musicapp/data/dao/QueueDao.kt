@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 interface QueueDao {
 
     @Query("""
-        SELECT q.orderIndex, q.uuid, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT q.orderIndex, q.uuid, q.shuffledIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
         FROM play_queue q
         JOIN tracks t on q.trackId=t.id
@@ -22,6 +22,16 @@ interface QueueDao {
         JOIN albums al on t.albumId=al.id
         ORDER BY q.orderIndex ASC""")
     fun getQueue(): Flow<List<QueueItemFull>>
+
+    @Query("""
+        SELECT q.orderIndex, q.uuid, q.shuffledIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        FROM play_queue q
+        JOIN tracks t on q.trackId=t.id
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        ORDER BY q.shuffledIndex ASC""")
+    fun getQueueShuffled(): Flow<List<QueueItemFull>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveQueue(tracks: List<QueueItem>)
