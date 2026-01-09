@@ -143,8 +143,7 @@ fun NowPlayingView(
                         if (repeatMode== Player.REPEAT_MODE_OFF) Icons.Default.Repeat
                         else if (repeatMode==Player.REPEAT_MODE_ALL) Icons.Default.RepeatOn
                         else Icons.Default.RepeatOne,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    Modifier.size(80.dp)
+                    contentDescription = "Repeat",
                 )
 
             }

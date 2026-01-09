@@ -150,7 +150,7 @@ class PlayerViewModel @Inject constructor (
                 controller.addListener(object : Player.Listener {
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         _currentTrack.value = queue.value[controller.currentMediaItemIndex].track
-         //               updatePlaybackSession()
+                        if (controller.repeatMode != Player.REPEAT_MODE_ONE) updatePlaybackSession()
                     }
 
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -161,7 +161,6 @@ class PlayerViewModel @Inject constructor (
 
                 }
                 )
-
 
             }, ContextCompat.getMainExecutor(context))
 
@@ -241,8 +240,8 @@ class PlayerViewModel @Inject constructor (
 
         controller.addMediaItem(nextIndex, toMediaItem(track))
         val dbList = queue.value.map { track ->
-            val newOriginal = if (track.originalOrder >= nextIndex+1) track.originalOrder+1 else track.originalOrder
-            val newShuffled = if (track.shuffledOrder >= nextIndex+1) track.shuffledOrder+1 else track.shuffledOrder
+            val newOriginal = if (track.originalOrder >= nextIndex) track.originalOrder+1 else track.originalOrder
+            val newShuffled = if (track.shuffledOrder >= nextIndex) track.shuffledOrder+1 else track.shuffledOrder
             track.copy(originalOrder = newOriginal, shuffledOrder = newShuffled)
         }
 
@@ -262,8 +261,8 @@ class PlayerViewModel @Inject constructor (
             add(
                 PlayQueueItemUUID(
                     track = track,
-                    originalOrder = controller.mediaItemCount,
-                    shuffledOrder = controller.mediaItemCount
+                    originalOrder = controller.mediaItemCount-1,
+                    shuffledOrder = controller.mediaItemCount-1
                 )
             )
         }
@@ -298,6 +297,7 @@ class PlayerViewModel @Inject constructor (
 
     fun addToQueueList(tracks: List<TrackInfo>){
         val controller = mediaController.value ?: return
+        val originalCount = controller.mediaItemCount
 
         controller.addMediaItems(tracks.map { track -> toMediaItem(track) })
 
@@ -306,8 +306,8 @@ class PlayerViewModel @Inject constructor (
                 tracks.mapIndexed { id, track ->
                     PlayQueueItemUUID(
                         track = track,
-                        originalOrder = controller.mediaItemCount+id,
-                        shuffledOrder = controller.mediaItemCount+id
+                        originalOrder = originalCount+id,
+                        shuffledOrder = originalCount+id
                     )
                 }
             )
@@ -352,8 +352,8 @@ class PlayerViewModel @Inject constructor (
     fun playTrack(queueId: String){
         val controller = mediaController.value ?: return
         val trackIndex = queue.value.indexOfFirst { it.queueId==queueId }
+        _currentTrack.value = queue.value[trackIndex].track
         controller.seekTo(trackIndex, 0L)
-        controller.prepare()
         controller.play()
     }
 
@@ -371,7 +371,7 @@ class PlayerViewModel @Inject constructor (
             play()
         }
         _isPlaying.value = true
-
+        _currentTrack.value = selectedTrack
         updateQueue(tracks.mapIndexed { id, track ->
             PlayQueueItemUUID(
                 track = track,
@@ -424,7 +424,21 @@ class PlayerViewModel @Inject constructor (
         if (index in currentList.indices) {
             controller.removeMediaItem(index)
             currentList.removeAt(index)
-            updateQueue(currentList)
+            _currentTrack.value = currentList[controller.currentMediaItemIndex].track
+
+
+            val newList =
+                if (isShuffleEnabled.value){
+                    currentList.mapIndexed { id, track ->
+                        track.copy(
+                            shuffledOrder = id,
+                            originalOrder = currentList.sortedBy { it.originalOrder }.indexOfFirst { it.queueId==track.queueId }
+                        )}
+                }
+                else {
+                    currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
+                }
+            updateQueue(newList)
         }
     }
 
