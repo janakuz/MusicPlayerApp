@@ -19,6 +19,8 @@ import com.example.musicapp.ui.theme.MusicAppTheme
 @Composable
 fun AllArtistsScreen(
     onClick: ((GridItem) -> Unit)? = null,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
     sortRequest: SortOption?
 ){
     val artistViewModel: AllArtistsViewModel = hiltViewModel()
@@ -43,6 +45,8 @@ fun AllArtistsScreen(
         shape = CircleShape,
         isAlbum = false,
         textStyle = MaterialTheme.typography.bodyMedium,
+        onPlayNext = onPlayNext,
+        onAddToQueue = onAddToQueue,
         onClick = onClick)
 
 }

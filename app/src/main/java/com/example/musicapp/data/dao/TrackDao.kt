@@ -97,7 +97,7 @@ interface TrackDao {
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
         WHERE ar.id = :artistId
-        ORDER BY title ASC
+        ORDER BY al.releaseDate ASC, t.trackNumber ASC
         """)
     fun getAllTracksByArtist(artistId: Int): Flow<List<TrackInfo>>
 

@@ -1,6 +1,6 @@
 package com.example.musicapp.ui.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,17 +24,23 @@ import androidx.compose.ui.unit.dp
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.dto.VisualTrack
 import java.util.Locale
 
 
@@ -57,8 +63,9 @@ fun TrackInfoRow(
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(artwork)
-                        .crossfade(true)
+                        .crossfade(false)
                         .diskCachePolicy(CachePolicy.ENABLED)
+                        .placeholderMemoryCacheKey(artwork)
                         .build(),
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
@@ -86,8 +93,12 @@ fun TrackRow(
     title: String,
     artist: String,
     duration: String,
-    track: TrackInfo,
-    onClick: (TrackInfo) -> Unit,
+    track: VisualTrack,
+    trackIndex: Int,
+    onClick: (VisualTrack) -> Unit,
+    onPlayNext: (TrackInfo) -> Unit,
+    onAddToQueue: (TrackInfo) -> Unit,
+    onRemoveFromQueue: ((Int) -> Unit)? = null,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -95,10 +106,17 @@ fun TrackRow(
     trackNum: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick(track) }
+            .combinedClickable(
+                onClick = { onClick(track) },
+                onLongClick = { expanded = true }
+            )
+//            .clickable {
+//                onClick(track)}
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -133,6 +151,35 @@ fun TrackRow(
             )
         }
     }
+
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false }
+    ) {
+        DropdownMenuItem(
+            text = { Text("Play Next") },
+            onClick = {
+                onPlayNext(track.data)
+                expanded = false
+            }
+        )
+        DropdownMenuItem(
+            text = { Text("Add to Queue") },
+            onClick = {
+                onAddToQueue(track.data)
+                expanded = false
+            }
+        )
+        if (onRemoveFromQueue!= null){
+            DropdownMenuItem(
+                text = {(Text("Remove from Queue"))},
+                onClick = {
+                    onRemoveFromQueue(trackIndex)
+                    expanded = false
+                }
+            )
+        }
+    }
 }
 
 fun formatDuration(durationMs: Long): String {
@@ -144,8 +191,11 @@ fun formatDuration(durationMs: Long): String {
 
 @Composable
 fun TrackList(
-    tracks: List<TrackInfo>,
-    onClick: (TrackInfo) -> Unit,
+    tracks: List<VisualTrack>,
+    onClick: (VisualTrack) -> Unit,
+    onPlayNext: (TrackInfo) -> Unit,
+    onAddToQueue: (TrackInfo) -> Unit,
+    onRemoveFromQueue: ((Int) -> Unit)? = null,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -153,27 +203,29 @@ fun TrackList(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to->{}},
-    playerViewModel: PlayerViewModel = viewModel()
 ) {
-//    val tracks by playerViewModel.queue.collectAsState()
- //   var list by remember { mutableStateOf<List<Track>>(tracks) }
     val hapticFeedback = LocalHapticFeedback.current
     LazyColumn(state = state,
         ) {
-        items(tracks, key = { it.trackId }) { track ->
-            ReorderableItem(reorderable, key = track.trackId) { isDragging ->
+        itemsIndexed(tracks, key = { index, track -> track.key }) { id, queueTrack ->
+            val track = queueTrack.data
+            ReorderableItem(reorderable, key = queueTrack.key) { isDragging ->
                 TrackRow(
                     artwork = track.albumArt.toString(),
                     title = track.title,
                     artist = track.artistName,
                     onClick = onClick,
+                    onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
                     showArtwork = showArtwork,
                     showTrackNum = showTrackNum,
                     showReorderIconStart = showReorderIconStart,
                     showReorderIconEnd = showReorderIconEnd,
                     trackNum = track.trackNum ?: 0,
                     duration = formatDuration(track.duration),
-                    track = track,
+                    track = queueTrack,
+                    trackIndex = id,
+                    onRemoveFromQueue = onRemoveFromQueue,
                     modifier = Modifier.
                             draggableHandle(
                             onDragStarted = {

@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
@@ -24,6 +25,8 @@ import com.example.musicapp.ui.viewmodels.AlbumDetailViewModel
 @Composable
 fun AlbumView(
     onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
+    onPlayNext: (TrackInfo) -> Unit,
+    onAddToQueue: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){
     val albumDetailViewModel: AlbumDetailViewModel = hiltViewModel()
@@ -33,6 +36,8 @@ fun AlbumView(
 
     val tracksUiState by albumDetailViewModel.albumTracksUiState.collectAsState()
     val tracks = tracksUiState.tracks
+
+    val visualTracks = tracks.map { track -> VisualTrack(key = track.trackId, data = track) }
 
     if (album != null) {
 
@@ -61,7 +66,12 @@ fun AlbumView(
 
             }
             Spacer(modifier = Modifier.height(4.dp))
-            TrackList(tracks, onClick = {track -> onTrackClick(track, tracks)}, showTrackNum = true)
+            TrackList(
+                visualTracks,
+                onClick = {track -> onTrackClick(track.data, tracks)},
+                onPlayNext = onPlayNext,
+                onAddToQueue = onAddToQueue,
+                showTrackNum = true)
 
 
         }

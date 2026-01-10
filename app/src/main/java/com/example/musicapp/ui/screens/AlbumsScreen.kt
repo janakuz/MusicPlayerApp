@@ -1,5 +1,7 @@
 package com.example.musicapp.ui.screens
 
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -15,12 +17,16 @@ import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
 import androidx.compose.runtime.getValue
 import com.example.musicapp.HomeScreen
 import com.example.musicapp.data.dto.AlbumInfo
+import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.entity.Album
 import com.example.musicapp.ui.components.SortOption
 
 
 @Composable
 fun AlbumsGrid(
     albums: List<AlbumInfo>,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
     showReleaseDate: Boolean = false,
     onClick: ((GridItem) -> Unit)? = null
 ){
@@ -39,18 +45,25 @@ fun AlbumsGrid(
         listItems = items,
         isAlbum = true,
         showReleaseDate = showReleaseDate,
+        onPlayNext = onPlayNext,
+        onAddToQueue = onAddToQueue,
         shape = RoundedCornerShape(
             topStart = 4.dp,
             topEnd = 4.dp,
             bottomStart = 4.dp,
             bottomEnd = 4.dp),
         textStyle = MaterialTheme.typography.bodyMedium,
-        onClick = onClick)
+        onClick = onClick
+    )
 }
 
 
 @Composable
-fun AllAlbumsScreen(onClick: (GridItem) -> Unit, sortRequest: SortOption?) {
+fun AllAlbumsScreen(
+    onClick: (GridItem) -> Unit,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
+    sortRequest: SortOption?) {
     val albumViewModel: AllAlbumsViewModel = hiltViewModel()
 
     LaunchedEffect(sortRequest) {
@@ -63,7 +76,13 @@ fun AllAlbumsScreen(onClick: (GridItem) -> Unit, sortRequest: SortOption?) {
     val albumsState by albumViewModel.albumListUiState.collectAsState()
     val albums = albumsState.albums
 
-    AlbumsGrid(albums, showReleaseDate = false, onClick = onClick)
+    AlbumsGrid(
+        albums,
+        showReleaseDate = false,
+        onClick = onClick,
+        onPlayNext = onPlayNext,
+        onAddToQueue = onAddToQueue
+        )
 }
 
 

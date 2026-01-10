@@ -8,10 +8,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
 import com.example.musicapp.data.dao.ArtistDao
+import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
+import com.example.musicapp.data.database.ALL_MIGRATIONS
 import com.example.musicapp.data.database.AppDatabase
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
@@ -19,8 +23,10 @@ import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
 import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
+import com.example.musicapp.data.repository.OfflinePlayQueueRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
+import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
@@ -38,6 +44,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import java.util.Queue
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -85,11 +92,15 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "music_app_db"
-        ).build()
+        )
+            .addMigrations(*ALL_MIGRATIONS)
+            .build()
     }
 
     @Provides
@@ -119,7 +130,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAlbumDao(db: AppDatabase): AlbumDao = db.albumDao()
-
 
 
     @Provides
@@ -251,6 +261,11 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideQueueDao(db: AppDatabase): QueueDao = db.queueDao()
+
+
+    @Provides
+    @Singleton
     fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         PreferenceDataStoreFactory.create (
             produceFile = {
@@ -263,5 +278,12 @@ object AppModule {
     fun provideUserPreferencesRepository(dataStore: DataStore<Preferences>): UserPreferencesRepository {
         return OfflineUserPreferencesRepository(dataStore)
     }
+
+    @Provides
+    @Singleton
+    fun provideQueueRepository(queueDao: QueueDao, dataStore: DataStore<Preferences>): PlayQueueRepository {
+        return OfflinePlayQueueRepository(dataStore, queueDao)
+    }
+
 
 }

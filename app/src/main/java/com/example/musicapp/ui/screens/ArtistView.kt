@@ -34,6 +34,8 @@ fun AlbumDetailHeader(
         isAlbum = false,
         imageModifier = Modifier.size(400.dp),
         textStyle = MaterialTheme.typography.headlineMedium,
+        onAddToQueue = {},
+        onPlayNext = {},
         imageShape = RectangleShape
     )
 }
@@ -42,6 +44,8 @@ fun AlbumDetailHeader(
 fun ArtistView(
     modifier: Modifier = Modifier,
     onAlbumClick: ((GridItem) -> Unit)? = null,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
     sortRequest: SortOption?
 ){
 
@@ -77,7 +81,12 @@ fun ArtistView(
             )
             Spacer(modifier = Modifier.height(4.dp))
 
-            AlbumsGrid(albums, showReleaseDate = true, onClick = onAlbumClick)
+            AlbumsGrid(
+                albums,
+                showReleaseDate = true,
+                onClick = onAlbumClick,
+                onAddToQueue = onAddToQueue,
+                onPlayNext = onPlayNext)
 
 
         }
@@ -90,7 +99,7 @@ fun ArtistView(
 fun ArtistPreview() {
     MusicAppTheme {
         val albumArtistSort = null
-        ArtistView(sortRequest = albumArtistSort)
+//        ArtistView(sortRequest = albumArtistSort)
     }
 
 }

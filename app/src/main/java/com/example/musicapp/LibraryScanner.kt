@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
@@ -52,10 +53,11 @@ class LibraryScanner @Inject constructor(
             MediaStore.Audio.Media.YEAR
         )
 
+        var foundCount = 0
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         withContext(Dispatchers.IO) {
             context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
                 projection,
                 selection,
                 null,
@@ -71,6 +73,7 @@ class LibraryScanner @Inject constructor(
                 val yearCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
 
                 while (cursor.moveToNext()) {
+                    foundCount++
                     val id = cursor.getLong(idCol)
                     val contentUri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
@@ -96,6 +99,9 @@ class LibraryScanner @Inject constructor(
                     )
                 }
             }
+        }
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, "Scanned $foundCount tracks", Toast.LENGTH_SHORT).show()
         }
         return list
     }
@@ -330,8 +336,6 @@ class LibraryScanner @Inject constructor(
                 }
             }
         }
-
-        Log.d("ScanTracks", toInsert.joinToString())
 
         if (toInsert.isNotEmpty())
             trackRepository.insertAll(toInsert)
