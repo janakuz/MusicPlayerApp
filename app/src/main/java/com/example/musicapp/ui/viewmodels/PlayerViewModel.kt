@@ -27,6 +27,7 @@ import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.ui.screens.PlayQueuePreview
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.multibindings.ElementsIntoSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -82,6 +83,9 @@ class PlayerViewModel @Inject constructor (
 
     private val _currentTrack = MutableStateFlow<TrackInfo?>(null)
     val currentTrack: StateFlow<TrackInfo?> = _currentTrack.asStateFlow()
+
+    private val _draftQueue = MutableStateFlow<List<PlayQueueItemUUID>>(emptyList())
+    val draftQueue = _draftQueue.asStateFlow()
 
     //    val currentTrack: StateFlow<TrackInfo?> = combine(queue, playQueueRepository.currentSession) { currentQueue, session ->
 //        if (currentQueue.isEmpty() || session.playQueueIndex !in currentQueue.indices) {
@@ -183,6 +187,11 @@ class PlayerViewModel @Inject constructor (
         )
     }
 
+
+    fun syncDraft() {
+        _draftQueue.value = queue.value
+    }
+
     fun togglePlayback(){
         val controller = mediaController.value ?: return
         if (controller.isPlaying) {
@@ -220,18 +229,102 @@ class PlayerViewModel @Inject constructor (
         }
     }
 
-    fun moveTrack(fromIndex: Int, toIndex: Int) {
-        val currentList = queue.value.toMutableList()
-
+    fun moveVisible(fromIndex: Int, toIndex: Int){
+        val currentList = _draftQueue.value.toMutableList()
         val trackToMove = currentList.removeAt(fromIndex)
-        currentList.add(toIndex, trackToMove)
+        val newTrack =
+            if (isShuffleEnabled.value) trackToMove.copy(shuffledOrder = toIndex)
+            else trackToMove.copy(originalOrder = toIndex)
+        currentList.add(toIndex, newTrack)
 
+
+    }
+
+    private var playingIdAtDragStart: String? = null
+
+    fun startDragging() {
+        val controller = mediaController.value ?: return
+        playingIdAtDragStart = queue.value[controller.currentMediaItemIndex].queueId
+    }
+
+    fun finalizeMove(currentList: List<PlayQueueItemUUID>){
         val controller = mediaController.value ?: return
 
-        controller.moveMediaItem(fromIndex, toIndex)
+        Log.d("index", controller.currentMediaItemIndex.toString())
+        val currentlyPlaying = playingIdAtDragStart
+        Log.d("index", controller.currentMediaItemIndex.toString())
 
-        updateQueue(currentList)
+        val newList =
+            if (isShuffleEnabled.value){
+                currentList.mapIndexed { id, track ->
+                    track.copy(
+                        shuffledOrder = id,
+                    )}
+            }
+            else {
+                currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
+            }
+
+        Log.d("index", currentlyPlaying.toString())
+        val nextIndex = newList.indexOfFirst { it.queueId==currentlyPlaying }
+        Log.d("index", newList.joinToString())
+        Log.d("index", nextIndex.toString())
+//        controller.moveMediaItem(fromIndex, toIndex)
+
+        controller.setMediaItems(newList.map { toMediaItem(it.track) },
+//            false
+            nextIndex, controller.currentPosition
+        )
+        _currentTrack.value = newList[controller.currentMediaItemIndex].track
+
+        updateQueue(newList)
         updatePlaybackSession()
+
+    }
+
+    fun moveTrack(fromIndex: Int, toIndex: Int) {
+        val controller = mediaController.value ?: return
+
+
+        val currentList = queue.value.toMutableList()
+
+        Log.d("index", controller.currentMediaItemIndex.toString())
+        val currentlyPlaying = currentList[controller.currentMediaItemIndex].queueId
+        Log.d("index", controller.currentMediaItemIndex.toString())
+
+        val trackToMove = currentList.removeAt(fromIndex)
+        val newTrack =
+            if (isShuffleEnabled.value) trackToMove.copy(shuffledOrder = toIndex)
+            else trackToMove.copy(originalOrder = toIndex)
+        currentList.add(toIndex, newTrack)
+
+
+        val newList =
+            if (isShuffleEnabled.value){
+                currentList.mapIndexed { id, track ->
+                    track.copy(
+                        shuffledOrder = id,
+                    )}
+            }
+            else {
+                currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
+            }
+
+        Log.d("index", currentlyPlaying)
+        val nextIndex = newList.indexOfFirst { it.queueId==currentlyPlaying }
+        Log.d("index", newList.joinToString())
+        Log.d("index", nextIndex.toString())
+//        controller.moveMediaItem(fromIndex, toIndex)
+
+        controller.setMediaItems(newList.map { toMediaItem(it.track) },
+//            false
+            nextIndex, controller.currentPosition
+        )
+        _currentTrack.value = newList[controller.currentMediaItemIndex].track
+
+        updateQueue(newList)
+        updatePlaybackSession()
+
     }
 
     fun playNext(track: TrackInfo) {
@@ -426,13 +519,17 @@ class PlayerViewModel @Inject constructor (
             currentList.removeAt(index)
             _currentTrack.value = currentList[controller.currentMediaItemIndex].track
 
+            val originalOrderLookup = currentList
+                .sortedBy { it.originalOrder }
+                .mapIndexed { index, track -> track.queueId to index }
+                .toMap()
 
             val newList =
                 if (isShuffleEnabled.value){
                     currentList.mapIndexed { id, track ->
                         track.copy(
                             shuffledOrder = id,
-                            originalOrder = currentList.sortedBy { it.originalOrder }.indexOfFirst { it.queueId==track.queueId }
+                            originalOrder = originalOrderLookup[track.queueId] ?: id
                         )}
                 }
                 else {

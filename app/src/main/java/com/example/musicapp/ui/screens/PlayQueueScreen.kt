@@ -1,8 +1,10 @@
 package com.example.musicapp.ui.screens
 
 import android.util.Log
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,23 +28,37 @@ fun PlayQueueScreen(
     playerViewModel: PlayerViewModel
 ){
     val lazyListState = rememberLazyListState()
-//    var visibleQueue by remember { mutableStateOf(tracks.toList()) }
+    var isDragging by remember { mutableStateOf(false) }
+    var visibleQueue by remember { mutableStateOf(tracks.toList()) }
 
-//    Log.d("PlayQueue", "tracks: ${tracks.size}")
-//    Log.d("PlayQueue", "queue: ${visibleQueue.size}")
-//    Log.d("PlayQueue", "IDs: ${visibleQueue.map { it.track.trackId }}")
-
-
-
-    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-//        visibleQueue = visibleQueue.toMutableList().apply {
-//            add(to.index, removeAt(from.index))
-//        }
- //       playerViewModel.updateQueue(visibleQueue)
-        playerViewModel.moveTrack(from.index, to.index)
+    LaunchedEffect(tracks) {
+        if (!isDragging) {
+            visibleQueue = tracks.toList()
+        }
     }
 
-    val visualTracks = tracks.map { track -> VisualTrack(key = track.queueId, data = track.track) }
+    val reorderableLazyListState = rememberReorderableLazyListState (
+        lazyListState = lazyListState,
+        onMove = { from, to ->
+            visibleQueue = visibleQueue.toMutableList().apply {
+                add(to.index, removeAt(from.index))
+            }
+        }
+    )
+//        playerViewModel.updateQueue(visibleQueue)
+
+    LaunchedEffect(reorderableLazyListState.isAnyItemDragging) {
+        if (reorderableLazyListState.isAnyItemDragging) {
+            playerViewModel.startDragging()
+            isDragging = true
+        } else if (isDragging) {
+            playerViewModel.finalizeMove(visibleQueue)
+            isDragging = false
+        }
+    }
+
+
+    val visualTracks = visibleQueue.map { track -> VisualTrack(key = track.queueId, data = track.track) }
 
     TrackList(
         visualTracks,
