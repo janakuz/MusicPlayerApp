@@ -1,6 +1,9 @@
 package com.example.musicapp.data.repository
 
+import android.util.Log
 import com.example.musicapp.data.dao.AlbumDao
+import com.example.musicapp.data.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.Release
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.dto.TrackInfo
@@ -17,7 +20,8 @@ import com.example.musicapp.ui.components.SortField
 class OfflineAlbumRepository(
     private val albumDao: AlbumDao,
     private val musicbrainzApiService: MusicbrainzApiService,
-    private val coverArtArchiveApiService: CoverArtArchiveApiService) : AlbumRepository {
+    private val coverArtArchiveApiService: CoverArtArchiveApiService,
+    private val discogsApiService: DiscogsApiService) : AlbumRepository {
 
     override fun getAllAlbumsByName(): Flow<List<Album>> =
         albumDao.getAllAlbumsByName()
@@ -48,12 +52,64 @@ class OfflineAlbumRepository(
     override fun getAlbum(id: Int): Flow<Album> =
         albumDao.getAlbum(id)
 
-    override suspend fun findAlbumMB(query: String) : ReleaseSearchResponse {
-        return musicbrainzApiService.findAlbum(query)
+    override suspend fun findAlbumMB(query: String) : ReleaseSearchResponse? {
+        return try {
+            musicbrainzApiService.findAlbum(query)
+        }
+        catch (e: Exception){
+            Log.e("album search", e.message.toString())
+            null
+        }
     }
 
-    override suspend fun getAlbumArt(mbid: String): String {
-        return coverArtArchiveApiService.getAlbumImage(mbid).images[0].image.replace("http://", "https://")
+    override suspend fun findAlbumDiscogs(
+        artist: String,
+        album: String,
+        year: String?
+    ): DiscogsSearchResponse? {
+        return try {
+            val response = discogsApiService.searchAlbum(artist, album, year)
+            if (response.results.isEmpty()){
+                try {
+                    discogsApiService.searchAlbum(artist, album, null)
+                }
+                catch (e: Exception){
+                    Log.e("discogs search", e.message.toString())
+                    null
+                }
+            }
+            else{
+                response
+            }
+        }
+        catch (e: Exception){
+            Log.e("discogs search", e.message.toString())
+            null
+        }
+    }
+
+    override suspend fun getAlbumDiscogs(releaseId: String): AlbumDiscogsResponse? {
+        return try{
+            discogsApiService.getAlbum(releaseId)
+        }
+        catch (e: Exception){
+            Log.e("discogs album", e.message.toString())
+            null
+        }
+    }
+
+    override suspend fun getAlbumArt(mbid: String): String? {
+        return try {
+            val response = coverArtArchiveApiService.getAlbumImage(mbid)
+            if (response.images.isNotEmpty()) {
+                response.images[0].image.replace("http://", "https://")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("AlbumArt", "Failed to fetch art for $mbid: ${e.message}")
+            null
+        }
     }
 
     override suspend fun insertAll(albums: List<Album>) {

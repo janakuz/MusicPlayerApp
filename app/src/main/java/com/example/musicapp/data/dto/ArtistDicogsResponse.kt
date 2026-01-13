@@ -3,7 +3,10 @@ package com.example.musicapp.data.dto
 import com.google.gson.annotations.SerializedName
 
 data class ArtistDicogsResponse(
-    val images: List<DiscogsImage>
+    val id: Int,
+    val name: String,
+    val profile: String,
+    val images: List<DiscogsImage>?
 )
 
 data class DiscogsImage(

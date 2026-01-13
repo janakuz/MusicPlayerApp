@@ -1,6 +1,8 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.LibraryScanner
@@ -14,7 +16,7 @@ import javax.inject.Inject
 
 data class ScanUiState(
     val isScanning: Boolean = false,
-    val progress: Int = 0, // optional
+    val progress: Int = 0,
     val error: String? = null
 )
 
@@ -26,12 +28,15 @@ class LibraryScanViewModel @Inject constructor(
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     fun startScan(context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isScanning = true, error = null) }
             try {
-                scanner.scanAll(context)
-                _uiState.update { it.copy(isScanning = false) }
+                scanner.scanAll(context) { progress ->
+                    _uiState.update { it.copy(progress = progress) }
+                }
+//                _uiState.update { it.copy(isScanning = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isScanning = false, error = e.message) }
             }

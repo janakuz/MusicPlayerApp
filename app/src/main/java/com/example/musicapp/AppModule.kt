@@ -245,8 +245,13 @@ object AppModule {
     @Singleton
     fun provideAlbumRepository(albumDao: AlbumDao,
                                musicbrainzApiService: MusicbrainzApiService,
-                               coverArtArchiveApiService: CoverArtArchiveApiService): AlbumRepository {
-        return OfflineAlbumRepository(albumDao, musicbrainzApiService, coverArtArchiveApiService)
+                               coverArtArchiveApiService: CoverArtArchiveApiService,
+                               discogsApiService: DiscogsApiService): AlbumRepository {
+        return OfflineAlbumRepository(
+            albumDao,
+            musicbrainzApiService,
+            coverArtArchiveApiService,
+            discogsApiService)
     }
 
     @Provides

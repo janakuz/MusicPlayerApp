@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.dto.ArtistDicogsResponse
 import com.example.musicapp.data.dto.ArtistMBResponse
 import com.example.musicapp.data.entity.Artist
 import kotlinx.coroutines.flow.Flow
@@ -20,9 +21,9 @@ interface ArtistRepository {
 
     suspend fun getArtistMusicbrainzInfo(mbid: String): ArtistMBResponse
 
-    suspend fun getArtistImage(discogsId: String): String
+    suspend fun getArtistDiscogsInfo(discogsId: String): ArtistDicogsResponse?
 
-    suspend fun getArtistBio(mbid: String): String
+    suspend fun getArtistBio(mbid: String?, name: String): String
 
     suspend fun insertAll(artists: List<Artist>)
 

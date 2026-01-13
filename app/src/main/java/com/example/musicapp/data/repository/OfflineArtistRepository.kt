@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import android.util.Log
 import com.example.musicapp.data.dao.ArtistDao
 import com.example.musicapp.data.dto.ArtistDicogsResponse
 import com.example.musicapp.data.dto.ArtistMBResponse
@@ -46,12 +47,30 @@ class OfflineArtistRepository(
         return musicbrainzApiService.getArtist(mbid)
     }
 
-    override suspend fun getArtistImage(discogsId: String): String {
-        return discogsApiService.getImages(discogsId).images[0].resourceUrl
+    override suspend fun getArtistDiscogsInfo(discogsId: String): ArtistDicogsResponse? {
+        return try {
+            discogsApiService.getArtist(discogsId)
+        } catch (e: Exception) {
+            Log.e("ArtistImage", "Failed to fetch image for $discogsId: ${e.message}")
+            null
+        }
     }
 
-    override suspend fun getArtistBio(mbid: String): String {
-        return lastfmApiService.getArtistInfo(mbid = mbid).artist.bio.content
+    override suspend fun getArtistBio(mbid: String?, name: String): String {
+        return try {
+            val response = lastfmApiService.getArtistInfo(mbid = mbid, artist = null)
+            response.artist.bio.content
+        }
+        catch (e: Exception) {
+            try {
+                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+                fallbackResponse.artist.bio.content
+            }
+            catch (e: Exception){
+                "No bio available."
+            }
+        }
+
     }
 
     override suspend fun insertAll(artists: List<Artist>) {
