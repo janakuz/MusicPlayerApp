@@ -27,7 +27,7 @@ import javax.inject.Inject
 import kotlin.toString
 import kotlin.collections.groupBy
 
-class LibraryScanner @Inject constructor(
+class LegacyLibraryScanner @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
     private val albumArtistRepository: AlbumArtistRepository,
@@ -35,7 +35,6 @@ class LibraryScanner @Inject constructor(
 ) {
 
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     suspend fun scanAll(context: Context, onProgress: (Int) -> Unit) {
         val audioEntries = queryMediaStore(context)
 
@@ -47,7 +46,6 @@ class LibraryScanner @Inject constructor(
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     private suspend fun queryMediaStore(context: Context): List<RawAudioEntry> {
         val list = mutableListOf<RawAudioEntry>()
         val projection = arrayOf(
@@ -65,7 +63,7 @@ class LibraryScanner @Inject constructor(
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         withContext(Dispatchers.IO) {
             context.contentResolver.query(
-                MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 projection,
                 selection,
                 null,
@@ -102,8 +100,8 @@ class LibraryScanner @Inject constructor(
                         duration = duration ?: 0L,
                         trackNumber = trackNum ?: 0,
                         albumArt = filePath,
-                        releaseDate = year
-
+                        releaseDate = year,
+                        filePath = filePath
                     )
                 }
             }
@@ -130,7 +128,7 @@ class LibraryScanner @Inject constructor(
             if (existingArtist != null) {
                 result[name] = existingArtist
             } else {
-                val new = Artist(name = name)
+                val new = Artist(name = name, searchKey = name.normalizeForMatching())
                 toInsert += new
             }
         }
@@ -185,7 +183,8 @@ class LibraryScanner @Inject constructor(
                     discogsId = null,
                     releaseDate = album.year,
                     label = null,
-                    numTracks = 0
+                    numTracks = 0,
+                    searchKey = album.title.normalizeForMatching()
                 )
                 val mbQuery = "release:${album.title} artist:${album.artist} date:${album.year}"
                 val mbAlbumSearch = albumRepository.findAlbumMB(mbQuery)
@@ -310,7 +309,8 @@ class LibraryScanner @Inject constructor(
                         bio = bio,
                         mbId = artistMbid,
                         image = artistImage,
-                        discogsId = discogsId
+                        discogsId = discogsId,
+                        searchKey = album.artist.normalizeForMatching()
                     )
 
                     Log.d("artist before insert", newArtist.name)
@@ -489,6 +489,7 @@ class LibraryScanner @Inject constructor(
 
 data class RawAudioEntry(
     val fileUri: String,
+    val filePath: String,
     val title: String?,
     val artistName: String?,
     val albumTitle: String?,

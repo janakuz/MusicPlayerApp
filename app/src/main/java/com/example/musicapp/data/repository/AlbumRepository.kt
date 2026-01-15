@@ -25,6 +25,8 @@ interface AlbumRepository {
 
     fun getAlbum(id: Int): Flow<Album>
 
+    suspend fun getByTitle(title: String, year: String?): Album?
+
     suspend fun findAlbumMB(query: String): ReleaseSearchResponse?
 
     suspend fun findAlbumDiscogs(artist: String, album: String, year: String?): DiscogsSearchResponse?

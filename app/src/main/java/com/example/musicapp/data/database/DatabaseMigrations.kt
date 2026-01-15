@@ -50,4 +50,13 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE artists add searchKey TEXT NOT NULL DEFAULT '';")
+        db.execSQL("ALTER TABLE albums add searchKey TEXT NOT NULL DEFAULT '';")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_artists_searchKey ON artists(searchKey)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_albums_searchKey ON albums(searchKey)")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)

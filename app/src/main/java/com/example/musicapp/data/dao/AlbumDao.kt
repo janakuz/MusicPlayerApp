@@ -58,6 +58,18 @@ interface AlbumDao {
     @Query("SELECT * FROM albums WHERE id=:id")
     fun getAlbum(id: Int): Flow<Album>
 
+    @Query("SELECT * " +
+            "FROM albums where searchKey=:title and " +
+            "releaseDate LIKE :year || '%'" +
+            "LIMIT 1")
+    suspend fun getAlbumByTitleAndYear(title: String, year: String): Album?
+
+    @Query("SELECT * " +
+            "FROM albums where searchKey=:title " +
+            "LIMIT 1")
+    suspend fun getAlbumByTitle(title: String): Album?
+
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertWithReturn(album: Album): Long
 

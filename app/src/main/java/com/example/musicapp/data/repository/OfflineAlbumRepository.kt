@@ -4,15 +4,13 @@ import android.util.Log
 import com.example.musicapp.data.dao.AlbumDao
 import com.example.musicapp.data.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.dto.DiscogsSearchResponse
-import com.example.musicapp.data.dto.Release
 import com.example.musicapp.data.dto.ReleaseSearchResponse
-import com.example.musicapp.data.dto.TrackInfo
 import kotlinx.coroutines.flow.Flow
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
-import com.example.musicapp.data.service.LastfmApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
+import com.example.musicapp.normalizeForMatching
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.components.SortField
 
@@ -51,6 +49,15 @@ class OfflineAlbumRepository(
 
     override fun getAlbum(id: Int): Flow<Album> =
         albumDao.getAlbum(id)
+
+    override suspend fun getByTitle(title: String, year: String?): Album? {
+        return if (year != null) {
+            albumDao.getAlbumByTitleAndYear(title.normalizeForMatching(), year) ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
+        } else{
+            albumDao.getAlbumByTitle(title.normalizeForMatching())
+        }
+
+    }
 
     override suspend fun findAlbumMB(query: String) : ReleaseSearchResponse? {
         return try {

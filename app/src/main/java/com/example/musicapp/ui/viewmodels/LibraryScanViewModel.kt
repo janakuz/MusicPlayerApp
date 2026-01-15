@@ -5,7 +5,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.LibraryScanner
+import com.example.musicapp.LegacyLibraryScanner
+import com.example.musicapp.LocalLibraryScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,13 +23,12 @@ data class ScanUiState(
 
 @HiltViewModel
 class LibraryScanViewModel @Inject constructor(
-    private val scanner: LibraryScanner,
+    private val scanner: LocalLibraryScanner,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     fun startScan(context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isScanning = true, error = null) }

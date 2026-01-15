@@ -15,6 +15,8 @@ interface ArtistRepository {
 
     fun getArtist(id: Int): Flow<Artist>
 
+    suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int
+
     suspend fun getArtistByName(name: String): List<Artist>
 
     suspend fun getArtistByMbid(mbId: String): Artist?
@@ -30,6 +32,8 @@ interface ArtistRepository {
     suspend fun insertAllString(artists: List<String>)
 
     suspend fun insert(artist: Artist)
+
+    suspend fun insertByName(name: String): Long
 
     suspend fun insertWithReturn(artist: Artist): Long
 

@@ -8,6 +8,7 @@ import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
+import com.example.musicapp.normalizeForMatching
 import kotlinx.coroutines.flow.Flow
 
 class OfflineArtistRepository(
@@ -33,6 +34,10 @@ class OfflineArtistRepository(
 
     override fun getArtist(id: Int): Flow<Artist> {
         return artistDao.getArtist(id)
+    }
+
+    override suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int {
+        return artistDao.getSingleArtistByName(searchKey)?.id ?: insertByName(name).toInt()
     }
 
     override suspend fun getArtistByName(name: String): List<Artist> {
@@ -79,6 +84,10 @@ class OfflineArtistRepository(
 
     override suspend fun insert(artist: Artist) = artistDao.insert(artist)
 
+    override suspend fun insertByName(name: String): Long {
+        return artistDao.insertWithReturn(Artist(name = name, searchKey = name.normalizeForMatching()))
+    }
+
     override suspend fun insertWithReturn(artist: Artist): Long {
         return artistDao.insertWithReturn(artist)
     }
@@ -92,7 +101,7 @@ class OfflineArtistRepository(
     }
 
     override suspend fun insertAllString(names: List<String>) {
-        val artists = names.map { Artist(name = it) }
+        val artists = names.map { Artist(name = it, searchKey = it.normalizeForMatching()) }
         artistDao.insertAll(artists)
     }
 }

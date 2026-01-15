@@ -45,9 +45,12 @@ interface ArtistDao {
     @Query("SELECT * FROM artists where LOWER(name)=LOWER(:name)")
     suspend fun getArtistByName(name: String): List<Artist>
 
+    @Query("SELECT * FROM artists where searchKey=:name " +
+            "LIMIT 1")
+    suspend fun getSingleArtistByName(name: String): Artist?
+
     @Query("SELECT * FROM artists where mbId=:mbId")
     suspend fun getArtistByMbid(mbId: String): Artist?
-
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(artists: List<Artist>)
@@ -57,7 +60,6 @@ interface ArtistDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertWithReturn(artist: Artist): Long
-
 
     @Update
     suspend fun update(artist: Artist)
