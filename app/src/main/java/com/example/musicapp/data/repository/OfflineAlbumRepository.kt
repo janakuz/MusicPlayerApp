@@ -13,6 +13,7 @@ import com.example.musicapp.data.service.MusicbrainzApiService
 import com.example.musicapp.normalizeForMatching
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.components.SortField
+import kotlinx.coroutines.delay
 
 
 class OfflineAlbumRepository(
@@ -50,6 +51,14 @@ class OfflineAlbumRepository(
     override fun getAlbum(id: Int): Flow<Album> =
         albumDao.getAlbum(id)
 
+    override suspend fun getAll(): List<Album> {
+        return albumDao.getAll()
+    }
+
+    override suspend fun getById(id: Int): Album {
+        return albumDao.getById(id)
+    }
+
     override suspend fun getByTitle(title: String, year: String?): Album? {
         return if (year != null) {
             albumDao.getAlbumByTitleAndYear(title.normalizeForMatching(), year) ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
@@ -78,6 +87,7 @@ class OfflineAlbumRepository(
             val response = discogsApiService.searchAlbum(artist, album, year)
             if (response.results.isEmpty()){
                 try {
+                    delay(1000)
                     discogsApiService.searchAlbum(artist, album, null)
                 }
                 catch (e: Exception){

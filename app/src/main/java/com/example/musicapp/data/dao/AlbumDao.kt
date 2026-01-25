@@ -58,6 +58,12 @@ interface AlbumDao {
     @Query("SELECT * FROM albums WHERE id=:id")
     fun getAlbum(id: Int): Flow<Album>
 
+    @Query("SELECT * FROM albums")
+    suspend fun getAll(): List<Album>
+
+    @Query("SELECT * FROM albums WHERE id=:id")
+    suspend fun getById(id: Int): Album
+
     @Query("SELECT * " +
             "FROM albums where searchKey=:title and " +
             "releaseDate LIKE :year || '%'" +

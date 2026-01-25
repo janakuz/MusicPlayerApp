@@ -16,5 +16,6 @@ data class Album(
     val mbId: String?,
     val label: String?,
     val discogsId: String?,
-    val releaseDate: String?
+    val releaseDate: String?,
+    val isEnriched: Boolean = false
 )

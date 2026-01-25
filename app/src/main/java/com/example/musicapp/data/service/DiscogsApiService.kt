@@ -15,7 +15,7 @@ interface DiscogsApiService {
     @GET("albums/{releaseId}")
     suspend fun getAlbum(@Path("releaseId") albumId: String) : AlbumDiscogsResponse
 
-    @GET("/database/search/")
+    @GET("/database/search")
     suspend fun searchAlbum(
         @Query("artist") artist: String,
         @Query("release_title") title: String,

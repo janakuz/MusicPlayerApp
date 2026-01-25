@@ -9,5 +9,6 @@ data class DiscogsResult(
     val year: String,
     val label: List<String>?,
     val cover_image: String,
-    val resource_url: String
+    val resource_url: String,
+    val title: String
 )

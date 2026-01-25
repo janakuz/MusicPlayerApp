@@ -109,6 +109,16 @@ interface AlbumArtistDao {
     fun getAll(): Flow<List<AlbumInfo>>
 
     @Query("""
+    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration
+    FROM albums a
+    JOIN album_artists aa ON aa.albumId = a.id
+    JOIN artists ar ON aa.artistId = ar.id
+    WHERE a.isEnriched = FALSE OR ar.isEnriched = FALSE
+    ORDER BY a.duration ASC
+    """)
+    suspend fun getAllUnenriched(): List<AlbumInfo>
+
+    @Query("""
     SELECT a.*
     FROM albums a
     JOIN album_artists aa ON aa.albumId = a.id
@@ -133,5 +143,7 @@ interface AlbumArtistDao {
 """)
     suspend fun getAllAlbumArtistsWithArtistInfo(): List<AlbumIdWithArtist>
 
+    @Query("UPDATE album_artists SET artistId = :newArtistId WHERE albumId = :albumId AND artistId = :oldArtistId")
+    suspend fun updateArtistForAlbum(albumId: Int, oldArtistId: Int, newArtistId: Int)
 
 }

@@ -14,5 +14,6 @@ data class Artist(
     val image: String? = null,
     val mbId: String? = null,
     val discogsId: String? = null,
-    val lastFmPage: String? = null
+    val lastFmPage: String? = null,
+    val isEnriched: Boolean = false
 )

@@ -59,4 +59,12 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE artists add isEnriched BOOLEAN NOT NULL DEFAULT FALSE;")
+        db.execSQL("ALTER TABLE albums add isEnriched BOOLEAN NOT NULL DEFAULT FALSE;")
+    }
+}
+
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)

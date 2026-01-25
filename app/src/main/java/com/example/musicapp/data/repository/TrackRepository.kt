@@ -27,6 +27,8 @@ interface TrackRepository {
 
     fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
 
+    suspend fun getAlbumTracks(albumId: Int): List<TrackInfo>
+
     suspend fun getTrackByUri(uri: String): Track?
 
     suspend fun insertAll(tracks: List<Track>)

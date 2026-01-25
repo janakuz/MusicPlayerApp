@@ -5,17 +5,26 @@ import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import com.example.musicapp.data.dto.ArtistSummary
+import com.example.musicapp.data.dto.DiscogsAlbumArtist
+import com.example.musicapp.data.dto.DiscogsSearchResponse
+import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
+import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
+import kotlin.math.round
 
 class LocalLibraryScanner@Inject constructor(
     private val artistRepository: ArtistRepository,
@@ -25,7 +34,7 @@ class LocalLibraryScanner@Inject constructor(
 ) {
 
 
-    suspend fun scanAll(context: Context, onProgress: (Int) -> Unit) {
+    suspend fun scanAll(context: Context, onProgress: (Float) -> Unit) {
         val audioEntries = queryMediaStore(context)
 
 //        val albumsAndArtists = extractAlbumsAndArtists(audioEntries) { progress ->
@@ -41,18 +50,12 @@ class LocalLibraryScanner@Inject constructor(
         val commonNames = listOf("cover", "folder", "front", "album", "art")
         val extensions = listOf("jpg", "jpeg", "png")
 
-        Log.d("scan image", folder.toString())
-
         val files = folder.listFiles() ?: return null
-
-        Log.d("scan image", files.joinToString())
 
         val bestMatch = files.find { file ->
             val name = file.nameWithoutExtension.lowercase()
             commonNames.contains(name) && extensions.contains(file.extension.lowercase())
         }
-
-        Log.d("scan image", bestMatch.toString())
 
         return bestMatch?.absolutePath ?: files.find {
             extensions.contains(it.extension.lowercase())
@@ -109,12 +112,6 @@ class LocalLibraryScanner@Inject constructor(
                     val rawId = cursor.getLong(idCol)
                     val castedId = rawId.toInt()
 
-                    if (rawId != castedId.toLong()) {
-                        Log.e("ID_CHECK", "!!! OVERFLOW DETECTED !!!")
-                        Log.e("ID_CHECK", "MediaStore ID: $rawId | Casted Int ID: $castedId")
-                    } else {
-                        Log.d("ID_CHECK", "ID is safe: $rawId matches $castedId")
-                    }
                     list += RawAudioEntry(
                         fileUri = contentUri,
                         filePath = filePath,
@@ -138,7 +135,7 @@ class LocalLibraryScanner@Inject constructor(
 
     private suspend fun buildTracks(
         entries: List<RawAudioEntry>,
-        onProgressUpdate: (Int) -> Unit
+        onProgressUpdate: (Float) -> Unit
     ) {
         var done = 0
         val total = entries.size
@@ -216,7 +213,7 @@ class LocalLibraryScanner@Inject constructor(
             }
 
             if (done % 5 == 0 || done == total - 1) {
-                val percent = ((done.toFloat() / total) * 100).toInt()
+                val percent = (done.toFloat() / total) * 100
                 onProgressUpdate(percent)
             }
 
@@ -226,7 +223,20 @@ class LocalLibraryScanner@Inject constructor(
             trackRepository.insertAll(toInsert)
         }
 
-        Log.d("scan", "after loop")
+        val allAlbums = albumRepository.getAll()
+        for (album in allAlbums){
+            var toUpdate = album
+            val tracks = trackRepository.getAlbumTracks(album.id)
+            val total = tracks.sumOf { it.duration }
+            val numTracks = tracks.size
+            if (toUpdate.duration != total)
+                toUpdate = toUpdate.copy(duration = total)
+            if (toUpdate.numTracks != numTracks)
+                toUpdate = toUpdate.copy(numTracks = numTracks)
+            albumRepository.update(toUpdate)
+        }
+
+        onProgressUpdate(100F)
 
     }
 
@@ -237,8 +247,6 @@ class LocalLibraryScanner@Inject constructor(
     }
 
 
-    private suspend fun enrichMetadata(){
-
-    }
 
 }
+

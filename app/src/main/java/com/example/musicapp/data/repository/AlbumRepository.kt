@@ -25,6 +25,10 @@ interface AlbumRepository {
 
     fun getAlbum(id: Int): Flow<Album>
 
+    suspend fun getAll(): List<Album>
+
+    suspend fun getById(id: Int): Album
+
     suspend fun getByTitle(title: String, year: String?): Album?
 
     suspend fun findAlbumMB(query: String): ReleaseSearchResponse?
