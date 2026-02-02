@@ -45,6 +45,35 @@ class LocalLibraryScanner@Inject constructor(
     }
 
 
+    suspend fun findChanges(context: Context) {
+        val audioEntries = queryMediaStore(context = context)
+        val actualAudioEntries = audioEntries.filter { entry ->
+            File(entry.filePath).exists()
+        }
+        val fileUris = actualAudioEntries.map { it.fileUri }
+        val dbUris = trackRepository.getAllUris()
+
+        Log.d("rescan files", "${fileUris.size}")
+        Log.d("rescan db", dbUris.size.toString())
+
+        val toDelete = dbUris - fileUris.toSet()
+        val toAdd = fileUris - dbUris.toSet()
+
+        Log.d("rescan toDelete", toDelete.size.toString())
+        Log.d("rescan toAdd", toAdd.size.toString())
+
+        trackRepository.deleteByUri(toDelete)
+        albumRepository.deleteOrphaned()
+        artistRepository.deleteOrphaned()
+
+        val toAddAudioEntries = audioEntries.filter { toAdd.contains(it.fileUri) }
+        buildTracks(
+            entries = toAddAudioEntries,
+            onProgressUpdate = null
+        )
+
+    }
+
     private fun findAlbumArt(fileUri: String): String? {
         val folder = File(fileUri).parentFile ?: return null
         val commonNames = listOf("cover", "folder", "front", "album", "art")
@@ -135,7 +164,7 @@ class LocalLibraryScanner@Inject constructor(
 
     private suspend fun buildTracks(
         entries: List<RawAudioEntry>,
-        onProgressUpdate: (Float) -> Unit
+        onProgressUpdate: ((Float) -> Unit)?
     ) {
         var done = 0
         val total = entries.size
@@ -212,7 +241,7 @@ class LocalLibraryScanner@Inject constructor(
                 toInsert.clear()
             }
 
-            if (done % 5 == 0 || done == total - 1) {
+            if (onProgressUpdate != null && (done % 5 == 0 || done == total - 1)) {
                 val percent = (done.toFloat() / total) * 100
                 onProgressUpdate(percent)
             }
@@ -236,7 +265,7 @@ class LocalLibraryScanner@Inject constructor(
             albumRepository.update(toUpdate)
         }
 
-        onProgressUpdate(100F)
+        if (onProgressUpdate != null) onProgressUpdate(100F)
 
     }
 

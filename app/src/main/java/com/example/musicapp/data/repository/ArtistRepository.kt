@@ -37,9 +37,9 @@ interface ArtistRepository {
 
     suspend fun insertWithReturn(artist: Artist): Long
 
-
     suspend fun update(artist: Artist)
 
     suspend fun delete(artist: Artist)
 
+    suspend fun deleteOrphaned()
 }

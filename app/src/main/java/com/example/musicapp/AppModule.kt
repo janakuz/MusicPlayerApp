@@ -27,9 +27,11 @@ import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflinePlayQueueRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
+import com.example.musicapp.data.repository.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
+import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
@@ -295,11 +297,18 @@ object AppModule {
         return OfflinePlayQueueRepository(dataStore, queueDao)
     }
 
+
+
     @Provides
     @Singleton
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
         return WorkManager.getInstance(context)
     }
 
+    @Provides
+    @Singleton
+    fun provideWorkManagerRepository(workManager: WorkManager): WorkerManagerRepository {
+        return OfflineWorkerManagerRepository(workManager)
+    }
 
 }

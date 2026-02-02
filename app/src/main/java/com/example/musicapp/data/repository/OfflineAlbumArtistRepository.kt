@@ -39,6 +39,10 @@ class OfflineAlbumArtistRepository(private val albumArtistDao : AlbumArtistDao) 
         return albumArtistDao.getAllUnenriched()
     }
 
+    override suspend fun getAllUnattempted(): List<AlbumInfo> {
+        return albumArtistDao.getAllUnattempted()
+    }
+
     override suspend fun getAllWithArtistInfo(): List<AlbumIdWithArtist> {
         return albumArtistDao.getAllAlbumArtistsWithArtistInfo()
     }

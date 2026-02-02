@@ -61,10 +61,72 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
 
 val MIGRATION_8_9 = object : Migration(8, 9) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE artists add isEnriched BOOLEAN NOT NULL DEFAULT FALSE;")
-        db.execSQL("ALTER TABLE albums add isEnriched BOOLEAN NOT NULL DEFAULT FALSE;")
+        db.execSQL("ALTER TABLE artists add isEnriched INTEGER NOT NULL DEFAULT 0;")
+        db.execSQL("ALTER TABLE albums add isEnriched INTEGER NOT NULL DEFAULT 0;")
     }
 }
 
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+val MIGRATION_9_10 = object : Migration(9,10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL("ALTER TABLE albums RENAME TO albums_old")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `albums` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`title` TEXT NOT NULL, " +
+                "`searchKey` TEXT NOT NULL, " +
+                "`image` TEXT, " +
+                "`duration` INTEGER NOT NULL, " +
+                "`numTracks` INTEGER NOT NULL, " +
+                "`mbId` TEXT, " +
+                "`label` TEXT, " +
+                "`discogsId` TEXT, " +
+                "`releaseDate` TEXT, " +
+                "`isEnriched` INTEGER NOT NULL DEFAULT 0, " +
+                "`enrichmentAttempted` INTEGER NOT NULL DEFAULT 0)")
+
+
+        db.execSQL("""
+            INSERT INTO albums (id, title, searchKey, image, duration, numTracks, mbId, label, discogsId, releaseDate, isEnriched)
+            SELECT id, title, searchKey, image, duration, numTracks, mbId, label, discogsId, releaseDate, isEnriched FROM albums_old
+        """)
+        db.execSQL("DROP TABLE albums_old")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_albums_searchKey` ON `albums` (`searchKey`)")
+
+        db.execSQL("ALTER TABLE artists RENAME TO artists_old")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `artists` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`name` TEXT NOT NULL, " +
+                "`searchKey` TEXT NOT NULL, " +
+                "`bio` TEXT, " +
+                "`image` TEXT, " +
+                "`mbId` TEXT, " +
+                "`discogsId` TEXT, " +
+                "`lastFmPage` TEXT, " +
+                "`isEnriched` INTEGER NOT NULL DEFAULT 0, " +
+                "`enrichmentAttempted` INTEGER NOT NULL DEFAULT 0)")
+
+
+        db.execSQL("""
+            INSERT INTO artists (id, name, searchKey, bio, image, mbId, discogsId, lastFmPage, isEnriched)
+            SELECT id, name, searchKey, bio, image, mbId, discogsId, lastFmPage, isEnriched FROM artists_old
+        """)
+        db.execSQL("DROP TABLE artists_old")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_artists_searchKey` ON `artists` (`searchKey`)")
+
+
+
+//        db.execSQL("ALTER TABLE artists add enrichmentAttempted INTEGER NOT NULL DEFAULT 0;")
+//        db.execSQL("ALTER TABLE albums add enrichmentAttempted INTEGER NOT NULL DEFAULT 0;")
+        db.execSQL("UPDATE artists SET enrichmentAttempted = 1 WHERE isEnriched = 1")
+        db.execSQL("UPDATE albums SET enrichmentAttempted = 1 WHERE isEnriched = 1")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(
+    MIGRATION_4_5,
+    MIGRATION_5_6,
+    MIGRATION_6_7,
+    MIGRATION_7_8,
+    MIGRATION_8_9,
+    MIGRATION_9_10)

@@ -131,4 +131,10 @@ interface TrackDao {
 
     @Query("SELECT * FROM tracks WHERE fileUri=:uri")
     suspend fun getTrackByUri(uri: String): Track?
+
+    @Query("SELECT fileUri FROM tracks")
+    suspend fun getAllUris(): List<String>
+
+    @Query("DELETE FROM tracks WHERE fileUri IN (:uris)")
+    suspend fun deleteByUri(uris: List<String>)
 }

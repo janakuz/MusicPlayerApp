@@ -1,5 +1,6 @@
 package com.example.musicapp.data.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -17,5 +18,8 @@ data class Album(
     val label: String?,
     val discogsId: String?,
     val releaseDate: String?,
-    val isEnriched: Boolean = false
+    @ColumnInfo(defaultValue = "0")
+    val isEnriched: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val enrichmentAttempted: Boolean = false
 )

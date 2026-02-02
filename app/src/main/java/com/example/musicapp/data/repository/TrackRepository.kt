@@ -38,6 +38,10 @@ interface TrackRepository {
     suspend fun update(track: Track)
 
     suspend fun delete(track: Track)
+
+    suspend fun getAllUris(): List<String>
+
+    suspend fun deleteByUri(uris: List<String>)
 }
 
 

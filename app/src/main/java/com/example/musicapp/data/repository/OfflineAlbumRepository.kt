@@ -148,4 +148,8 @@ class OfflineAlbumRepository(
     override suspend fun delete(album: Album) {
         albumDao.delete(album)
     }
+
+    override suspend fun deleteOrphaned() {
+        albumDao.deleteOrphaned()
+    }
 }

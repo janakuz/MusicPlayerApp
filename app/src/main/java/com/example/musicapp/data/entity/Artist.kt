@@ -1,5 +1,6 @@
 package com.example.musicapp.data.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -15,5 +16,8 @@ data class Artist(
     val mbId: String? = null,
     val discogsId: String? = null,
     val lastFmPage: String? = null,
-    val isEnriched: Boolean = false
+    @ColumnInfo(defaultValue = "0")
+    val isEnriched: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val enrichmentAttempted: Boolean = false
 )

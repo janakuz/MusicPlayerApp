@@ -21,6 +21,8 @@ interface AlbumArtistRepository {
 
     suspend fun getAllUnenriched(): List<AlbumInfo>
 
+    suspend fun getAllUnattempted(): List<AlbumInfo>
+
     suspend fun getAllWithArtistInfo(): List<AlbumIdWithArtist>
 
     suspend fun insertAll(albumArtists: List<AlbumArtist>)

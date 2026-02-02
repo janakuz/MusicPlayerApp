@@ -66,4 +66,8 @@ interface ArtistDao {
 
     @Delete
     suspend fun delete(artist: Artist)
+
+    @Query("DELETE FROM artists WHERE id NOT IN " +
+            "(SELECT DISTINCT artistId from album_artists)")
+    suspend fun deleteOrphaned()
 }

@@ -100,6 +100,10 @@ class OfflineArtistRepository(
         artistDao.delete(artist)
     }
 
+    override suspend fun deleteOrphaned() {
+        artistDao.deleteOrphaned()
+    }
+
     override suspend fun insertAllString(names: List<String>) {
         val artists = names.map { Artist(name = it, searchKey = it.normalizeForMatching()) }
         artistDao.insertAll(artists)

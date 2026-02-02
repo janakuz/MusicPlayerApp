@@ -79,4 +79,8 @@ interface AlbumDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertWithReturn(album: Album): Long
 
+    @Query("DELETE FROM albums WHERE id NOT IN " +
+            "(SELECT DISTINCT albumId from tracks)")
+    suspend fun deleteOrphaned()
+
 }

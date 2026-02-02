@@ -36,18 +36,24 @@ class MetadataWorker @AssistedInject constructor(
     private val albumArtistRepository: AlbumArtistRepository
 ) : CoroutineWorker(context, params) {
 
+    val isManualScan = inputData.getBoolean("IS_MANUAL_SCAN", false)
+
     companion object {
         private const val CHANNEL_ID = "metadata_sync_channel"
         private const val NOTIFICATION_ID = 1
     }
 
     override suspend fun doWork(): Result {
-        createNotificationChannel()
 
-        setForeground(getForegroundInfo())
+        if (isManualScan) {
+
+            createNotificationChannel()
+
+            setForeground(getForegroundInfo())
+        }
 
         try {
-            enrichMetadata()
+            enrichMetadata(isManualScan)
             return Result.success()
         }
         catch (e: HttpException){
@@ -87,8 +93,8 @@ class MetadataWorker @AssistedInject constructor(
         notificationManager.createNotificationChannel(channel)
     }
 
-    private suspend fun enrichMetadata(){
-        val currentAlbumArtists = albumArtistRepository.getAllUnenriched()
+    private suspend fun enrichMetadata(isManual: Boolean){
+        val currentAlbumArtists = if (isManual) albumArtistRepository.getAllUnenriched() else albumArtistRepository.getAllUnattempted()
 
         var current = 0
         val total = currentAlbumArtists.size
@@ -154,11 +160,17 @@ class MetadataWorker @AssistedInject constructor(
                 toUpdate = true
             }
             if (toUpdate && !toInsert) {
+                currentArtist = currentArtist.copy(enrichmentAttempted = true)
                 artistRepository.update(currentArtist)
             }
             else if (toInsert) {
+                currentArtist = currentArtist.copy(enrichmentAttempted = true)
                 val inserted = artistRepository.insertWithReturn(currentArtist).toInt()
                 albumArtistRepository.updateAlbumArtist(albumArtist.albumId, albumArtist.artistId, inserted)
+            }
+            else if (currentArtist.enrichmentAttempted==false){
+                currentArtist = currentArtist.copy(enrichmentAttempted = true)
+                artistRepository.update(currentArtist)
             }
 
             val progressData = workDataOf(
@@ -194,7 +206,7 @@ class MetadataWorker @AssistedInject constructor(
             val labelName = if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) mbAlbum.labelInfo[0].label!!.name else ""
             val newReleaseDate = releaseDate ?: mbAlbum.date
 
-            val newAlbum = album.copy(mbId = mbAlbum.id, image = newAlbumArt, label = labelName, releaseDate = newReleaseDate, isEnriched = true)
+            val newAlbum = album.copy(mbId = mbAlbum.id, image = newAlbumArt, label = labelName, releaseDate = newReleaseDate, isEnriched = true, enrichmentAttempted = true)
             return AlbumMetadataResult(mbAlbumSearch, null, newAlbum)
         }
         else {
@@ -217,12 +229,12 @@ class MetadataWorker @AssistedInject constructor(
                 val labelName = if (discogsResponse.results[i].label != null && discogsResponse.results[i].label?.isNotEmpty() == true)
                     discogsResponse.results[i].label?.get(0) else ""
                 val newReleaseDate = releaseDate ?: discogsResponse.results[i].year
-                val newAlbum = album.copy(image = newAlbumArt, label = labelName, releaseDate = newReleaseDate, isEnriched = true)
+                val newAlbum = album.copy(image = newAlbumArt, label = labelName, releaseDate = newReleaseDate, isEnriched = true, enrichmentAttempted = true)
                 return AlbumMetadataResult(mbAlbumSearch, discogsResponse, newAlbum)
             }
 
         }
-        return AlbumMetadataResult(null, null, album)
+        return AlbumMetadataResult(null, null, album.copy(enrichmentAttempted = true))
     }
 
 

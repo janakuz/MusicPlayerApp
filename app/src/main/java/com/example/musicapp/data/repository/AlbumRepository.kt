@@ -48,10 +48,6 @@ interface AlbumRepository {
     suspend fun update(album: Album)
 
     suspend fun delete(album: Album)
-}
 
-enum class SortFieldAlbum{
-    TITLE,
-    DURATION,
-    RELEASE_DATE
+    suspend fun deleteOrphaned()
 }

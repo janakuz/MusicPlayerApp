@@ -69,4 +69,12 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
     override suspend fun delete(track: Track) {
         trackDao.delete(track)
     }
+
+    override suspend fun getAllUris(): List<String> {
+        return trackDao.getAllUris()
+    }
+
+    override suspend fun deleteByUri(uris: List<String>) {
+        trackDao.deleteByUri(uris)
+    }
 }
