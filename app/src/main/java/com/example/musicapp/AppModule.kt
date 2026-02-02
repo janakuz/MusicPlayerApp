@@ -10,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.work.WorkManager
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
 import com.example.musicapp.data.dao.ArtistDao
@@ -26,9 +27,11 @@ import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflinePlayQueueRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
+import com.example.musicapp.data.repository.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
+import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
@@ -143,7 +146,11 @@ object AppModule {
 
     @Provides
     fun provideLoggingInterceptor(): HttpLoggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BASIC
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     @Provides
@@ -245,8 +252,13 @@ object AppModule {
     @Singleton
     fun provideAlbumRepository(albumDao: AlbumDao,
                                musicbrainzApiService: MusicbrainzApiService,
-                               coverArtArchiveApiService: CoverArtArchiveApiService): AlbumRepository {
-        return OfflineAlbumRepository(albumDao, musicbrainzApiService, coverArtArchiveApiService)
+                               coverArtArchiveApiService: CoverArtArchiveApiService,
+                               discogsApiService: DiscogsApiService): AlbumRepository {
+        return OfflineAlbumRepository(
+            albumDao,
+            musicbrainzApiService,
+            coverArtArchiveApiService,
+            discogsApiService)
     }
 
     @Provides
@@ -285,5 +297,18 @@ object AppModule {
         return OfflinePlayQueueRepository(dataStore, queueDao)
     }
 
+
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
+        return WorkManager.getInstance(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWorkManagerRepository(workManager: WorkManager): WorkerManagerRepository {
+        return OfflineWorkerManagerRepository(workManager)
+    }
 
 }

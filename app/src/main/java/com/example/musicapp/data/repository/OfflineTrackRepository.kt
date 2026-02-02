@@ -45,6 +45,14 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
     override fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>> =
         trackDao.getAllTracksInAlbum(albumId)
 
+    override suspend fun getAlbumTracks(albumId: Int): List<TrackInfo> {
+        return trackDao.getAlbumTracks(albumId)
+    }
+
+    override suspend fun getTrackByUri(uri: String): Track? {
+        return trackDao.getTrackByUri(uri)
+    }
+
 
     override suspend fun insertAll(tracks: List<Track>) {
         trackDao.insertAll(tracks)
@@ -60,5 +68,13 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
 
     override suspend fun delete(track: Track) {
         trackDao.delete(track)
+    }
+
+    override suspend fun getAllUris(): List<String> {
+        return trackDao.getAllUris()
+    }
+
+    override suspend fun deleteByUri(uris: List<String>) {
+        trackDao.deleteByUri(uris)
     }
 }

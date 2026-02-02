@@ -1,5 +1,7 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.ui.components.SortOption
@@ -23,9 +25,19 @@ interface AlbumRepository {
 
     fun getAlbum(id: Int): Flow<Album>
 
-    suspend fun findAlbumMB(query: String): ReleaseSearchResponse
+    suspend fun getAll(): List<Album>
 
-    suspend fun getAlbumArt(mbid: String): String
+    suspend fun getById(id: Int): Album
+
+    suspend fun getByTitle(title: String, year: String?): Album?
+
+    suspend fun findAlbumMB(query: String): ReleaseSearchResponse?
+
+    suspend fun findAlbumDiscogs(artist: String, album: String, year: String?): DiscogsSearchResponse?
+
+    suspend fun getAlbumDiscogs(releaseId: String): AlbumDiscogsResponse?
+
+    suspend fun getAlbumArt(mbid: String): String?
 
     suspend fun insertAll(albums: List<Album>)
 
@@ -36,10 +48,6 @@ interface AlbumRepository {
     suspend fun update(album: Album)
 
     suspend fun delete(album: Album)
-}
 
-enum class SortFieldAlbum{
-    TITLE,
-    DURATION,
-    RELEASE_DATE
+    suspend fun deleteOrphaned()
 }

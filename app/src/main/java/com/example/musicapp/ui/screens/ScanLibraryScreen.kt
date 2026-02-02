@@ -1,7 +1,6 @@
 package com.example.musicapp.ui.screens
 
 import android.Manifest
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,16 +20,17 @@ fun ScanLibraryScreen(viewModel: LibraryScanViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     Column {
         if (uiState.isScanning) {
-            Text("Scanning... ${uiState.progress}%")
-            // maybe a LinearProgressIndicator
-        } else {
+            Text("Scanning... ${uiState.scanProgress}%")
+        }
+        else if (uiState.isEnriching){
+            Text("Enriching... ${uiState.enrichmentProgress}%")
+            Text("${uiState.statusMessage}")
+        }
+        else {
 
             val context = LocalContext.current
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission =
                 Manifest.permission.READ_MEDIA_AUDIO
-            } else {
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            }
 
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission(),

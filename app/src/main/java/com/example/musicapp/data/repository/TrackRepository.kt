@@ -27,6 +27,10 @@ interface TrackRepository {
 
     fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
 
+    suspend fun getAlbumTracks(albumId: Int): List<TrackInfo>
+
+    suspend fun getTrackByUri(uri: String): Track?
+
     suspend fun insertAll(tracks: List<Track>)
 
     suspend fun insert(track: Track)
@@ -34,6 +38,10 @@ interface TrackRepository {
     suspend fun update(track: Track)
 
     suspend fun delete(track: Track)
+
+    suspend fun getAllUris(): List<String>
+
+    suspend fun deleteByUri(uris: List<String>)
 }
 
 

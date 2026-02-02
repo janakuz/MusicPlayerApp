@@ -113,8 +113,28 @@ interface TrackDao {
     fun getAllTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
 
     @Query("""
+        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        FROM tracks t
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE al.id = :albumId
+        ORDER BY t.trackNumber ASC
+        """)
+    suspend fun getAlbumTracks(albumId: Int): List<TrackInfo>
+
+    @Query("""
         SELECT * 
         FROM tracks
         """)
     fun getAllTracksFull(): Flow<List<Track>>
+
+    @Query("SELECT * FROM tracks WHERE fileUri=:uri")
+    suspend fun getTrackByUri(uri: String): Track?
+
+    @Query("SELECT fileUri FROM tracks")
+    suspend fun getAllUris(): List<String>
+
+    @Query("DELETE FROM tracks WHERE fileUri IN (:uris)")
+    suspend fun deleteByUri(uris: List<String>)
 }

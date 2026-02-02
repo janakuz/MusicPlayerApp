@@ -11,7 +11,8 @@ interface LastfmApiService {
     suspend fun getArtistInfo(
         @Query("method") method: String = "artist.getInfo",
         @Query("api_key") apiKey: String = BuildConfig.LASTFM_KEY,
-        @Query("mbid") mbid: String,
+        @Query("mbid") mbid: String?,
+        @Query("artist") artist: String?,
         @Query("format") format: String = "json"
     ) : ArtistLastfmResponse
 

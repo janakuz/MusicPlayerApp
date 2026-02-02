@@ -35,6 +35,14 @@ class OfflineAlbumArtistRepository(private val albumArtistDao : AlbumArtistDao) 
         return albumArtistDao.getAll()
     }
 
+    override suspend fun getAllUnenriched(): List<AlbumInfo> {
+        return albumArtistDao.getAllUnenriched()
+    }
+
+    override suspend fun getAllUnattempted(): List<AlbumInfo> {
+        return albumArtistDao.getAllUnattempted()
+    }
+
     override suspend fun getAllWithArtistInfo(): List<AlbumIdWithArtist> {
         return albumArtistDao.getAllAlbumArtistsWithArtistInfo()
     }
@@ -49,5 +57,13 @@ class OfflineAlbumArtistRepository(private val albumArtistDao : AlbumArtistDao) 
 
     override suspend fun delete(albumArtist: AlbumArtist) {
         albumArtistDao.delete(albumArtist)
+    }
+
+    override suspend fun updateAlbumArtist(
+        albumId: Int,
+        oldArtistId: Int,
+        newArtistId: Int
+    ) {
+        albumArtistDao.updateArtistForAlbum(albumId, oldArtistId, newArtistId)
     }
 }

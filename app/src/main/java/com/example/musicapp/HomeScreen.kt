@@ -29,6 +29,7 @@ import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.screens.AllAlbumsScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.ScanLibraryScreen
+import com.example.musicapp.ui.viewmodels.BackgroundScanViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 
 enum class HomeScreen(@StringRes val title: Int) {

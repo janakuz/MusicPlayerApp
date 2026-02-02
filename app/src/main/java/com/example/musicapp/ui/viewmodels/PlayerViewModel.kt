@@ -2,6 +2,7 @@ package com.example.musicapp.ui.viewmodels
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.content.contentValuesOf
@@ -10,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.common.Player
+import androidx.media3.session.MediaSession
 import com.example.musicapp.PlaybackService
 import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.QueueItemFull
@@ -25,6 +28,8 @@ import com.example.musicapp.data.entity.QueueItem
 import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.ui.screens.PlayQueuePreview
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.multibindings.ElementsIntoSet
@@ -43,6 +48,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration
 
@@ -52,8 +58,10 @@ class PlayerViewModel @Inject constructor (
     private val playQueueRepository: PlayQueueRepository,
     private val trackRepository: TrackRepository,
 ) : ViewModel() {
-    private val mediaController = MutableStateFlow<MediaController?>(null)
-    val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
+//    private val mediaController = MutableStateFlow<MediaController?>(null)
+//    val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
+
+    private var controller: MediaController? = null
 
     val isShuffleEnabled: StateFlow<Boolean> = playQueueRepository.shuffleOn
         .stateIn(
@@ -99,18 +107,42 @@ class PlayerViewModel @Inject constructor (
 //        initialValue = null
 //    )
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val position: StateFlow<Long> = mediaController.flatMapLatest { controller ->
-        if (controller == null || controller.currentMediaItem==null) {
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val position: StateFlow<Long> = controller.flatMapLatest { controller ->
+//        if (controller == null || controller.currentMediaItem==null) {
+//            playQueueRepository.currentSession.map { it.position }
+//        } else {
+//            tickerFlow(500).map { controller.currentPosition }
+//        }
+//    }.stateIn(
+//        scope = viewModelScope,
+//        started = SharingStarted.WhileSubscribed(5_000),
+//        initialValue = 0L
+//    )
+
+    val hasActivePlayback: StateFlow<Boolean> =
+        currentTrack.map {
+            it != null
+        }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                false
+            )
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+    val position: StateFlow<Long> =  hasActivePlayback.flatMapLatest { hasPlayback ->
+        if (!hasPlayback) {
             playQueueRepository.currentSession.map { it.position }
         } else {
-            tickerFlow(500).map { controller.currentPosition }
+            tickerFlow(500).map { controller?.currentPosition ?: 0L }
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = 0L
     )
+
 
     val duration: StateFlow<Long> = currentTrack.map { track ->
         track?.duration ?: 0L
@@ -132,29 +164,29 @@ class PlayerViewModel @Inject constructor (
 
 
             controllerFuture.addListener({
-                val controller = controllerFuture.get()
-                mediaController.value = controller
+                controller = controllerFuture.get()
+ //               val controller = controllerFuture.get()
+ //               mediaController.value = controller
 
+                val c = controller!!
 
-                viewModelScope.launch {
-                    queue.collect { newQueue ->
-                        val controller = mediaController.value ?: return@collect
-
-                        if (controller.mediaItemCount == 0 && newQueue.isNotEmpty()) {
-                            val mediaItems = newQueue.map { toMediaItem(it.track) }
-                            controller.setMediaItems(mediaItems)
-
-                            val session = playQueueRepository.currentSession.first()
-                            controller.prepare()
-                            controller.seekTo(session.playQueueIndex, session.position)
-                            _currentTrack.value = queue.value[session.playQueueIndex].track
-                        }
-                    }
-                }
-                controller.addListener(object : Player.Listener {
+                c.addListener(object : Player.Listener {
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                        _currentTrack.value = queue.value[controller.currentMediaItemIndex].track
-                        if (controller.repeatMode != Player.REPEAT_MODE_ONE) updatePlaybackSession()
+                        mediaItem.let {
+//                            _currentTrack.value = mediaItem?.localConfiguration?.tag as? TrackInfo
+                            _currentTrack.value = TrackInfo(
+                                title = mediaItem?.mediaMetadata?.title.toString(),
+                                trackId = mediaItem?.mediaId?.toInt() ?: 0,
+                                artistName = mediaItem?.mediaMetadata?.artist.toString(),
+                                albumTitle = mediaItem?.mediaMetadata?.albumTitle.toString(),
+                                albumArt = mediaItem?.mediaMetadata?.artworkUri.toString(),
+                                trackNum = mediaItem?.mediaMetadata?.trackNumber,
+                                duration = mediaItem?.mediaMetadata?.durationMs ?: 0L,
+                                fileUri = mediaItem?.requestMetadata?.mediaUri.toString(),
+                            )
+                        }
+        //                _currentTrack.value = queue.value[c.currentMediaItemIndex].track
+                        if (c.repeatMode != Player.REPEAT_MODE_ONE) updatePlaybackSession()
                     }
 
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -163,8 +195,33 @@ class PlayerViewModel @Inject constructor (
                         if (!isPlaying) updatePlaybackSession()
                     }
 
+                    override fun onPlayerError(error: PlaybackException) {
+                        Log.e("PlayerError",error.errorCode.toString()+ " " + error.message)
+                    }
+
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        Log.d("player", playbackState.toString())
+                    }
+
                 }
                 )
+
+                viewModelScope.launch {
+                    queue.collect { newQueue ->
+          //              val controller = mediaController.value ?: return@collect
+
+                        if (controller!!.mediaItemCount == 0 && newQueue.isNotEmpty()) {
+                            val mediaItems = newQueue.map { toMediaItem(it.track, it.queueId) }
+                            controller!!.setMediaItems(mediaItems)
+
+                            val session = playQueueRepository.currentSession.first()
+                            controller!!.prepare()
+                            controller!!.seekTo(session.playQueueIndex, session.position)
+                            _currentTrack.value = queue.value[session.playQueueIndex].track
+                        }
+                    }
+                }
+
 
             }, ContextCompat.getMainExecutor(context))
 
@@ -193,20 +250,20 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun togglePlayback(){
-        val controller = mediaController.value ?: return
-        if (controller.isPlaying) {
-            controller.pause()
+//        val controller = mediaController.value ?: return
+        if (controller!!.isPlaying) {
+            controller!!.pause()
         } else {
-            controller.play()
+            controller!!.play()
         }
 
     }
 
 
     private fun updatePlaybackSession() {
-        val controller = mediaController.value ?: return
-        val currentIndex = controller.currentMediaItemIndex
-        val currentPosition = controller.currentPosition
+//        val controller = mediaController.value ?: return
+        val currentIndex = controller!!.currentMediaItemIndex
+        val currentPosition = controller!!.currentPosition
 
         viewModelScope.launch (Dispatchers.IO) {
             playQueueRepository.saveSession(
@@ -243,16 +300,16 @@ class PlayerViewModel @Inject constructor (
     private var playingIdAtDragStart: String? = null
 
     fun startDragging() {
-        val controller = mediaController.value ?: return
-        playingIdAtDragStart = queue.value[controller.currentMediaItemIndex].queueId
+//        val controller = mediaController.value ?: return
+        playingIdAtDragStart = queue.value[controller!!.currentMediaItemIndex].queueId
     }
 
     fun finalizeMove(currentList: List<PlayQueueItemUUID>){
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
 
-        Log.d("index", controller.currentMediaItemIndex.toString())
+        Log.d("index", controller!!.currentMediaItemIndex.toString())
         val currentlyPlaying = playingIdAtDragStart
-        Log.d("index", controller.currentMediaItemIndex.toString())
+        Log.d("index", controller!!.currentMediaItemIndex.toString())
 
         val newList =
             if (isShuffleEnabled.value){
@@ -271,11 +328,11 @@ class PlayerViewModel @Inject constructor (
         Log.d("index", nextIndex.toString())
 //        controller.moveMediaItem(fromIndex, toIndex)
 
-        controller.setMediaItems(newList.map { toMediaItem(it.track) },
+        controller!!.setMediaItems(newList.map { toMediaItem(it.track) },
 //            false
-            nextIndex, controller.currentPosition
+            nextIndex, controller!!.currentPosition
         )
-        _currentTrack.value = newList[controller.currentMediaItemIndex].track
+        _currentTrack.value = newList[controller!!.currentMediaItemIndex].track
 
         updateQueue(newList)
         updatePlaybackSession()
@@ -283,14 +340,14 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun moveTrack(fromIndex: Int, toIndex: Int) {
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
 
 
         val currentList = queue.value.toMutableList()
 
-        Log.d("index", controller.currentMediaItemIndex.toString())
-        val currentlyPlaying = currentList[controller.currentMediaItemIndex].queueId
-        Log.d("index", controller.currentMediaItemIndex.toString())
+        Log.d("index", controller!!.currentMediaItemIndex.toString())
+        val currentlyPlaying = currentList[controller!!.currentMediaItemIndex].queueId
+        Log.d("index", controller!!.currentMediaItemIndex.toString())
 
         val trackToMove = currentList.removeAt(fromIndex)
         val newTrack =
@@ -316,11 +373,11 @@ class PlayerViewModel @Inject constructor (
         Log.d("index", nextIndex.toString())
 //        controller.moveMediaItem(fromIndex, toIndex)
 
-        controller.setMediaItems(newList.map { toMediaItem(it.track) },
+        controller!!.setMediaItems(newList.map { toMediaItem(it.track, it.queueId) },
 //            false
-            nextIndex, controller.currentPosition
+            nextIndex, controller!!.currentPosition
         )
-        _currentTrack.value = newList[controller.currentMediaItemIndex].track
+        _currentTrack.value = newList[controller!!.currentMediaItemIndex].track
 
         updateQueue(newList)
         updatePlaybackSession()
@@ -328,10 +385,10 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun playNext(track: TrackInfo) {
-        val controller = mediaController.value ?: return
-        val nextIndex = controller.currentMediaItemIndex + 1
+//        val controller = mediaController.value ?: return
+        val nextIndex = controller!!.currentMediaItemIndex + 1
 
-        controller.addMediaItem(nextIndex, toMediaItem(track))
+        controller!!.addMediaItem(nextIndex, toMediaItem(track))
         val dbList = queue.value.map { track ->
             val newOriginal = if (track.originalOrder >= nextIndex) track.originalOrder+1 else track.originalOrder
             val newShuffled = if (track.shuffledOrder >= nextIndex) track.shuffledOrder+1 else track.shuffledOrder
@@ -346,16 +403,16 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun addToQueue(track: TrackInfo) {
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
 
-        controller.addMediaItem(toMediaItem(track))
+        controller!!.addMediaItem(toMediaItem(track))
 
         val newList = queue.value.toMutableList().apply {
             add(
                 PlayQueueItemUUID(
                     track = track,
-                    originalOrder = controller.mediaItemCount-1,
-                    shuffledOrder = controller.mediaItemCount-1
+                    originalOrder = controller!!.mediaItemCount-1,
+                    shuffledOrder = controller!!.mediaItemCount-1
                 )
             )
         }
@@ -363,10 +420,10 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun playNextList(tracks: List<TrackInfo>) {
-        val controller = mediaController.value ?: return
-        val nextIndex = controller.currentMediaItemIndex + 1
+//        val controller = mediaController.value ?: return
+        val nextIndex = controller!!.currentMediaItemIndex + 1
 
-        controller.addMediaItems(nextIndex, tracks.map { track -> toMediaItem(track) })
+        controller!!.addMediaItems(nextIndex, tracks.map { track -> toMediaItem(track) })
         val dbList = queue.value.map { track ->
             val newOriginal = if (track.originalOrder >= nextIndex) track.originalOrder+tracks.size else track.originalOrder
             val newShuffled = if (track.shuffledOrder >= nextIndex) track.shuffledOrder+tracks.size else track.shuffledOrder
@@ -389,10 +446,10 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun addToQueueList(tracks: List<TrackInfo>){
-        val controller = mediaController.value ?: return
-        val originalCount = controller.mediaItemCount
+//        val controller = mediaController.value ?: return
+        val originalCount = controller!!.mediaItemCount
 
-        controller.addMediaItems(tracks.map { track -> toMediaItem(track) })
+        controller!!.addMediaItems(tracks.map { track -> toMediaItem(track) })
 
         val newList = queue.value.toMutableList().apply {
             addAll(
@@ -443,11 +500,11 @@ class PlayerViewModel @Inject constructor (
 
 
     fun playTrack(queueId: String){
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
         val trackIndex = queue.value.indexOfFirst { it.queueId==queueId }
         _currentTrack.value = queue.value[trackIndex].track
-        controller.seekTo(trackIndex, 0L)
-        controller.play()
+        controller!!.seekTo(trackIndex, 0L)
+        controller!!.play()
     }
 
 
@@ -458,32 +515,42 @@ class PlayerViewModel @Inject constructor (
 
         val startIndex = tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
 
-        mediaController.value?.apply {
-            setMediaItems(mediaItems, startIndex, 0L)
-            prepare()
-            play()
-        }
+        controller!!.setMediaItems(mediaItems)
+        controller!!.prepare()
+        controller!!.seekTo(startIndex, 0L)
+        controller!!.play()
+
         _isPlaying.value = true
         _currentTrack.value = selectedTrack
         updateQueue(tracks.mapIndexed { id, track ->
             PlayQueueItemUUID(
                 track = track,
-                originalOrder = id) })
+                originalOrder = id)
+        }
+        )
 
         viewModelScope.launch {
             playQueueRepository.updateShuffle(false)
         }
     }
 
-    fun toMediaItem(track: TrackInfo): MediaItem {
+    fun toMediaItem(track: TrackInfo, uuid: String? = null): MediaItem {
         val mediaItem = MediaItem.Builder()
             .setUri(track.fileUri.toUri())
             .setMediaId(track.trackId.toString())
+            .setTag(uuid)
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(track.title.toString())
                     .setArtist(track.artistName.toString())
                     .setArtworkUri(track.albumArt?.toUri())
+                    .setDurationMs(track.duration)
+                    .setAlbumTitle(track.albumTitle)
+                    .build()
+            )
+            .setRequestMetadata(
+                MediaItem.RequestMetadata.Builder()
+                    .setMediaUri(track.fileUri.toUri())
                     .build()
             )
             .build()
@@ -492,32 +559,37 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun seekTo(positionMs: Long) {
-        mediaController.value?.seekTo(positionMs)
+//        mediaController.value?.seekTo(positionMs)
+        controller!!.seekTo(positionMs)
     }
 
     fun skipToNext() {
-        mediaController.value?.seekToNext()
+//        mediaController.value?.seekToNext()
+        controller!!.seekToNext()
     }
 
     fun skipToPrevious() {
-        mediaController.value?.seekToPrevious()
+//        mediaController.value?.seekToPrevious()
+        controller!!.seekToPrevious()
     }
 
     fun hasNextMediaItem() : Boolean? {
-        return mediaController.value?.hasNextMediaItem()
+//        return mediaController.value?.hasNextMediaItem()
+        return controller!!.hasNextMediaItem()
     }
 
     fun hasPrevMediaItem() : Boolean? {
-        return mediaController.value?.hasPreviousMediaItem()
+//        return mediaController.value?.hasPreviousMediaItem()
+        return controller!!.hasPreviousMediaItem()
     }
 
     fun removeTrackAt(index: Int) {
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
         val currentList = queue.value.toMutableList()
         if (index in currentList.indices) {
-            controller.removeMediaItem(index)
+            controller!!.removeMediaItem(index)
             currentList.removeAt(index)
-            _currentTrack.value = currentList[controller.currentMediaItemIndex].track
+            _currentTrack.value = currentList[controller!!.currentMediaItemIndex].track
 
             val originalOrderLookup = currentList
                 .sortedBy { it.originalOrder }
@@ -540,20 +612,35 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun toggleShuffle(){
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
 
         viewModelScope.launch {
-            val currentPlayingId = queue.value[controller.currentMediaItemIndex].queueId
+            val currentPlayingId = queue.value[controller!!.currentMediaItemIndex].queueId
             val newShuffleState = !isShuffleEnabled.value
-            playQueueRepository.updateShuffle(newShuffleState)
-            if (newShuffleState){
-                playQueueRepository.shuffleQueue(currentPlayingId)
+            val freshQueue = withContext(Dispatchers.IO) {
+                playQueueRepository.updateShuffle(newShuffleState)
+                if (newShuffleState) {
+                    playQueueRepository.shuffleQueue(currentPlayingId)
+                }
+                playQueueRepository.getCurrentQueue(newShuffleState).first()
             }
-            val freshQueue = playQueueRepository.getCurrentQueue(newShuffleState).first()
+//            playQueueRepository.updateShuffle(newShuffleState)
+//            if (newShuffleState){
+//                playQueueRepository.shuffleQueue(currentPlayingId)
+//            }
+//            val freshQueue = playQueueRepository.getCurrentQueue(newShuffleState).first()
+
+//            val controller = controller ?: return@launch
+//            freshQueue.forEachIndexed { newIndex, item ->
+//                val oldIndex =
+//                if (oldIndex != newIndex){
+//                    controller?.moveMediaItem(oldIndex!!, newIndex)
+//                }
+//            }
             val startIndex = freshQueue.indexOfFirst { it.uuid==currentPlayingId }
-            controller.setMediaItems(freshQueue.map { item ->
+            controller!!.setMediaItems(freshQueue.map { item ->
                 toMediaItem(item.trackInfo) }, false)
-            controller.seekTo(startIndex, position.value)
+            controller!!.seekTo(startIndex, position.value)
             _currentTrack.value = freshQueue[startIndex].trackInfo
             updatePlaybackSession()
 
@@ -561,16 +648,16 @@ class PlayerViewModel @Inject constructor (
     }
 
     fun toggleRepeat(){
-        val controller = mediaController.value ?: return
+//        val controller = mediaController.value ?: return
 
         viewModelScope.launch {
-            val newMode = when (controller.repeatMode) {
+            val newMode = when (controller!!.repeatMode) {
                 Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
                 Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
                 Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_OFF
                 else -> Player.REPEAT_MODE_OFF
             }
-            controller.repeatMode = newMode
+            controller!!.repeatMode = newMode
             playQueueRepository.updateRepeat(newMode)
         }
 
