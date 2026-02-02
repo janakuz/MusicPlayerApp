@@ -5,9 +5,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -66,7 +71,8 @@ fun NowPlayingView(
     var sliderPosition by remember { mutableStateOf(position.toFloat()) }
 
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize().navigationBarsPadding()
     ) {
         track?.let {
             AlbumDetailHeader(
@@ -78,7 +84,7 @@ fun NowPlayingView(
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = it.albumTitle, style = MaterialTheme.typography.bodyMedium)
         }
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(10.dp))
 
         Slider(
 
@@ -92,7 +98,7 @@ fun NowPlayingView(
 
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(10.dp))
 
         Row {
 
@@ -149,6 +155,7 @@ fun NowPlayingView(
             }
 
         }
+        Spacer(Modifier.height(32.dp))
     }
 
 }
@@ -163,11 +170,14 @@ fun NowPlayingWithQueue(
 ) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState()
+    val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val totalPeekHeight = 10.dp
 
     val tracks by playerViewModel.queue.collectAsState()
 
 
     BottomSheetScaffold(
+        sheetPeekHeight = totalPeekHeight,
         topBar = {
             TopAppBar(
                 title = { Text("Now Playing") },
@@ -184,6 +194,7 @@ fun NowPlayingWithQueue(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
+                    .navigationBarsPadding()
                     .background(MaterialTheme.colorScheme.surface)
             ) {
                 PlayQueueScreen(
@@ -194,7 +205,6 @@ fun NowPlayingWithQueue(
                     playerViewModel)
             }
         },
-        sheetPeekHeight = 0.dp,
         content = {
             NowPlayingView(
                 playerViewModel = playerViewModel,
@@ -203,13 +213,13 @@ fun NowPlayingWithQueue(
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun NowPlayingPreview() {
-    MusicAppTheme {
-        NowPlayingView(
-            playerViewModel = viewModel(),
-        )
-    }
-
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun NowPlayingPreview() {
+//    MusicAppTheme {
+//        NowPlayingView(
+//            playerViewModel = viewModel(),
+//        )
+//    }
+//
+//}

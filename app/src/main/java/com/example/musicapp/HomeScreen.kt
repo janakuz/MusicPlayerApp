@@ -2,6 +2,8 @@ package com.example.musicapp
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -69,6 +71,8 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
 
 
     Scaffold(
+        modifier = Modifier.fillMaxSize()
+            .navigationBarsPadding(),
         topBar = {
             Column {
                 LibraryTopBar(
@@ -114,7 +118,8 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
                 NowPlayingBar(
                     playerViewModel = playerViewModel,
                     currentRoute = currentRoute,
-                    onClick = { navController.navigate("nowPlaying") }
+                    onClick = { navController.navigate("nowPlaying") },
+                    modifier = Modifier.navigationBarsPadding()
                 )
             }
 //        }
