@@ -43,7 +43,8 @@ fun PlayQueueScreen(
             visibleQueue = visibleQueue.toMutableList().apply {
                 add(to.index, removeAt(from.index))
             }
-        }
+            playerViewModel.moveTrack(from.index, to.index)
+        },
     )
 //        playerViewModel.updateQueue(visibleQueue)
 
