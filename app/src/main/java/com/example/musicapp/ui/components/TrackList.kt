@@ -57,10 +57,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.example.musicapp.R
 import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
@@ -89,8 +91,12 @@ fun TrackInfoRow(
                         .data(artwork)
                         .crossfade(false)
                         .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
                         .placeholderMemoryCacheKey(artwork)
                         .build(),
+                    placeholder = painterResource(R.drawable.baseline_album_24),
+                    error = painterResource(R.drawable.baseline_album_24),
+                    fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
                     contentScale = ContentScale.Crop

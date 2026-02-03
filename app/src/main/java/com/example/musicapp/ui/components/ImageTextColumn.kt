@@ -26,12 +26,14 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.example.musicapp.R
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.model.GridItem
 
@@ -70,14 +72,19 @@ fun ImageWithTextColumn(
 //            } else Modifier).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val defalutImage = if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_artist_24)
         Box {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(image)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .placeholderMemoryCacheKey(image)
                     .build(),
+                placeholder = defalutImage,
+                error = defalutImage,
+                fallback = defalutImage,
                 contentDescription = null,
                 modifier = imageModifier
                     .clip(imageShape)
