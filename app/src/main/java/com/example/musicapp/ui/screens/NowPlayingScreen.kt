@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PauseCircle
@@ -61,7 +62,7 @@ import com.example.musicapp.data.dto.TrackInfo
 fun NowPlayingView(
     playerViewModel: PlayerViewModel,
 ){
-    val track by playerViewModel.currentTrack.collectAsState()
+    val trackState by playerViewModel.currentTrack.collectAsState()
     val isPlaying by playerViewModel.isPlaying.collectAsState()
     val position by playerViewModel.position.collectAsState()
     val duration by playerViewModel.duration.collectAsState()
@@ -74,6 +75,7 @@ fun NowPlayingView(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().navigationBarsPadding()
     ) {
+        val track = trackState?.track
         track?.let {
             AlbumDetailHeader(
                 image = track!!.albumArt.toString(),
@@ -183,7 +185,7 @@ fun NowPlayingWithQueue(
                 title = { Text("Now Playing") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                     }
                 }
             )

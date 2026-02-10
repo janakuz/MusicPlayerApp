@@ -71,9 +71,8 @@ fun AlbumView(
                 onClick = {track -> onTrackClick(track.data, tracks)},
                 onPlayNext = onPlayNext,
                 onAddToQueue = onAddToQueue,
-                showTrackNum = true)
-
-
+                showTrackNum = true,
+            )
         }
     }
 

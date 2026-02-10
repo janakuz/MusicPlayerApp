@@ -21,7 +21,7 @@ import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.ui.components.FastScrollbar
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.AllTracksViewModel
-import java.nio.file.WatchEvent
+import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 
 
 @Composable
@@ -29,7 +29,8 @@ fun AllTracksScreen(
     onClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
-    sortRequest: SortOption?){
+    sortRequest: SortOption?,
+){
     val trackViewModel: AllTracksViewModel = hiltViewModel()
 
     LaunchedEffect(sortRequest) {
@@ -54,7 +55,7 @@ fun AllTracksScreen(
             onPlayNext = onPlayNext,
             onAddToQueue = onAddToQueue,
             showArtwork = true,
-            state = sharedListState
+            state = sharedListState,
         )
 
         FastScrollbar(

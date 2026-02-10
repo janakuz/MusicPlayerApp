@@ -1,11 +1,8 @@
 package com.example.musicapp.ui.screens
 
-import android.util.Log
-import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,13 +61,14 @@ fun PlayQueueScreen(
     TrackList(
         visualTracks,
         onClick = onTrackClick,
-        showArtwork = true,
-        showReorderIconEnd = true,
-        state = lazyListState,
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
+        onRemoveFromQueue = { index -> playerViewModel.removeTrackAt(index) },
+        showReorderIconEnd = true,
+        showArtwork = true,
+        strictHighlight = true,
+        state = lazyListState,
         reorderable = reorderableLazyListState,
-        onRemoveFromQueue = { index -> playerViewModel.removeTrackAt(index) }
     //    playerViewModel = playerViewModel
     )
 

@@ -53,6 +53,10 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
         return trackDao.getTrackByUri(uri)
     }
 
+    override suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo> {
+        return trackDao.getTracksByIds(trackIds)
+    }
+
 
     override suspend fun insertAll(tracks: List<Track>) {
         trackDao.insertAll(tracks)

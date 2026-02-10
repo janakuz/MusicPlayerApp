@@ -1,10 +1,18 @@
 package com.example.musicapp.ui.components
 
 import android.annotation.SuppressLint
-import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -20,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,13 +38,15 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -59,16 +68,49 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStoreOwner
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
+import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+
+
+@Composable
+fun LiveEqualizer(
+    color: Color = MaterialTheme.colorScheme.primary,
+    modifier: Modifier = Modifier.size(16.dp)
+) {
+    val transition = rememberInfiniteTransition(label = "equalizer")
+
+    val heights = listOf(
+        transition.animateFloat(0.3f, 1f, infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse)),
+        transition.animateFloat(0.2f, 0.8f, infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse)),
+        transition.animateFloat(0.4f, 0.9f, infiniteRepeatable(tween(520, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+    )
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        heights.forEach { heightState ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(heightState.value)
+                    .background(color, RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+            )
+        }
+    }
+}
 
 @Composable
 fun TrackInfoRow(
@@ -125,6 +167,7 @@ fun TrackRow(
     duration: String,
     track: VisualTrack,
     trackIndex: Int,
+    isPlaying: Boolean = false,
     onClick: (VisualTrack) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
@@ -133,21 +176,34 @@ fun TrackRow(
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
     showArtwork: Boolean = false,
+    useQueueId: Boolean = false,
     trackNum: Int = 0,
     modifier: Modifier = Modifier,
     reorderModifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    val selectionViewModel: TrackSelectionViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
+    val selectionState by selectionViewModel.selectionState.collectAsState()
+    val selectionMode by selectionViewModel.selectionMode.collectAsState()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .background(
+                if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                else if (!useQueueId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                else Color.Transparent)
             .combinedClickable(
-                onClick = { onClick(track) },
-                onLongClick = { expanded = true }
+                onClick = {
+                    if (!selectionMode) onClick(track)
+                    else if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId)
+                    else selectionViewModel.toggleSelection(track.key.toString()) },
+                onLongClick = {
+                    if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId) else selectionViewModel.toggleSelection(track.key.toString())
+                }
             )
-//            .clickable {
-//                onClick(track)}
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -160,8 +216,7 @@ fun TrackRow(
             )
         }
         if (showTrackNum) {
-            Text(text = trackNum.toString(), style = MaterialTheme.typography.bodySmall)
-
+            if (isPlaying) LiveEqualizer() else Text(text = trackNum.toString(), style = MaterialTheme.typography.bodySmall)
         }
 
         TrackInfoRow(
@@ -183,34 +238,45 @@ fun TrackRow(
                     .padding(start = 8.dp)
             )
         }
-    }
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        DropdownMenuItem(
-            text = { Text("Play Next") },
-            onClick = {
-                onPlayNext(track.data)
-                expanded = false
+        Box {
+            IconButton(onClick = { expanded = true }) {
+
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Menu",
+                )
             }
-        )
-        DropdownMenuItem(
-            text = { Text("Add to Queue") },
-            onClick = {
-                onAddToQueue(track.data)
-                expanded = false
-            }
-        )
-        if (onRemoveFromQueue!= null){
-            DropdownMenuItem(
-                text = {(Text("Remove from Queue"))},
-                onClick = {
-                    onRemoveFromQueue(trackIndex)
-                    expanded = false
+
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Play Next") },
+                    onClick = {
+                        onPlayNext(track.data)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Add to Queue") },
+                    onClick = {
+                        onAddToQueue(track.data)
+                        expanded = false
+                    }
+                )
+                if (onRemoveFromQueue != null) {
+                    DropdownMenuItem(
+                        text = { (Text("Remove from Queue")) },
+                        onClick = {
+                            onRemoveFromQueue(trackIndex)
+                            expanded = false
+                        }
+                    )
                 }
-            )
+            }
         }
     }
 }
@@ -348,11 +414,19 @@ fun TrackList(
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
     showArtwork: Boolean = false,
+    strictHighlight: Boolean = false,
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
-    reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to->{}},
+    reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to -> {} },
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+
+    val activity = LocalActivity.current
+
+    val playerViewModel: PlayerViewModel = hiltViewModel(activity as ViewModelStoreOwner)
+    val currentTrack by playerViewModel.currentTrack.collectAsState()
+
+    val currentTrackId = if (strictHighlight) currentTrack?.queueId else currentTrack?.track?.trackId
 
     LazyColumn(state = state,
         ) {
@@ -363,6 +437,7 @@ fun TrackList(
                     artwork = track.albumArt.toString(),
                     title = track.title,
                     artist = track.artistName,
+                    isPlaying = currentTrackId==queueTrack.key,
                     onClick = onClick,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
@@ -373,6 +448,7 @@ fun TrackList(
                     trackNum = track.trackNum ?: 0,
                     duration = formatDuration(track.duration),
                     track = queueTrack,
+                    useQueueId = strictHighlight,
                     trackIndex = id,
                     onRemoveFromQueue = onRemoveFromQueue,
                     reorderModifier = Modifier.

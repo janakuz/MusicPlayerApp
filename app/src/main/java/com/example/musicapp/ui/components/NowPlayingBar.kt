@@ -51,7 +51,7 @@ fun NowPlayingBar(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val track = trackState
+        val track = trackState?.track
         if (track != null) {
 
             AsyncImage(

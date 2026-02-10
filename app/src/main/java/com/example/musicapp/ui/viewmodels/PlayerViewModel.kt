@@ -2,10 +2,8 @@ package com.example.musicapp.ui.viewmodels
 
 import android.content.ComponentName
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.core.content.ContextCompat
-import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.lifecycle.ViewModel
@@ -20,7 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.common.Player
-import androidx.media3.session.MediaSession
 import com.example.musicapp.PlaybackService
 import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.QueueItemFull
@@ -28,30 +25,22 @@ import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.QueueItem
 import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.TrackRepository
-import com.example.musicapp.ui.screens.PlayQueuePreview
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.multibindings.ElementsIntoSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.time.Duration
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor (
@@ -90,11 +79,14 @@ class PlayerViewModel @Inject constructor (
             initialValue = emptyList<PlayQueueItemUUID>()
         )
 
-    private val _currentTrack = MutableStateFlow<TrackInfo?>(null)
-    val currentTrack: StateFlow<TrackInfo?> = _currentTrack.asStateFlow()
+    private val _currentTrack = MutableStateFlow<PlayQueueItemUUID?>(null)
+    val currentTrack: StateFlow<PlayQueueItemUUID?> = _currentTrack.asStateFlow()
 
     private val _draftQueue = MutableStateFlow<List<PlayQueueItemUUID>>(emptyList())
     val draftQueue = _draftQueue.asStateFlow()
+
+    private val _eventChannel = Channel<String>(Channel.BUFFERED)
+    val events = _eventChannel.receiveAsFlow()
 
     //    val currentTrack: StateFlow<TrackInfo?> = combine(queue, playQueueRepository.currentSession) { currentQueue, session ->
 //        if (currentQueue.isEmpty() || session.playQueueIndex !in currentQueue.indices) {
@@ -146,7 +138,7 @@ class PlayerViewModel @Inject constructor (
 
 
     val duration: StateFlow<Long> = currentTrack.map { track ->
-        track?.duration ?: 0L
+        track?.track?.duration ?: 0L
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -157,6 +149,9 @@ class PlayerViewModel @Inject constructor (
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
 
+
+    private val _selectedTrackIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedTrackIds = _selectedTrackIds.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -175,7 +170,7 @@ class PlayerViewModel @Inject constructor (
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         mediaItem.let {
 //                            _currentTrack.value = mediaItem?.localConfiguration?.tag as? TrackInfo
-                            _currentTrack.value = TrackInfo(
+                            val track = TrackInfo(
                                 title = mediaItem?.mediaMetadata?.title.toString(),
                                 trackId = mediaItem?.mediaMetadata?.extras?.getInt("ID") ?: 0,//.mediaId?.toInt() ?: 0,
                                 artistName = mediaItem?.mediaMetadata?.artist.toString(),
@@ -184,6 +179,12 @@ class PlayerViewModel @Inject constructor (
                                 trackNum = mediaItem?.mediaMetadata?.trackNumber,
                                 duration = mediaItem?.mediaMetadata?.durationMs ?: 0L,
                                 fileUri = mediaItem?.requestMetadata?.mediaUri.toString(),
+                            )
+                            _currentTrack.value = PlayQueueItemUUID(
+                                queueId = mediaItem?.mediaId ?: "",
+                                track = track,
+                                originalOrder = 0,
+                                shuffledOrder = 0
                             )
                         }
         //                _currentTrack.value = queue.value[c.currentMediaItemIndex].track
@@ -218,7 +219,7 @@ class PlayerViewModel @Inject constructor (
                             val session = playQueueRepository.currentSession.first()
                             controller!!.prepare()
                             controller!!.seekTo(session.playQueueIndex, session.position)
-                            _currentTrack.value = queue.value[session.playQueueIndex].track
+                            _currentTrack.value = queue.value[session.playQueueIndex]
                         }
                     }
                 }
@@ -329,7 +330,17 @@ class PlayerViewModel @Inject constructor (
         controller!!.moveMediaItem(fromIndex, toIndex)
     }
 
-    fun playNext(track: TrackInfo) {
+    fun toggleSelection(trackId: String) {
+        _selectedTrackIds.update { current ->
+            if (current.contains(trackId)) current - trackId else current + trackId
+        }
+    }
+
+    fun clearSelection() {
+        _selectedTrackIds.value = emptySet()
+    }
+
+     fun playNext(track: TrackInfo) {
 //        val controller = mediaController.value ?: return
         val nextIndex = controller!!.currentMediaItemIndex + 1
 
@@ -348,9 +359,13 @@ class PlayerViewModel @Inject constructor (
                 newTrack
             ) }
         updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${track.title} to queue")
+         }
     }
 
-    fun addToQueue(track: TrackInfo) {
+     fun addToQueue(track: TrackInfo) {
 //        val controller = mediaController.value ?: return
 
         val queueItem = PlayQueueItemUUID(
@@ -368,9 +383,13 @@ class PlayerViewModel @Inject constructor (
         controller!!.addMediaItem(toMediaItem(queueItem))
 
         updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${track.title} to queue")
+         }
     }
 
-    fun playNextList(tracks: List<TrackInfo>) {
+     fun playNextList(tracks: List<TrackInfo>) {
 //        val controller = mediaController.value ?: return
         val nextIndex = controller!!.currentMediaItemIndex + 1
 
@@ -399,9 +418,13 @@ class PlayerViewModel @Inject constructor (
         controller!!.addMediaItems(nextIndex, toAdd.map { track -> toMediaItem(track) })
 
         updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${tracks.size} tracks to queue")
+         }
     }
 
-    fun addToQueueList(tracks: List<TrackInfo>){
+     fun addToQueueList(tracks: List<TrackInfo>){
 //        val controller = mediaController.value ?: return
         val originalCount = controller!!.mediaItemCount
 
@@ -424,7 +447,27 @@ class PlayerViewModel @Inject constructor (
         controller!!.addMediaItems(toAdd.map { track -> toMediaItem(track) })
 
         updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${tracks.size} tracks to queue")
+         }
+
     }
+
+    fun playNextListIds(trackIds: Set<Int>){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByIds(trackIds)
+            playNextList(tracks)
+        }
+    }
+
+    fun addToQueueListIds(trackIds: Set<Int>){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByIds(trackIds)
+            addToQueueList(tracks)
+        }
+    }
+
 
     fun playNextAlbum(albumId: Int){
         viewModelScope.launch {
@@ -463,7 +506,7 @@ class PlayerViewModel @Inject constructor (
     fun playTrack(queueId: String){
 //        val controller = mediaController.value ?: return
         val trackIndex = queue.value.indexOfFirst { it.queueId==queueId }
-        _currentTrack.value = queue.value[trackIndex].track
+        _currentTrack.value = queue.value[trackIndex]
         controller!!.seekTo(trackIndex, 0L)
         controller!!.play()
     }
@@ -488,7 +531,7 @@ class PlayerViewModel @Inject constructor (
         controller!!.play()
 
         _isPlaying.value = true
-        _currentTrack.value = selectedTrack
+        _currentTrack.value = queueTracks[startIndex]
         updateQueue(
             queueTracks
         )
@@ -552,13 +595,43 @@ class PlayerViewModel @Inject constructor (
         return controller!!.hasPreviousMediaItem()
     }
 
+    fun removeFromQueue(uuids: Set<String>){
+        val currentList = queue.value.filterNot { it.queueId in uuids }
+
+        viewModelScope.launch {
+            val controller = controller ?: return@launch
+            for (uuid in uuids) {
+                val index = findCurrentIndexInController(controller, uuid)
+                controller.removeMediaItem(index)
+            }
+        }
+
+        val originalOrderLookup = currentList
+            .sortedBy { it.originalOrder }
+            .mapIndexed { index, track -> track.queueId to index }
+            .toMap()
+
+        val newList =
+            if (isShuffleEnabled.value){
+                currentList.mapIndexed { id, track ->
+                    track.copy(
+                        shuffledOrder = id,
+                        originalOrder = originalOrderLookup[track.queueId] ?: id
+                    )}
+            }
+            else {
+                currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
+            }
+        updateQueue(newList)
+    }
+
     fun removeTrackAt(index: Int) {
 //        val controller = mediaController.value ?: return
         val currentList = queue.value.toMutableList()
         if (index in currentList.indices) {
             controller!!.removeMediaItem(index)
             currentList.removeAt(index)
-            _currentTrack.value = currentList[controller!!.currentMediaItemIndex].track
+            _currentTrack.value = currentList[controller!!.currentMediaItemIndex]
 
             val originalOrderLookup = currentList
                 .sortedBy { it.originalOrder }
@@ -601,7 +674,13 @@ class PlayerViewModel @Inject constructor (
                 }
             }
             val startIndex = freshQueue.indexOfFirst { it.uuid==currentPlayingId }
-            _currentTrack.value = freshQueue[startIndex].trackInfo
+            _currentTrack.value = PlayQueueItemUUID(
+                queueId = freshQueue[startIndex].uuid,
+                originalOrder = freshQueue[startIndex].orderIndex,
+                shuffledOrder = freshQueue[startIndex].shuffledIndex ?: 0,
+                track = freshQueue[startIndex].trackInfo
+            )
+
             updatePlaybackSession()
 
         }
