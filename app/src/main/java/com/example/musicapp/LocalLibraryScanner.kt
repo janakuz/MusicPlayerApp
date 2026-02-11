@@ -2,6 +2,7 @@ package com.example.musicapp
 
 import android.content.ContentUris
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -35,13 +36,13 @@ class LocalLibraryScanner@Inject constructor(
 
 
     suspend fun scanAll(context: Context, onProgress: (Float) -> Unit) {
-        val audioEntries = queryMediaStore(context)
+        val audioEntries = queryMediaStore(context, isManual = true)
 
 //        val albumsAndArtists = extractAlbumsAndArtists(audioEntries) { progress ->
 //            onProgress(progress) }
 //        val albums = albumsAndArtists.first
 
-        val tracks = buildTracks(audioEntries, onProgress)
+        val tracks = buildTracks(context, audioEntries, onProgress)
     }
 
 
@@ -68,13 +69,44 @@ class LocalLibraryScanner@Inject constructor(
 
         val toAddAudioEntries = audioEntries.filter { toAdd.contains(it.fileUri) }
         buildTracks(
+            context,
             entries = toAddAudioEntries,
             onProgressUpdate = null
         )
 
     }
 
-    private fun findAlbumArt(fileUri: String): String? {
+
+    private fun saveArtworkToStorage(context: Context, folder: File, artwork: ByteArray): String? {
+        return try {
+            val fileName = "cover_${folder.name}.jpg"
+            val directory = File(context.filesDir, "covers")
+            if (!directory.exists()) {
+                directory.mkdirs()
+            }
+            val file = File(directory, fileName)
+            file.writeBytes(artwork)
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun getEmbeddedPicture(context: Context, path: String, folder: File): String? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(path)
+            val artwork = retriever.embeddedPicture
+            if (artwork != null) saveArtworkToStorage(context, folder, artwork) else null
+        } catch (e: Exception) {
+            null
+        } finally {
+            retriever.release()
+        }
+    }
+
+    private fun findAlbumArt(context: Context, fileUri: String): String? {
         val folder = File(fileUri).parentFile ?: return null
         val commonNames = listOf("cover", "folder", "front", "album", "art")
         val extensions = listOf("jpg", "jpeg", "png")
@@ -86,13 +118,15 @@ class LocalLibraryScanner@Inject constructor(
             commonNames.contains(name) && extensions.contains(file.extension.lowercase())
         }
 
-        return bestMatch?.absolutePath ?: files.find {
+        val altMatch = files.find {
             extensions.contains(it.extension.lowercase())
         }?.absolutePath
+
+        return bestMatch?.absolutePath ?: altMatch ?: getEmbeddedPicture(context, fileUri, folder)
     }
 
 
-    private suspend fun queryMediaStore(context: Context): List<RawAudioEntry> {
+    private suspend fun queryMediaStore(context: Context, isManual: Boolean = false): List<RawAudioEntry> {
         val list = mutableListOf<RawAudioEntry>()
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -156,13 +190,16 @@ class LocalLibraryScanner@Inject constructor(
                 }
             }
         }
-        withContext(Dispatchers.Main) {
-            Toast.makeText(context, "Scanned $foundCount tracks", Toast.LENGTH_SHORT).show()
+        if (isManual) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Scanned $foundCount tracks", Toast.LENGTH_SHORT).show()
+            }
         }
         return list
     }
 
     private suspend fun buildTracks(
+        context: Context,
         entries: List<RawAudioEntry>,
         onProgressUpdate: ((Float) -> Unit)?
     ) {
@@ -189,7 +226,7 @@ class LocalLibraryScanner@Inject constructor(
                 albumId = albumRepository.getByTitle(albumTitle, releaseYear)?.id
 
                 if (albumId == null){
-                    val albumArt = findAlbumArt(entry.filePath)
+                    val albumArt = findAlbumArt(context, entry.filePath)
 
                     val newAlbum = Album(
                         title = albumTitle,
