@@ -65,8 +65,10 @@ fun routeToLibraryScreen(route: String?): LibraryScreen =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MusicApp(playerViewModel: PlayerViewModel) {
+fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val navController = rememberNavController()
+
+    val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -171,7 +173,7 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
 
         NavHost(
             navController = navController,
-            startDestination = HomeScreen.Artists.name,
+            startDestination = startDest,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(route = HomeScreen.Artists.name) {
@@ -213,7 +215,9 @@ fun MusicApp(playerViewModel: PlayerViewModel) {
             }
 
             composable(HomeScreen.Scan.name) {
-                ScanLibraryScreen()
+                ScanLibraryScreen(
+                    isInitial = startDest == HomeScreen.Scan.name
+                )
             }
 
             composable("artist/{artistId}") {

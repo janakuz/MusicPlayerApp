@@ -46,7 +46,7 @@ class LocalLibraryScanner@Inject constructor(
     }
 
 
-    suspend fun findChanges(context: Context) {
+    suspend fun findChanges(context: Context): Boolean {
         val audioEntries = queryMediaStore(context = context)
         val actualAudioEntries = audioEntries.filter { entry ->
             File(entry.filePath).exists()
@@ -54,14 +54,10 @@ class LocalLibraryScanner@Inject constructor(
         val fileUris = actualAudioEntries.map { it.fileUri }
         val dbUris = trackRepository.getAllUris()
 
-        Log.d("rescan files", "${fileUris.size}")
-        Log.d("rescan db", dbUris.size.toString())
+        if (dbUris.isEmpty()) return false
 
         val toDelete = dbUris - fileUris.toSet()
         val toAdd = fileUris - dbUris.toSet()
-
-        Log.d("rescan toDelete", toDelete.size.toString())
-        Log.d("rescan toAdd", toAdd.size.toString())
 
         trackRepository.deleteByUri(toDelete)
         albumRepository.deleteOrphaned()
@@ -73,6 +69,8 @@ class LocalLibraryScanner@Inject constructor(
             entries = toAddAudioEntries,
             onProgressUpdate = null
         )
+
+        return true
 
     }
 

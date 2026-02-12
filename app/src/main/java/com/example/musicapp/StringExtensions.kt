@@ -30,7 +30,7 @@ fun String.isSimilar(other: String, threshold: Double = 0.85): Boolean {
     if (maxLength == 0) return true
 
     val distance = levenshtein(s1, s2)
-    return (maxLength - distance).toDouble() / maxLength >= threshold
+    return ((maxLength - distance).toDouble() / maxLength ) >= threshold
 }
 
 private fun levenshtein(s1: String, s2: String): Int{
