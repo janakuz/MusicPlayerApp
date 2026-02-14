@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
+import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -29,6 +31,13 @@ class AllTracksViewModel @Inject constructor(
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
+
+    val currentSortOption: StateFlow<SortOption> = userPreferencesRepository.trackSortOption
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = SortOption(SortField.NAME, )
+        )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val tracksUiState: StateFlow<TracksUiState> = userPreferencesRepository.trackSortOption

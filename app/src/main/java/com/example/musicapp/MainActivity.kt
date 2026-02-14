@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -63,12 +64,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            MusicAppTheme {
+            MusicAppTheme (darkTheme = true) {
 
                 val context = LocalContext.current
 
                 val lifecycleOwner = LocalLifecycleOwner.current
                 val scope = rememberCoroutineScope()
+                val isLibraryInitialized = backgroundScanViewModel.isInitialized.collectAsState()
 
                 DisposableEffect(lifecycleOwner) {
                     val observer = LifecycleEventObserver { _, event ->
@@ -83,7 +85,7 @@ class MainActivity : ComponentActivity() {
                         lifecycleOwner.lifecycle.removeObserver(observer)
                     }
                 }
-                MusicApp(playerViewModel)
+                MusicApp(playerViewModel, isLibraryInitialized.value)
                 }
             }
     }

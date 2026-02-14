@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
@@ -60,7 +61,9 @@ class ArtistDetailViewModel @Inject constructor(
             )
         }.onStart { emit(ArtistDetailUiState(isLoading = true)) }
             .catch { e -> emit(ArtistDetailUiState(error = e.message, isLoading = false)) }
-    }.stateIn(
+    }
+        .distinctUntilChanged()
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ArtistDetailUiState(isLoading = true)

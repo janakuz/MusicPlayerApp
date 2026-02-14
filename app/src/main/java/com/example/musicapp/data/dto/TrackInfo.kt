@@ -8,6 +8,8 @@ data class TrackInfo(
     val albumArt: String?,
     val trackNum: Int?,
     val duration: Long,
-    val fileUri: String
+    val fileUri: String,
+    val albumId: Int,
+    val artistId: Int,
 
 )

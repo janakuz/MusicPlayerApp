@@ -20,6 +20,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -44,9 +45,9 @@ class LibraryScanViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
-//    init {
-//        observeEnrichment()
-//    }
+    init {
+        observeEnrichment()
+    }
 
     fun startScan(context: Context) {
         viewModelScope.launch {
@@ -83,26 +84,26 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
-//    fun observeEnrichment() {
-//        workManager.getWorkInfosForUniqueWorkFlow("MetadataSync")
-//            .onEach { workInfos ->
-//                val info = workInfos.firstOrNull() ?: return@onEach
-//
-//                val current = info.progress.getInt("current", 0)
-//                val total = info.progress.getInt("total", 0)
-//                val albumTitle = info.progress.getString("albumTitle") ?: ""
-//
-//                if (info.state == WorkInfo.State.RUNNING) {
-//                    _uiState.update { it.copy(
-//                        isEnriching = true,
-//                        enrichmentProgress = if (total > 0) current.toFloat() / total else 0f,
-//                        statusMessage = "Enriching $albumTitle..."
-//                    ) }
-//                } else if (info.state.isFinished) {
-//                    _uiState.update { it.copy(isEnriching = false, isScanning = false) }
-//                }
-//
-//            }
-//    }
+    fun observeEnrichment() {
+        workerManagerRepository.getEnrichmentProgress()
+            .onEach { info ->
+                if (info == null) return@onEach
+
+                val current = info.progress.getInt("current", 0)
+                val total = info.progress.getInt("total", 0)
+                val albumTitle = info.progress.getString("albumTitle") ?: ""
+
+                if (info.state == WorkInfo.State.RUNNING) {
+                    _uiState.update { it.copy(
+                        isEnriching = true,
+                        enrichmentProgress = if (total > 0) current.toFloat() / total else 0f,
+                        statusMessage = "Enriching $albumTitle..."
+                    ) }
+                } else if (info.state.isFinished) {
+                    _uiState.update { it.copy(isEnriching = false, isScanning = false) }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
 }

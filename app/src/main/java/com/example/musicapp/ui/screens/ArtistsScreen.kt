@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.screens
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -8,6 +9,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.navigation.NavBackStackEntry
 import com.example.musicapp.ui.viewmodels.AllArtistsViewModel
 import com.example.musicapp.model.GridItem
 import com.example.musicapp.ui.components.Grid
@@ -21,7 +24,7 @@ fun AllArtistsScreen(
     onClick: ((GridItem) -> Unit)? = null,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
-    sortRequest: SortOption?
+    sortRequest: SortOption?,
 ){
     val artistViewModel: AllArtistsViewModel = hiltViewModel()
 
@@ -47,7 +50,8 @@ fun AllArtistsScreen(
         textStyle = MaterialTheme.typography.bodyMedium,
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
-        onClick = onClick)
+        onClick = onClick,
+        )
 
 }
 

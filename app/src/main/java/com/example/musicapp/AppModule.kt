@@ -11,6 +11,9 @@ import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.work.WorkManager
+import coil.ImageLoader
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
 import com.example.musicapp.data.dao.ArtistDao
@@ -21,9 +24,11 @@ import com.example.musicapp.data.database.AppDatabase
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
 import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
+import com.example.musicapp.data.repository.OfflineDynamicThemeRepository
 import com.example.musicapp.data.repository.OfflinePlayQueueRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
@@ -92,6 +97,7 @@ object AppModule {
 //    @Retention(AnnotationRetention.BINARY)
 //    annotation class SpotifyRetrofit
 
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
@@ -103,6 +109,25 @@ object AppModule {
             "music_app_db"
         )
             .addMigrations(*ALL_MIGRATIONS)
+            .build()
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideCoilImageLoader(@ApplicationContext context: Context): ImageLoader{
+        return ImageLoader.Builder(context)
+            .memoryCache {
+                MemoryCache.Builder(context)
+                    .maxSizePercent(0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(521L * 1024 * 1024)
+                    .build()
+            }
             .build()
     }
 
@@ -309,6 +334,12 @@ object AppModule {
     @Singleton
     fun provideWorkManagerRepository(workManager: WorkManager): WorkerManagerRepository {
         return OfflineWorkerManagerRepository(workManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDynamicThemeRepository(imageLoader: ImageLoader): DynamicThemeRepository {
+        return OfflineDynamicThemeRepository(imageLoader)
     }
 
 }

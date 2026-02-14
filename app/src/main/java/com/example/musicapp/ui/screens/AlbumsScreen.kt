@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.screens
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,8 @@ import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.navigation.NavBackStackEntry
 import com.example.musicapp.HomeScreen
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.dto.TrackInfo
@@ -28,8 +31,11 @@ fun AlbumsGrid(
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
     showReleaseDate: Boolean = false,
-    onClick: ((GridItem) -> Unit)? = null
-){
+    onClick: ((GridItem) -> Unit)? = null,
+    header: (@Composable () -> Unit)? = null,
+    ){
+
+
     val items = albums.map { album ->
         GridItem.AlbumItem(
             id = album.albumId,
@@ -53,7 +59,8 @@ fun AlbumsGrid(
             bottomStart = 4.dp,
             bottomEnd = 4.dp),
         textStyle = MaterialTheme.typography.bodyMedium,
-        onClick = onClick
+        onClick = onClick,
+        header = header,
     )
 }
 
@@ -63,7 +70,8 @@ fun AllAlbumsScreen(
     onClick: (GridItem) -> Unit,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
-    sortRequest: SortOption?) {
+    sortRequest: SortOption?,
+    ) {
     val albumViewModel: AllAlbumsViewModel = hiltViewModel()
 
     LaunchedEffect(sortRequest) {
@@ -78,11 +86,10 @@ fun AllAlbumsScreen(
 
     AlbumsGrid(
         albums,
-        showReleaseDate = false,
-        onClick = onClick,
         onPlayNext = onPlayNext,
-        onAddToQueue = onAddToQueue
-        )
+        onAddToQueue = onAddToQueue,
+        onClick = onClick,
+    )
 }
 
 

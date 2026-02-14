@@ -1,10 +1,13 @@
 package com.example.musicapp.ui.components
 
+import android.util.Log
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,8 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.entity.Album
 import com.example.musicapp.model.GridItem
 
 
@@ -31,7 +32,10 @@ fun Grid(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     showReleaseDate: Boolean = false,
-    onClick: ((GridItem) -> Unit)? = null) {
+    onClick: ((GridItem) -> Unit)? = null,
+    header: (@Composable () -> Unit)? = null,
+) {
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -39,6 +43,11 @@ fun Grid(
         modifier = modifier
     ) {
 
+        if (header != null){
+            item(span = {
+                GridItemSpan(maxLineSpan)
+            }) { header() }
+        }
 
 
         items(listItems, key = {it.id}) { item ->

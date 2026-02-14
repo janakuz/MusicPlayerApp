@@ -31,6 +31,8 @@ interface TrackRepository {
 
     suspend fun getTrackByUri(uri: String): Track?
 
+    suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo>
+
     suspend fun insertAll(tracks: List<Track>)
 
     suspend fun insert(track: Track)

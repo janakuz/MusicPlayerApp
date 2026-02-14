@@ -1,11 +1,9 @@
 package com.example.musicapp
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -25,7 +23,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.yield
 import retrofit2.HttpException
+import kotlin.math.min
 
 @HiltWorker
 class MetadataWorker @AssistedInject constructor(
@@ -75,7 +75,7 @@ class MetadataWorker @AssistedInject constructor(
             ForegroundInfo {
         val notification = NotificationCompat.Builder(applicationContext,CHANNEL_ID)
             .setContentTitle("Enriching Library")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.outline_sync_24)
             .setOngoing(true)
             .build()
         return ForegroundInfo(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
@@ -180,9 +180,30 @@ class MetadataWorker @AssistedInject constructor(
             )
             setProgress(progressData)
 
+            yield()
+
             current++
         }
 
+    }
+
+    private suspend fun fuzzyMatch(
+        albumTitleLocal: String,
+        albumTitleAPI: String,
+        artistLocal: String,
+        artistAPI: String,
+        releaseDateLocal: String?,
+        releaseDateAPI: String?
+    ): Boolean{
+        if (albumTitleLocal == albumTitleAPI) return true
+        if (albumTitleLocal.isSimilar(albumTitleAPI, threshold = 0.85)) return true
+        if (albumTitleLocal.isSimilar(albumTitleAPI, threshold = 0.65) &&
+            artistLocal == artistAPI && (releaseDateLocal == null || releaseDateAPI == null || releaseDateLocal == releaseDateAPI)) return true
+        if ( (albumTitleLocal.startsWith(albumTitleAPI) || albumTitleAPI.startsWith(albumTitleLocal)) &&
+            artistLocal == artistAPI && min(albumTitleAPI.length, albumTitleLocal.length) > 10 &&
+            (releaseDateLocal == null || releaseDateAPI == null || releaseDateLocal == releaseDateAPI)
+        ) return true
+        return false
     }
 
     private suspend fun getAlbumData(album: Album, albumTitle: String, artistName: String, releaseDate: String?, albumArt: String?): AlbumMetadataResult{
@@ -216,7 +237,7 @@ class MetadataWorker @AssistedInject constructor(
 
             if (discogsResponse != null && discogsResponse.results.isNotEmpty()){
                 while (i < discogsResponse.results.size &&
-                    discogsResponse.results[i].title.split(" - ")[1].normalizeForMatching() == albumTitle.normalizeForMatching()){
+                    discogsResponse.results[i].title.split(" - ")[1].normalizeForMatching() != albumTitle.normalizeForMatching()){
                     i++
                 }
             }
