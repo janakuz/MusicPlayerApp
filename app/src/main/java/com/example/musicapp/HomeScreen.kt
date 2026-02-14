@@ -1,5 +1,6 @@
 package com.example.musicapp
 
+import android.annotation.SuppressLint
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.screens.AllTracksScreen
@@ -176,43 +178,89 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             startDestination = startDest,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(route = HomeScreen.Artists.name) {
-                AllArtistsScreen(
-                    sortRequest = artistSort,
-                    onClick = { artist ->
-                        navController.navigate("artist/${artist.id}")
-                    },
-                    onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
-                    onAddToQueue = { artist -> playerViewModel.addToQueueArtist(artist.id) },
-                )
-            }
 
-            composable(route = HomeScreen.Albums.name) {
-                AllAlbumsScreen(
-                    sortRequest = albumSort,
-                    onClick = { album ->
-                        navController.navigate("album/${album.id}")
-                    },
-                    onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
-                    onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
-                )
-            }
 
-            composable(route = HomeScreen.Tracks.name) {
-                AllTracksScreen(
-                    sortRequest = trackSort,
-                    onClick = {
-                        track, tracks -> playerViewModel.playTracks(tracks, track)
-                        navController.navigate("nowPlaying")
-                    },
-                    onPlayNext = {
-                        track -> playerViewModel.playNext(track)
-                    },
-                    onAddToQueue = {
-                        track -> playerViewModel.addToQueue(track)
-                    },
-                )
-            }
+
+//            navigation(
+//                route = "library",
+//                startDestination = HomeScreen.Artists.name
+//            ) {
+
+                composable(route = HomeScreen.Artists.name) {
+                    AllArtistsScreen(
+                        sortRequest = artistSort,
+                        onClick = { artist ->
+                            navController.navigate("artist/${artist.id}")
+                            {
+                                launchSingleTop = true
+    //                            restoreState = true
+                            }
+                        },
+                        onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onAddToQueue = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                    )
+                }
+
+                composable(route = HomeScreen.Albums.name) {
+                    AllAlbumsScreen(
+                        sortRequest = albumSort,
+                        onClick = { album ->
+                            navController.navigate("album/${album.id}"){
+                                launchSingleTop = true
+  //                              restoreState = true
+                            }
+                        },
+                        onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
+                        onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                    )
+                }
+
+                composable(route = HomeScreen.Tracks.name) {
+                    AllTracksScreen(
+                        sortRequest = trackSort,
+                        onClick = { track, tracks ->
+                            playerViewModel.playTracks(tracks, track)
+                            navController.navigate("nowPlaying")
+                        },
+                        onPlayNext = { track ->
+                            playerViewModel.playNext(track)
+                        },
+                        onAddToQueue = { track ->
+                            playerViewModel.addToQueue(track)
+                        },
+                    )
+                }
+
+                composable("artist/{artistId}") {
+                    ArtistView(
+                        onAlbumClick = {album ->
+                            navController.navigate("album/${album.id}"){
+                                launchSingleTop = true
+//                                restoreState = true
+                            }
+                        },
+                        sortRequest = artistDetailSort,
+                        onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
+                        onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
+                    )
+                }
+
+                composable("album/{albumId}") {
+                    AlbumView(
+                        onTrackClick = { track, tracks ->
+                            playerViewModel.playTracks(tracks, track)
+                            navController.navigate("nowPlaying")
+                            {
+                                launchSingleTop = true
+                            }
+                        },
+                        onPlayNext = { track -> playerViewModel.playNext(track)},
+                        onAddToQueue = { track -> playerViewModel.addToQueue(track)}
+                    )
+                }
+
+
+  //          }
 
             composable(HomeScreen.Scan.name) {
                 ScanLibraryScreen(
@@ -220,16 +268,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 )
             }
 
-            composable("artist/{artistId}") {
-                ArtistView(
-                    onAlbumClick = {album ->
-                        navController.navigate("album/${album.id}")
-                    },
-                    sortRequest = artistDetailSort,
-                    onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
-                    onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
-                )
-            }
 
 
             composable("nowPlaying") { backStackEntry ->
@@ -241,25 +279,19 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                          {
                              launchSingleTop = true
                          } },
-                     onBack = { navController.popBackStack() }
+                     onBack = { navController.popBackStack() },
+                     onArtistClick = { artistId ->
+                         navController.navigate("artist/${artistId}")
+                     },
+                     onAlbumClick = { albumId ->
+                         navController.navigate("album/${albumId}")
+                     }
                  )
             }
 
-            composable("album/{albumId}") {
-                AlbumView(
-                    onTrackClick = { track, tracks ->
-                        playerViewModel.playTracks(tracks, track)
-                        navController.navigate("nowPlaying")
-                        {
-                            launchSingleTop = true
-                        }
-                    },
-                    onPlayNext = { track -> playerViewModel.playNext(track)},
-                    onAddToQueue = { track -> playerViewModel.addToQueue(track)}
-                )
-            }
-
         }
+
+
     }
 }
 

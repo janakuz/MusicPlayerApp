@@ -1,26 +1,198 @@
 package com.example.musicapp.ui.screens
 
+import android.text.Layout
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.example.musicapp.R
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
+import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AlbumDetailViewModel
+import java.nio.file.WatchEvent
+
+
+@Composable
+fun AlbumDetailHeader(
+    image: String,
+    title: String,
+    gradientColors: PlayerColors,
+) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+//            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(350.dp)
+            ) {
+                val defaultImage = painterResource(R.drawable.baseline_album_24)
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(image)
+                        .size(400)
+                        .crossfade(false)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .placeholderMemoryCacheKey(image)
+                        .build(),
+                    placeholder = defaultImage,
+                    error = defaultImage,
+                    fallback = defaultImage,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush =
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                                        MaterialTheme.colorScheme.background
+//                                        gradientColors.mainColor.copy(alpha = 0.6f),
+//                                        gradientColors.mainColor.copy(alpha = 0.5f)
+                                    )
+                                )
+                        )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+}
+
+
+@Composable
+fun AlbumInfoRow(album: Album) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        InfoChip(text = album.releaseDate.toString())
+
+        DotSeparator()
+
+        InfoChip(text = "${album.numTracks} Tracks")
+
+        DotSeparator()
+
+        InfoChip(text = formatDuration(album.duration))
+    }
+}
+
+@Composable
+fun InfoChip(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = CircleShape,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun DotSeparator() {
+    Text(
+        text = "•",
+        modifier = Modifier.padding(horizontal = 8.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+    )
+}
+
+@Composable
+fun FullHeader(album: Album, gradientColors: PlayerColors) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AlbumDetailHeader(
+            image = album.image.toString(),
+            title = album.title,
+            gradientColors = gradientColors
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        AlbumInfoRow(album)
+        Spacer(modifier = Modifier.height(8.dp))
+
+    }
+}
+
+@Composable
+fun Footer(label: String) {
+    Row(
+        modifier = Modifier
+            .padding(top = 16.dp, start = 8.dp)
+            .fillMaxWidth(),
+    ) {
+        Text(
+            text = "Released on $label",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+    }
+}
 
 @Composable
 fun AlbumView(
@@ -37,43 +209,48 @@ fun AlbumView(
     val tracksUiState by albumDetailViewModel.albumTracksUiState.collectAsState()
     val tracks = tracksUiState.tracks
 
+
     val visualTracks = tracks.map { track -> VisualTrack(key = track.trackId, data = track) }
 
     if (album != null) {
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AlbumDetailHeader(
-                image = album.image.toString(),
-                title = album.title
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Row() {
-                Text(
-                    text = album.releaseDate.toString(),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+        albumDetailViewModel.getAlbumColors(album.image.toString())
+        val gradientColors = albumDetailViewModel.albumColors
 
-                Text(text = album.numTracks.toString(), style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.width(4.dp))
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .height(500.dp)
+//                .background(
+//                    brush =
+//                        Brush.verticalGradient(
+//                            colors = listOf(
+////                                MaterialTheme.colorScheme.background,
+////                                gradientColors.mainColor.copy(alpha = 0.5f),
+//                                gradientColors.mainColor.copy(alpha = 0.4f),
+//                                Color.Transparent,
+////                                MaterialTheme.colorScheme.background
+//                            )
+//                        )
+//                )
+//        )
 
-                Text(
-                    text = formatDuration(album.duration),
-                    style = MaterialTheme.typography.bodySmall
-                )
 
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            TrackList(
+        TrackList(
                 visualTracks,
                 onClick = {track -> onTrackClick(track.data, tracks)},
                 onPlayNext = onPlayNext,
                 onAddToQueue = onAddToQueue,
                 showTrackNum = true,
+                header = {FullHeader(
+                    album,
+                    gradientColors)
+                },
+            footer = {
+                if (album.label != null && album.label != "") Footer(album.label) else null
+            }
             )
-        }
+//        }
     }
 
 }

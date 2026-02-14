@@ -3,6 +3,10 @@ package com.example.musicapp.ui.viewmodels
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -23,7 +27,9 @@ import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.QueueItemFull
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.QueueItem
+import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,6 +53,7 @@ class PlayerViewModel @Inject constructor (
     @ApplicationContext private val context: Context,
     private val playQueueRepository: PlayQueueRepository,
     private val trackRepository: TrackRepository,
+    private val dynamicThemeRepository: DynamicThemeRepository,
 ) : ViewModel() {
 //    private val mediaController = MutableStateFlow<MediaController?>(null)
 //    val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
@@ -87,6 +94,12 @@ class PlayerViewModel @Inject constructor (
 
     private val _eventChannel = Channel<String>(Channel.BUFFERED)
     val events = _eventChannel.receiveAsFlow()
+
+    var albumColors by mutableStateOf(PlayerColors(
+        mainColor = Color(0xFF121212),
+        secondaryColor = Color.Cyan,
+        onColor = Color.White
+    ))
 
     //    val currentTrack: StateFlow<TrackInfo?> = combine(queue, playQueueRepository.currentSession) { currentQueue, session ->
 //        if (currentQueue.isEmpty() || session.playQueueIndex !in currentQueue.indices) {
@@ -179,6 +192,8 @@ class PlayerViewModel @Inject constructor (
                                 trackNum = mediaItem?.mediaMetadata?.trackNumber,
                                 duration = mediaItem?.mediaMetadata?.durationMs ?: 0L,
                                 fileUri = mediaItem?.requestMetadata?.mediaUri.toString(),
+                                albumId = mediaItem?.mediaMetadata?.extras?.getInt("albumId") ?: 0,
+                                artistId = mediaItem?.mediaMetadata?.extras?.getInt("artistId") ?: 0
                             )
                             _currentTrack.value = PlayQueueItemUUID(
                                 queueId = mediaItem?.mediaId ?: "",
@@ -250,6 +265,15 @@ class PlayerViewModel @Inject constructor (
     fun syncDraft() {
         _draftQueue.value = queue.value
     }
+
+    fun getAlbumColors(imagePath: String) {
+        viewModelScope.launch {
+            dynamicThemeRepository.extractColorsFromUrl(imagePath, context = context)?.let {
+                albumColors = it
+            }
+        }
+    }
+
 
     fun togglePlayback(){
 //        val controller = mediaController.value ?: return
@@ -550,7 +574,9 @@ class PlayerViewModel @Inject constructor (
                 MediaMetadata.Builder()
                     .setExtras(
                         bundleOf(
-                            "ID" to queueItem.track.trackId
+                            "ID" to queueItem.track.trackId,
+                            "artistId" to queueItem.track.artistId,
+                            "albumId" to queueItem.track.albumId
                         )
                     )
                     .setTitle(queueItem.track.title.toString())

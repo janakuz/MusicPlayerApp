@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            MusicAppTheme {
+            MusicAppTheme (darkTheme = true) {
 
                 val context = LocalContext.current
 

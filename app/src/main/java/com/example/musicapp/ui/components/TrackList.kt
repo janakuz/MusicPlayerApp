@@ -10,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -41,8 +42,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
@@ -131,10 +134,13 @@ fun TrackInfoRow(
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(artwork)
+                        .size(128)
                         .crossfade(false)
                         .diskCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(artwork)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .placeholderMemoryCacheKey(artwork)
+                        .memoryCacheKey(artwork)
                         .build(),
                     placeholder = painterResource(R.drawable.baseline_album_24),
                     error = painterResource(R.drawable.baseline_album_24),
@@ -187,97 +193,118 @@ fun TrackRow(
     val selectionState by selectionViewModel.selectionState.collectAsState()
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                else if (!useQueueId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                else Color.Transparent)
-            .combinedClickable(
-                onClick = {
-                    if (!selectionMode) onClick(track)
-                    else if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId)
-                    else selectionViewModel.toggleSelection(track.key.toString()) },
-                onLongClick = {
-                    if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId) else selectionViewModel.toggleSelection(track.key.toString())
-                }
-            )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (showReorderIconStart) {
-            Icon(
-                imageVector = Icons.Default.DragHandle,
-                contentDescription = "Reorder",
-                modifier = reorderModifier
-                    .padding(end = 8.dp)
-            )
-        }
-        if (showTrackNum) {
-            if (isPlaying) LiveEqualizer() else Text(text = trackNum.toString(), style = MaterialTheme.typography.bodySmall)
-        }
+    Column {
 
-        TrackInfoRow(
-            artwork = artwork,
-            title = title,
-            artist = artist,
-            modifier = Modifier.weight(1f),
-            showArtwork = showArtwork
-        )
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(
+                    if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                    else if (!useQueueId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                        alpha = 0.7f
+                    )
+                    else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                        alpha = 0.7f
+                    )
+                    else Color.Transparent
+                )
+                .combinedClickable(
+                    onClick = {
+                        if (!selectionMode) onClick(track)
+                        else if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId)
+                        else selectionViewModel.toggleSelection(track.key.toString())
+                    },
+                    onLongClick = {
+                        if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId) else selectionViewModel.toggleSelection(
+                            track.key.toString()
+                        )
+                    }
+                )
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
 
-        Text(text = duration, style = MaterialTheme.typography.bodyMedium)
-
-
-        if (showReorderIconEnd) {
-            Icon(
-                imageVector = Icons.Default.DragHandle,
-                contentDescription = "Reorder",
-                modifier = reorderModifier
-                    .padding(start = 8.dp)
-            )
-        }
-
-        Box {
-            IconButton(onClick = { expanded = true }) {
-
+            ) {
+            if (showReorderIconStart) {
                 Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Menu",
+                    imageVector = Icons.Default.DragHandle,
+                    contentDescription = "Reorder",
+                    modifier = reorderModifier
+                        .padding(end = 8.dp)
+                )
+            }
+            if (showTrackNum) {
+                if (isPlaying) LiveEqualizer() else Text(
+                    text = trackNum.toString(),
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 
+            TrackInfoRow(
+                artwork = artwork,
+                title = title,
+                artist = artist,
+                modifier = Modifier.weight(1f),
+                showArtwork = showArtwork
+            )
 
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Play Next") },
-                    onClick = {
-                        onPlayNext(track.data)
-                        expanded = false
-                    }
+            Text(text = duration, style = MaterialTheme.typography.bodyMedium)
+
+
+            if (showReorderIconEnd) {
+                Icon(
+                    imageVector = Icons.Default.DragHandle,
+                    contentDescription = "Reorder",
+                    modifier = reorderModifier
+                        .padding(start = 8.dp)
                 )
-                DropdownMenuItem(
-                    text = { Text("Add to Queue") },
-                    onClick = {
-                        onAddToQueue(track.data)
-                        expanded = false
-                    }
-                )
-                if (onRemoveFromQueue != null) {
+            }
+
+            Box {
+                IconButton(onClick = { expanded = true }) {
+
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                    )
+                }
+
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
                     DropdownMenuItem(
-                        text = { (Text("Remove from Queue")) },
+                        text = { Text("Play Next") },
                         onClick = {
-                            onRemoveFromQueue(trackIndex)
+                            onPlayNext(track.data)
                             expanded = false
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("Add to Queue") },
+                        onClick = {
+                            onAddToQueue(track.data)
+                            expanded = false
+                        }
+                    )
+                    if (onRemoveFromQueue != null) {
+                        DropdownMenuItem(
+                            text = { (Text("Remove from Queue")) },
+                            onClick = {
+                                onRemoveFromQueue(trackIndex)
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
         }
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+        )
+
     }
 }
 
@@ -418,7 +445,9 @@ fun TrackList(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to -> {} },
-) {
+    header: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
+    ) {
     val hapticFeedback = LocalHapticFeedback.current
 
     val activity = LocalActivity.current
@@ -430,6 +459,9 @@ fun TrackList(
 
     LazyColumn(state = state,
         ) {
+        if (header != null){
+            item { header() }
+        }
         itemsIndexed(tracks, key = { index, track -> track.key }) { id, queueTrack ->
             val track = queueTrack.data
             ReorderableItem(reorderable, key = queueTrack.key) { isDragging ->
@@ -463,6 +495,10 @@ fun TrackList(
                 )
 
             }
+        }
+
+        if (footer != null){
+            item { footer() }
         }
     }
 

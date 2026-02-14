@@ -26,7 +26,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -42,7 +42,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -58,7 +58,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -68,7 +68,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -81,7 +81,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -92,7 +92,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -103,7 +103,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -114,7 +114,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -125,7 +125,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id

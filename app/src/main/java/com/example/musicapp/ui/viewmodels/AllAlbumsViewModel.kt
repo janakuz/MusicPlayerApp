@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.viewmodels
 
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.AlbumInfo
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -32,6 +34,8 @@ class AllAlbumsViewModel @Inject constructor(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
+
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val albumListUiState: StateFlow<AlbumListUiState> = userPreferencesRepository.albumSortOption
         .flatMapLatest { option ->
@@ -40,9 +44,10 @@ class AllAlbumsViewModel @Inject constructor(
                 .onStart { emit(AlbumListUiState(isLoading = true)) }
                 .catch { e -> emit(AlbumListUiState(error = e.message, isLoading = false)) }
         }
+        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.Lazily,
             initialValue = AlbumListUiState(isLoading = true)
 
         )

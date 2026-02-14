@@ -76,16 +76,21 @@ fun ScanLibraryScreen(
                 progress = { uiState.scanProgress },
                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
             )
-            Text("Importing ${ (uiState.scanProgress * 100).toInt() }%")
+            Text("Importing ${ (uiState.scanProgress).toInt() }%")
 
         }
         else if (uiState.isEnriching){
             Text("Tracks imported! Retrieving metadata...")
 
+            Spacer(Modifier.height(8.dp))
+
             LinearProgressIndicator(
                 progress = { uiState.enrichmentProgress },
                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
             )
+
+            Spacer(Modifier.height(8.dp))
+
             Text("${uiState.statusMessage}")
         }
 

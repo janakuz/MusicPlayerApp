@@ -1,5 +1,7 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.util.Log
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -34,6 +37,7 @@ class AllArtistsViewModel @Inject constructor(
     }
 
 
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val artistListUiState: StateFlow<ArtistListUiState> = userPreferencesRepository.artistSortOption
         .flatMapLatest { option ->
@@ -42,9 +46,10 @@ class AllArtistsViewModel @Inject constructor(
                 .onStart { emit(ArtistListUiState(isLoading = true)) }
                 .catch { e -> emit(ArtistListUiState(error = e.message, isLoading = false)) }
         }
+        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.Lazily,
             initialValue = ArtistListUiState(isLoading = true)
         )
 
@@ -53,6 +58,10 @@ class AllArtistsViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferencesRepository.updateArtistSort(option)
         }
+    }
+
+    init {
+        Log.d("Artists VM", "CREATED ${hashCode()}")
     }
 
 

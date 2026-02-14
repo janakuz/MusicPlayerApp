@@ -1,12 +1,20 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.DynamicThemeRepository
+import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,11 +24,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.contracts.contract
 
 @HiltViewModel
 class AlbumDetailViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
     private val trackRepository: TrackRepository,
+    private val dynamicThemeRepository: DynamicThemeRepository,
+    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -37,6 +48,11 @@ class AlbumDetailViewModel @Inject constructor(
     private val _albumTracksUiState = MutableStateFlow(TracksUiState())
     val albumTracksUiState: StateFlow<TracksUiState> = _albumTracksUiState.asStateFlow()
 
+    var albumColors by mutableStateOf(PlayerColors(
+        mainColor = Color(0xFF121212),
+        secondaryColor = Color.Cyan,
+        onColor = Color.White
+    ))
 
     init {
         viewModelScope.launch {
@@ -77,6 +93,14 @@ class AlbumDetailViewModel @Inject constructor(
                 }
         }
 
+    }
+
+    fun getAlbumColors(imagePath: String) {
+        viewModelScope.launch {
+            dynamicThemeRepository.extractColorsFromUrl(imagePath, context = context)?.let {
+                albumColors = it
+            }
+        }
     }
 
 }

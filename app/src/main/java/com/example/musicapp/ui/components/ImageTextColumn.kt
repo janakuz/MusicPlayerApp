@@ -1,18 +1,27 @@
 package com.example.musicapp.ui.components
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -72,26 +81,79 @@ fun ImageWithTextColumn(
 //            } else Modifier).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val defalutImage = if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_artist_24)
-        Box {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(image)
-                    .crossfade(true)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .placeholderMemoryCacheKey(image)
-                    .build(),
-                placeholder = defalutImage,
-                error = defalutImage,
-                fallback = defalutImage,
-                contentDescription = null,
-                modifier = imageModifier
-                    .clip(imageShape)
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-                contentScale = ContentScale.Crop
-            )
+        val defaultImage = if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_groups_24)
+//        val default = if (isAlbum)
+//            Icon(
+//                imageVector = Icons.Default.Album,
+//                contentDescription = null,
+//                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+////                modifier = Modifier.size(40.dp)
+//            )
+//        else Icon(
+//            imageVector = Icons.Rounded.Groups,
+//            contentDescription = null,
+//            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+////            modifier = Modifier.size(40.dp)
+//        )
+        Surface(modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+//            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clip(imageShape),
+//            contentAlignment = Alignment.Center,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        ) {
+//            if (image != "" && image.lowercase() != "null") {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(image)
+                        .size(400)
+                        .crossfade(false)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(image)
+                        .memoryCacheKey(image)
+                        .placeholderMemoryCacheKey(image)
+                        .build(),
+                    placeholder = defaultImage,
+                    error = defaultImage,
+                    fallback = defaultImage,
+                    contentDescription = null,
+                    modifier = imageModifier
+                        .clip(imageShape)
+                        .fillMaxWidth()
+                        .aspectRatio(1f),
+                    contentScale = ContentScale.Crop
+                )
+//            }
+//            else {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+////                        .aspectRatio(1f)
+////                        .clip(imageShape)
+//                        .background(MaterialTheme.colorScheme.surfaceVariant),
+//                    contentAlignment = Alignment.Center
+//                )
+//                {
+//                    if (!isAlbum) {
+//                        Icon(
+//                            imageVector = Icons.Rounded.Groups,
+//                            contentDescription = null,
+//                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+//                            modifier = Modifier.size(80.dp)
+//                        )
+//                    }
+//                    else{
+//                        Icon(
+//                            imageVector = Icons.Default.Album,
+//                            contentDescription = null,
+//                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+//                            modifier = Modifier.size(100.dp)
+//                        )
+//                    }
+//                }
+//            }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
