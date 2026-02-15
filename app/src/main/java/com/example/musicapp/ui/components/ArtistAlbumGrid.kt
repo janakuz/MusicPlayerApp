@@ -28,6 +28,7 @@ fun Grid(
     shape: Shape,
     isAlbum: Boolean,
     onPlayNext: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
@@ -71,6 +72,7 @@ fun Grid(
                     onClick = onClick,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
+                    onEdit = onEdit,
                     item = item
                 )
             }

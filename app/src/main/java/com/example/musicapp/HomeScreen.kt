@@ -37,6 +37,7 @@ import com.example.musicapp.ui.components.NowPlayingBar
 import com.example.musicapp.ui.components.SelectionTopBar
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.screens.AllAlbumsScreen
+import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.ScanLibraryScreen
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
@@ -80,6 +81,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val editRoutes = listOf<String>("artist/edit", "album/edit", "track/edit")
+
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel()
 
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
@@ -105,7 +108,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             Column {
                 val selectedTabIndex =
                     tabs.indexOfFirst { it.name == currentRoute }
-                if (currentRoute != "nowPlaying" && !selectionMode) {
+                if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all { currentRoute?.startsWith(it) == false }) {
                     LibraryTopBar(
                         currentScreen = routeToLibraryScreen(currentRoute),
                         onSearchClick = { },
@@ -198,6 +201,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
                         onAddToQueue = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onEdit = { artist -> navController.navigate("artist/edit/${artist.id}")}
                     )
                 }
 
@@ -258,6 +262,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { track -> playerViewModel.addToQueue(track)}
                     )
                 }
+
+            composable("artist/edit/{artistId}") {
+                ArtistEditScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
 
 
   //          }

@@ -28,6 +28,8 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.painterResource
+import com.example.musicapp.R
 
 @Composable
 fun NowPlayingBar(
@@ -57,11 +59,18 @@ fun NowPlayingBar(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(track.albumArt)
+                    .size(128)
                     .crossfade(false)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(track.albumArt)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .placeholderMemoryCacheKey(track.albumArt)
+                    .memoryCacheKey(track.albumArt)
                     .build(),
                 contentDescription = null,
+                placeholder = painterResource(R.drawable.baseline_album_24),
+                error = painterResource(R.drawable.baseline_album_24),
+                fallback = painterResource(R.drawable.baseline_album_24),
                 modifier = Modifier.size(56.dp)
             )
 

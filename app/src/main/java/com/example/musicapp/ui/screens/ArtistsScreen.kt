@@ -24,6 +24,7 @@ fun AllArtistsScreen(
     onClick: ((GridItem) -> Unit)? = null,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
 ){
     val artistViewModel: AllArtistsViewModel = hiltViewModel()
@@ -51,6 +52,7 @@ fun AllArtistsScreen(
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
         onClick = onClick,
+        onEdit = onEdit
         )
 
 }

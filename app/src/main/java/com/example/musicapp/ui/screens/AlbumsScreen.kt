@@ -61,6 +61,7 @@ fun AlbumsGrid(
         textStyle = MaterialTheme.typography.bodyMedium,
         onClick = onClick,
         header = header,
+        onEdit = {}
     )
 }
 
