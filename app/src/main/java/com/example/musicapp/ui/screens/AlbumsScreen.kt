@@ -32,6 +32,7 @@ fun AlbumsGrid(
     onAddToQueue: (GridItem) -> Unit,
     showReleaseDate: Boolean = false,
     onClick: ((GridItem) -> Unit)? = null,
+    onEdit: (GridItem) -> Unit,
     header: (@Composable () -> Unit)? = null,
     ){
 
@@ -61,7 +62,7 @@ fun AlbumsGrid(
         textStyle = MaterialTheme.typography.bodyMedium,
         onClick = onClick,
         header = header,
-        onEdit = {}
+        onEdit = onEdit
     )
 }
 
@@ -71,6 +72,7 @@ fun AllAlbumsScreen(
     onClick: (GridItem) -> Unit,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
     ) {
     val albumViewModel: AllAlbumsViewModel = hiltViewModel()
@@ -90,6 +92,7 @@ fun AllAlbumsScreen(
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
         onClick = onClick,
+        onEdit = onEdit
     )
 }
 

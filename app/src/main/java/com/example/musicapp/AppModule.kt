@@ -16,19 +16,25 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
+import com.example.musicapp.data.dao.AlbumGenreDao
 import com.example.musicapp.data.dao.ArtistDao
+import com.example.musicapp.data.dao.GenreDao
 import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.database.ALL_MIGRATIONS
 import com.example.musicapp.data.database.AppDatabase
 import com.example.musicapp.data.repository.AlbumArtistRepository
+import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
+import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
+import com.example.musicapp.data.repository.OfflineAlbumGenreRepository
 import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflineDynamicThemeRepository
+import com.example.musicapp.data.repository.OfflineGenreRepository
 import com.example.musicapp.data.repository.OfflinePlayQueueRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
@@ -299,6 +305,27 @@ object AppModule {
     @Provides
     @Singleton
     fun provideQueueDao(db: AppDatabase): QueueDao = db.queueDao()
+
+
+    @Provides
+    @Singleton
+    fun provideGenreDao(db: AppDatabase): GenreDao = db.genreDao()
+
+    @Provides
+    @Singleton
+    fun provideGenreRepository(genreDao: GenreDao): GenreRepository {
+        return OfflineGenreRepository(genreDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlbumGenreDao(db: AppDatabase): AlbumGenreDao = db.albumGenreDao()
+
+    @Provides
+    @Singleton
+    fun provideAlbumGenreRepository(albumGenreDao: AlbumGenreDao, genreDao: GenreDao): AlbumGenreRepository {
+        return OfflineAlbumGenreRepository(albumGenreDao, genreDao)
+    }
 
 
     @Provides

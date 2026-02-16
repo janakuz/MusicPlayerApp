@@ -124,6 +124,29 @@ class LocalLibraryScanner@Inject constructor(
     }
 
 
+    fun findAllAlbumArtOptions(context: Context, fileUri: String): List<String>? {
+        val folder = File(fileUri).parentFile ?: return null
+        val commonNames = listOf("cover", "folder", "front", "album", "art")
+        val extensions = listOf("jpg", "jpeg", "png")
+
+        val files = folder.listFiles() ?: return null
+
+        val matches = files.filter { file ->
+            val name = file.nameWithoutExtension.lowercase()
+            commonNames.contains(name) && extensions.contains(file.extension.lowercase())
+        }.map { it.absolutePath }
+
+        val altMatches = files.filter {
+            extensions.contains(it.extension.lowercase())
+        }.map { it.absolutePath }
+
+        val embedded = getEmbeddedPicture(context, fileUri, folder)
+        val embeddedList = if (embedded != null) listOf(embedded) else emptyList()
+
+        return matches + altMatches + embeddedList
+    }
+
+
     private suspend fun queryMediaStore(context: Context, isManual: Boolean = false): List<RawAudioEntry> {
         val list = mutableListOf<RawAudioEntry>()
         val projection = arrayOf(

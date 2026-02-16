@@ -154,6 +154,7 @@ fun ArtistView(
     onAlbumClick: ((GridItem) -> Unit)? = null,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?
 ){
 
@@ -179,7 +180,9 @@ fun ArtistView(
                 onClick = onAlbumClick,
                 onAddToQueue = onAddToQueue,
                 onPlayNext = onPlayNext,
-                header = {FullArtistHeader(artist)})
+                header = {FullArtistHeader(artist)},
+                onEdit = onEdit
+            )
 
     }
 

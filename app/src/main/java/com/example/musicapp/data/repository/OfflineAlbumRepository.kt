@@ -129,6 +129,21 @@ class OfflineAlbumRepository(
         }
     }
 
+    override suspend fun getAllCAAOptions(mbid: String): List<String> {
+        return try {
+            val response = coverArtArchiveApiService.getAlbumImage(mbid)
+            if (response.images.isNotEmpty()) {
+                response.images.map {it.image.replace("http://", "https://")}
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("AlbumArt", "Failed to fetch art for $mbid: ${e.message}")
+            emptyList()
+        }
+
+    }
+
     override suspend fun insertAll(albums: List<Album>) {
         albumDao.insertAll(albums)
     }

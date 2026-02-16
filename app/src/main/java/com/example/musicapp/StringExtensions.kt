@@ -11,6 +11,21 @@ fun String.normalizeForMatching(): String {
         .trim()
 }
 
+fun String.normalizeGenre(): String {
+    return this.lowercase()
+        .replace("-", " ")
+        .replace(Regex("\\bthe\\b"), "")
+        .replace(Regex("\\((.*?)\\)"), "")
+        .replace(Regex("[^a-z0-9\\s]"), "")
+        .replace(Regex("\\s+"), " ")
+        .replace("ep", "")
+        .trim()
+}
+
+fun String.toTitleCase() = split(" ").joinToString(" ") {
+    it.lowercase().replaceFirstChar { char -> char.uppercase() }
+}
+
 fun String.cleanForSearching(): String {
     return this.lowercase()
         .replace("&", "and")

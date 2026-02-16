@@ -39,6 +39,8 @@ interface AlbumRepository {
 
     suspend fun getAlbumArt(mbid: String): String?
 
+    suspend fun getAllCAAOptions(mbid: String): List<String>
+
     suspend fun insertAll(albums: List<Album>)
 
     suspend fun insert(album: Album)

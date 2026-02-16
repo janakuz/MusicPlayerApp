@@ -36,6 +36,7 @@ import com.example.musicapp.ui.screens.AllArtistsScreen
 import com.example.musicapp.ui.components.NowPlayingBar
 import com.example.musicapp.ui.components.SelectionTopBar
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.screens.AlbumEditScreen
 import com.example.musicapp.ui.screens.AllAlbumsScreen
 import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
@@ -216,6 +217,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}") }
                     )
                 }
 
@@ -245,7 +247,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         sortRequest = artistDetailSort,
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
-                        onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
+                        onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)},
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}") }
                     )
                 }
 
@@ -269,8 +272,14 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 )
             }
 
+            composable("album/edit/{albumId}") {
+                AlbumEditScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
 
-  //          }
+
+            //          }
 
             composable(HomeScreen.Scan.name) {
                 ScanLibraryScreen(
