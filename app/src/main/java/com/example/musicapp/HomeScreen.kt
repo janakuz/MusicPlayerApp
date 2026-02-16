@@ -41,6 +41,7 @@ import com.example.musicapp.ui.screens.AllAlbumsScreen
 import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.ScanLibraryScreen
+import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 
@@ -234,6 +235,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { track ->
                             playerViewModel.addToQueue(track)
                         },
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
                     )
                 }
 
@@ -262,7 +264,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track)},
-                        onAddToQueue = { track -> playerViewModel.addToQueue(track)}
+                        onAddToQueue = { track -> playerViewModel.addToQueue(track)},
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
                     )
                 }
 
@@ -274,6 +277,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
             composable("album/edit/{albumId}") {
                 AlbumEditScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("track/edit/{trackId}") {
+                TrackEditScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
@@ -304,7 +313,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                      },
                      onAlbumClick = { albumId ->
                          navController.navigate("album/${albumId}")
-                     }
+                     },
+                     onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
                  )
             }
 

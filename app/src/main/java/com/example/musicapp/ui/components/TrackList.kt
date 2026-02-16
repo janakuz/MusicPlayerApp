@@ -178,6 +178,7 @@ fun TrackRow(
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
+    onEdit: (TrackInfo) -> Unit,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -296,6 +297,14 @@ fun TrackRow(
                             }
                         )
                     }
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = {
+                            onEdit(track.data)
+                            expanded = false
+                        }
+                    )
+
                 }
             }
         }
@@ -437,6 +446,7 @@ fun TrackList(
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
+    onEdit: (TrackInfo) -> Unit,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -469,7 +479,7 @@ fun TrackList(
                     artwork = track.albumArt.toString(),
                     title = track.title,
                     artist = track.artistName,
-                    isPlaying = currentTrackId==queueTrack.key,
+                    isPlaying = currentTrackId == queueTrack.key,
                     onClick = onClick,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
@@ -483,15 +493,15 @@ fun TrackList(
                     useQueueId = strictHighlight,
                     trackIndex = id,
                     onRemoveFromQueue = onRemoveFromQueue,
-                    reorderModifier = Modifier.
-                            draggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                            },
-                    onDragStopped = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                    },
-                )
+                    reorderModifier = Modifier.draggableHandle(
+                        onDragStarted = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                        },
+                        onDragStopped = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                        },
+                    ),
+                    onEdit = onEdit,
                 )
 
             }

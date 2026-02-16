@@ -199,6 +199,7 @@ fun AlbumView(
     onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onEdit: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){
     val albumDetailViewModel: AlbumDetailViewModel = hiltViewModel()
@@ -237,18 +238,19 @@ fun AlbumView(
 
 
         TrackList(
-                visualTracks,
-                onClick = {track -> onTrackClick(track.data, tracks)},
-                onPlayNext = onPlayNext,
-                onAddToQueue = onAddToQueue,
-                showTrackNum = true,
-                header = {FullHeader(
-                    album,
-                    gradientColors)
-                },
+            visualTracks,
+            onClick = {track -> onTrackClick(track.data, tracks)},
+            onPlayNext = onPlayNext,
+            onAddToQueue = onAddToQueue,
+            showTrackNum = true,
+            header = {FullHeader(
+                album,
+                gradientColors)
+            },
             footer = {
                 if (album.label != null && album.label != "") Footer(album.label) else null
-            }
+            },
+            onEdit = onEdit
             )
 //        }
     }

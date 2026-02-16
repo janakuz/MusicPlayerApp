@@ -149,6 +149,33 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
     }
 }
 
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `moods` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `name` TEXT NOT NULL
+            )
+        """)
+
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_moods_name` ON `moods` (`name`)")
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `track_moods` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `trackId` INTEGER NOT NULL, 
+                `moodId` INTEGER NOT NULL, 
+                FOREIGN KEY(`moodId`) REFERENCES `moods`(`id`) ON DELETE CASCADE, 
+                FOREIGN KEY(`trackId`) REFERENCES `tracks`(`id`) ON DELETE CASCADE
+            )
+        """)
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_track_moods_moodId` ON `track_moods` (`moodId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_track_moods_trackId` ON `track_moods` (`trackId`)")
+    }
+}
+
+
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
     MIGRATION_5_6,
@@ -156,4 +183,6 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_7_8,
     MIGRATION_8_9,
     MIGRATION_9_10,
-    MIGRATION_10_11)
+    MIGRATION_10_11,
+    MIGRATION_11_12
+)

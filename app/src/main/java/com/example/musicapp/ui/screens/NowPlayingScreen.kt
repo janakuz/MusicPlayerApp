@@ -55,6 +55,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import java.nio.file.WatchEvent
@@ -257,6 +258,7 @@ fun NowPlayingWithQueue(
     playerViewModel: PlayerViewModel,
     onTrackClick: (String) -> Unit,
     onBack: () -> Unit,
+    onEdit: (TrackInfo) -> Unit,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit
 ) {
@@ -294,7 +296,9 @@ fun NowPlayingWithQueue(
                     {track -> onTrackClick(track.key.toString())},
                     onPlayNext = { track -> playerViewModel.playNext(track) },
                     onAddToQueue = { track -> playerViewModel.addToQueue(track)},
-                    playerViewModel)
+                    onEdit = onEdit,
+                    playerViewModel
+                )
             }
         },
         content = {

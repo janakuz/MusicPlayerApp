@@ -19,8 +19,10 @@ import com.example.musicapp.data.dao.AlbumDao
 import com.example.musicapp.data.dao.AlbumGenreDao
 import com.example.musicapp.data.dao.ArtistDao
 import com.example.musicapp.data.dao.GenreDao
+import com.example.musicapp.data.dao.MoodDao
 import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
+import com.example.musicapp.data.dao.TrackMoodDao
 import com.example.musicapp.data.database.ALL_MIGRATIONS
 import com.example.musicapp.data.database.AppDatabase
 import com.example.musicapp.data.repository.AlbumArtistRepository
@@ -29,17 +31,21 @@ import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.GenreRepository
+import com.example.musicapp.data.repository.MoodRepository
 import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
 import com.example.musicapp.data.repository.OfflineAlbumGenreRepository
 import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflineDynamicThemeRepository
 import com.example.musicapp.data.repository.OfflineGenreRepository
+import com.example.musicapp.data.repository.OfflineMoodRepository
 import com.example.musicapp.data.repository.OfflinePlayQueueRepository
+import com.example.musicapp.data.repository.OfflineTrackMoodRepository
 import com.example.musicapp.data.repository.OfflineTrackRepository
 import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
 import com.example.musicapp.data.repository.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.WorkerManagerRepository
@@ -327,6 +333,26 @@ object AppModule {
         return OfflineAlbumGenreRepository(albumGenreDao, genreDao)
     }
 
+
+    @Provides
+    @Singleton
+    fun provideMoodDao(db: AppDatabase): MoodDao = db.moodDao()
+
+    @Provides
+    @Singleton
+    fun provideMoodRepository(moodDao: MoodDao): MoodRepository {
+        return OfflineMoodRepository(moodDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTrackMoodDao(db: AppDatabase): TrackMoodDao = db.trackMoodDao()
+
+    @Provides
+    @Singleton
+    fun provideTrackMoodRepository(trackMoodDao: TrackMoodDao, moodDao: MoodDao): TrackMoodRepository {
+        return OfflineTrackMoodRepository(trackMoodDao, moodDao)
+    }
 
     @Provides
     @Singleton

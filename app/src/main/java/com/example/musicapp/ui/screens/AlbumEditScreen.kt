@@ -165,13 +165,14 @@ fun GenrePicker(
     genres: List<String>,
     suggestions: List<String>,
     onGenreQueryChange: (String) -> Unit,
-    onGenresChange: (List<String>) -> Unit
+    onGenresChange: (List<String>) -> Unit,
+    label: String
 ) {
     var textFieldValue by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text("Genres", style = MaterialTheme.typography.labelMedium)
+        Text("${label}s", style = MaterialTheme.typography.labelMedium)
 
         FlowRow(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -204,7 +205,7 @@ fun GenrePicker(
                     expanded = true
                 },
                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                label = { Text("Add Genre") },
+                label = { Text("Add $label") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -356,7 +357,8 @@ fun AlbumEditScreen(
                     genres = albumEditUiState.draftGenres,
                     onGenresChange = { list -> albumEditViewModel.onGenresChange(list) },
                     suggestions = suggestions,
-                    onGenreQueryChange = { query -> albumEditViewModel.onGenreQueryChange(query)}
+                    onGenreQueryChange = { query -> albumEditViewModel.onGenreQueryChange(query)},
+                    label = "Genre"
                 )
             }
 

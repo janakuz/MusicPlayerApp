@@ -42,7 +42,7 @@ class AlbumEditViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val albumId: Int = savedStateHandle.get<String>("albumId")?.toInt()
-        ?: throw IllegalStateException("artistId not found in SavedStateHandle")
+        ?: throw IllegalStateException("trackId not found in SavedStateHandle")
 
     private val _uiState = MutableStateFlow(AlbumEditUiState())
     val uiState = _uiState.asStateFlow()
@@ -174,7 +174,8 @@ class AlbumEditViewModel @Inject constructor(
         _uiState.update { it.copy(
             draftReleaseDate = initialDate ?: "",
             draftImageUrl = initialImageUrl ?: "",
-            draftLabel = initialLabel ?: ""
+            draftLabel = initialLabel ?: "",
+            draftGenres = initialGenres
         )}
     }
 }
