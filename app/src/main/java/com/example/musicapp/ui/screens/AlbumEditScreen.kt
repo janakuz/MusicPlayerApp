@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Public
 import com.example.musicapp.ui.viewmodels.ImageOption
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -60,7 +62,9 @@ import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
 import kotlin.math.absoluteValue
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -278,7 +282,6 @@ fun AlbumEditScreen(
             }
         )
     }
-
     Scaffold(
         topBar = {
             EditTopBar(
@@ -290,8 +293,7 @@ fun AlbumEditScreen(
             if (canSave) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        albumEditViewModel.onSave()
-                        onNavigateBack()
+                        albumEditViewModel.onSave(onNavigateBack)
                     },
                     text = { Text("Save") },
                     icon = { Icon(Icons.Default.Check, null) }
@@ -300,68 +302,101 @@ fun AlbumEditScreen(
         }
     ) { padding ->
 
-        LazyColumn (modifier = Modifier.padding(padding)) {
-            item {
-                AlbumImagePicker(
-                    images = images,
-                    currentSelection = albumEditUiState.draftImageUrl,
-                    onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) }
-                )
-            }
+        Box(modifier = Modifier.fillMaxSize()) {
 
-            item {
-                OutlinedTextField(
-                    value = albumEditUiState.title,
-                    onValueChange = {},
-                    label = { Text("Album Title") },
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+
+            LazyColumn(modifier = Modifier.padding(padding)) {
+                item {
+                    AlbumImagePicker(
+                        images = images,
+                        currentSelection = albumEditUiState.draftImageUrl,
+                        onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) }
                     )
-                )
-            }
+                }
 
-            item {
-                OutlinedTextField(
-                    value = albumEditUiState.draftReleaseDate,
-                    onValueChange = { albumEditViewModel.onReleaseDateChange(it) },
-                    label = { Text("Release Date") },
-                    enabled = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                item {
+                    OutlinedTextField(
+                        value = albumEditUiState.title,
+                        onValueChange = { albumEditViewModel.onTitleChange(it) },
+                        label = { Text("Album Title") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-                )
-            }
+                }
 
-
-            item {
-                OutlinedTextField(
-                    value = albumEditUiState.draftLabel,
-                    onValueChange = { albumEditViewModel.onLabelChange(it) },
-                    label = { Text("Record Label") },
-                    enabled = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                item {
+                    OutlinedTextField(
+                        value = albumEditUiState.artist,
+                        onValueChange = { albumEditViewModel.onArtistChange(it) },
+                        label = { Text("Artist") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-                )
+                }
+
+
+                item {
+                    OutlinedTextField(
+                        value = albumEditUiState.draftReleaseDate,
+                        onValueChange = { albumEditViewModel.onReleaseDateChange(it) },
+                        label = { Text("Release Date") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+
+                item {
+                    OutlinedTextField(
+                        value = albumEditUiState.draftLabel,
+                        onValueChange = { albumEditViewModel.onLabelChange(it) },
+                        label = { Text("Record Label") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+                item {
+                    GenrePicker(
+                        genres = albumEditUiState.draftGenres,
+                        onGenresChange = { list -> albumEditViewModel.onGenresChange(list) },
+                        suggestions = suggestions,
+                        onGenreQueryChange = { query -> albumEditViewModel.onGenreQueryChange(query) },
+                        label = "Genre"
+                    )
+                }
             }
 
-            item {
-                GenrePicker(
-                    genres = albumEditUiState.draftGenres,
-                    onGenresChange = { list -> albumEditViewModel.onGenresChange(list) },
-                    suggestions = suggestions,
-                    onGenreQueryChange = { query -> albumEditViewModel.onGenreQueryChange(query)},
-                    label = "Genre"
-                )
-            }
+            if (albumEditUiState.isSaving) {
+                Surface(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Text("Saving...", color = Color.White)
+                    }
+                }
 
+                BackHandler(enabled = true) { }
+            }
 
         }
     }

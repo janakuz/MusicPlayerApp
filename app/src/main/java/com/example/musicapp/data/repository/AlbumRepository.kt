@@ -1,6 +1,7 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
@@ -29,6 +30,8 @@ interface AlbumRepository {
 
     suspend fun getById(id: Int): Album
 
+    suspend fun getByIdFull(id: Int): AlbumInfo
+
     suspend fun getByTitle(title: String, year: String?): Album?
 
     suspend fun findAlbumMB(query: String): ReleaseSearchResponse?
@@ -52,4 +55,6 @@ interface AlbumRepository {
     suspend fun delete(album: Album)
 
     suspend fun deleteOrphaned()
+
+    suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int)
 }

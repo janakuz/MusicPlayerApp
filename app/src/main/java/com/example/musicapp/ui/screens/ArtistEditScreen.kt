@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,6 +56,8 @@ import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
 import kotlin.math.absoluteValue
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
 
 
 @Composable
@@ -230,8 +234,7 @@ fun ArtistEditScreen(
             if (canSave) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        artistEditViewModel.onSave()
-                        onNavigateBack()
+                        artistEditViewModel.onSave(onNavigateBack)
                     },
                     text = { Text("Save") },
                     icon = { Icon(Icons.Default.Check, null) }
@@ -240,37 +243,55 @@ fun ArtistEditScreen(
         }
     ) { padding ->
 
-        LazyColumn (modifier = Modifier.padding(padding)) {
-            item {
-                ArtistImagePicker(
-                    images = images,
-                    currentSelection = artistEditUiState.draftImageUrl,
-                    onImageSelected = { selected -> artistEditViewModel.onImageChange(selected) }
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = artistEditUiState.name,
-                    onValueChange = {},
-                    label = { Text("Artist Name") },
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(modifier = Modifier.padding(padding)) {
+                item {
+                    ArtistImagePicker(
+                        images = images,
+                        currentSelection = artistEditUiState.draftImageUrl,
+                        onImageSelected = { selected -> artistEditViewModel.onImageChange(selected) }
                     )
-                )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = artistEditUiState.name,
+                        onValueChange = { artistEditViewModel.onNameChange(it) },
+                        label = { Text("Artist Name") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+                item {
+                    ArtistBioEditor(
+                        draftBio = artistEditUiState.draftBio,
+                        lastFmBio = artistEditUiState.lastFmBio,
+                        discogsBio = artistEditUiState.discogsBio,
+                        onBioChange = { newBio -> artistEditViewModel.onBioChange(newBio) }
+                    )
+                }
+
             }
 
-            item {
-                ArtistBioEditor(
-                    draftBio = artistEditUiState.draftBio,
-                    lastFmBio = artistEditUiState.lastFmBio,
-                    discogsBio = artistEditUiState.discogsBio,
-                    onBioChange = { newBio -> artistEditViewModel.onBioChange(newBio) }
-                )
+            if (artistEditUiState.isSaving) {
+                Surface(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Text("Saving...", color = Color.White)
+                    }
+                }
+
+                BackHandler(enabled = true) { }
             }
+
 
         }
     }

@@ -4,9 +4,11 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.MetadataWorker
 import com.example.musicapp.data.dto.DiscogsImage
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistEditViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
+    private val metadataRepository: MetadataRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -31,11 +34,15 @@ class ArtistEditViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ArtistEditUiState())
     val uiState = _uiState.asStateFlow()
 
-    private var initialBio: String? = null
-    private var initialImageUrl: String? = null
+    private var initialName: String? = null
+    private var initialBio: String? = ""
+    private var initialImageUrl: String? = ""
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
-        val hasChanges = state.draftBio != initialBio || state.draftImageUrl != initialImageUrl
+        val hasChanges = state.draftBio != initialBio || state.draftImageUrl != initialImageUrl || state.name != initialName
+        Log.d("bio", initialBio + " " + state.draftBio)
+        Log.d("image", "init:" + initialImageUrl + " " + "draft:" + state.draftImageUrl)
+        Log.d("name", initialName + " " + state.name)
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -46,13 +53,14 @@ class ArtistEditViewModel @Inject constructor(
     private fun loadArtistData() {
         viewModelScope.launch {
             val artist = artistRepository.getArtist(artistId).first()
+            initialName = artist.name
             initialBio = artist.bio
-            initialImageUrl = artist.image
+            initialImageUrl = artist.image ?: ""
             _uiState.update { it.copy(
                 name = artist.name,
                 draftBio = artist.bio ?: "",
                 draftImageUrl = artist.image ?: ""
-            )
+                )
             }
 
 
@@ -62,6 +70,10 @@ class ArtistEditViewModel @Inject constructor(
 
 
 
+    }
+
+    fun onNameChange(newName: String) {
+        _uiState.update { it.copy(name = newName) }
     }
 
     fun onBioChange(newBio: String) {
@@ -90,15 +102,24 @@ class ArtistEditViewModel @Inject constructor(
         }
     }
 
-    fun onSave(){
+    fun onSave(onBack: () -> Unit){
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
 
             val currentArtist = artistRepository.getArtist(artistId).first()
 
-//            val isDirty = _uiState.value.draftBio != originalBio || draftImageUrl != originalImageUrl
             val newArtist = currentArtist.copy(bio = _uiState.value.draftBio, image = _uiState.value.draftImageUrl)
             artistRepository.update(newArtist)
+
+            if (initialName != _uiState.value.name){
+                metadataRepository.updateArtist(
+                    newArtistName = _uiState.value.name,
+                    oldArtist = currentArtist
+                )
+            }
+
+            _uiState.update { it.copy(isSaving = false) }
+            onBack()
         }
     }
 

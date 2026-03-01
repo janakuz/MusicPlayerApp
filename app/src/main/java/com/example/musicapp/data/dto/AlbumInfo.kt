@@ -8,5 +8,6 @@ data class AlbumInfo(
     val artistId: Int,
     val image: String?,
     val label: String?,
+    val mbId: String? = null,
     val duration: Long
 )

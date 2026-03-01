@@ -1,6 +1,7 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dao.AlbumArtistDao
+import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.dto.AlbumIdWithArtist
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
@@ -10,7 +11,9 @@ import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
-class OfflineAlbumArtistRepository(private val albumArtistDao : AlbumArtistDao) : AlbumArtistRepository {
+class OfflineAlbumArtistRepository(
+    private val albumArtistDao : AlbumArtistDao,
+    private val trackDao: TrackDao) : AlbumArtistRepository {
     override fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>> {
         return albumArtistDao.getAlbumsByArtist(artistId)
     }
@@ -65,5 +68,6 @@ class OfflineAlbumArtistRepository(private val albumArtistDao : AlbumArtistDao) 
         newArtistId: Int
     ) {
         albumArtistDao.updateArtistForAlbum(albumId, oldArtistId, newArtistId)
+        trackDao.updateArtistForAlbum(albumId, oldArtistId, newArtistId)
     }
 }

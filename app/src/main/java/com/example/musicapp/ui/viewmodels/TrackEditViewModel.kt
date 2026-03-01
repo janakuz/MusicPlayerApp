@@ -7,6 +7,9 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.MoodRepository
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
@@ -36,6 +39,9 @@ class TrackEditViewModel  @Inject constructor(
     private val trackRepository: TrackRepository,
     private val moodRepository: MoodRepository,
     private val trackMoodRepository: TrackMoodRepository,
+    private val metadataRepository: MetadataRepository,
+    private val albumRepository: AlbumRepository,
+    private val artistRepository: ArtistRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -65,13 +71,15 @@ class TrackEditViewModel  @Inject constructor(
             initialValue = emptyList()
         )
 
+    private var initialArtist: String? = null
+    private var initialAlbum: String? = null
     private var initialNumber: String? = ""
     private var initialTitle: String? = ""
     private var initialMoods: List<String> = emptyList()
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges = state.draftTrackNumber != initialNumber || state.title != initialTitle
-                || state.draftMoods != initialMoods
+                || state.draftMoods != initialMoods || state.album != initialAlbum || state.artist != initialArtist
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -83,6 +91,8 @@ class TrackEditViewModel  @Inject constructor(
         viewModelScope.launch {
             val track = trackRepository.getTrackInfo(trackId).first()
             val moods = trackMoodRepository.getTrackMoods(trackId)
+            initialAlbum = track.albumTitle
+            initialArtist = track.artistName
             initialNumber = track.trackNum.toString()
             initialTitle = track.title
             initialMoods = moods
@@ -102,6 +112,16 @@ class TrackEditViewModel  @Inject constructor(
 
     fun onTitleChange(newTitle: String) {
         _uiState.update { it.copy(title = newTitle) }
+    }
+
+
+    fun onAlbumChange(newAlbum: String) {
+        _uiState.update { it.copy(album = newAlbum) }
+    }
+
+
+    fun onArtistChange(newArtist: String) {
+        _uiState.update { it.copy(artist = newArtist) }
     }
 
 
@@ -135,9 +155,10 @@ class TrackEditViewModel  @Inject constructor(
         return path
     }
 
-    fun onSave(){
+    fun onSave(onBack: () -> Unit){
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
+
 
             val currentTrack = trackRepository.getTrackById(trackId).first()
 
@@ -147,6 +168,37 @@ class TrackEditViewModel  @Inject constructor(
             )
             trackRepository.update(newTrack)
             trackMoodRepository.updateTrackMoods(trackId, _uiState.value.draftMoods)
+
+
+            if (initialAlbum != _uiState.value.album) {
+                val track = trackRepository.getTrackInfo(trackId).first()
+                val currentAlbum = albumRepository.getAlbum(track.albumId).first()
+                val currentAlbumInfo = albumRepository.getByIdFull(track.albumId)
+                val currentArtist = artistRepository.getArtist(currentAlbumInfo.artistId).first()
+
+                metadataRepository.updateAlbum(
+                    newAlbumTitle = _uiState.value.album,
+                    oldAlbum = currentAlbum,
+                    newArtistName = _uiState.value.artist,
+                    oldArtist = currentArtist,
+                    newReleaseDate = null,
+                    newAlbumArt = null
+                )
+            }
+
+            else if (initialArtist != _uiState.value.artist){
+                val track = trackRepository.getTrackInfo(trackId).first()
+                val currentArtist = artistRepository.getArtist(track.artistId).first()
+                metadataRepository.updateArtist(
+                    newArtistName = _uiState.value.artist,
+                    oldArtist = currentArtist
+                )
+
+            }
+            _uiState.update { it.copy(isSaving = false) }
+            onBack()
+
+
         }
     }
 

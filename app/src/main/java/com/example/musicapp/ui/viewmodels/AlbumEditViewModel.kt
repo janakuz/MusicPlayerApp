@@ -5,9 +5,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.LocalLibraryScanner
+import com.example.musicapp.MetadataWorker
 import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.GenreRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -34,10 +37,12 @@ import kotlin.text.toInt
 class AlbumEditViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val albumRepository: AlbumRepository,
+    private val artistRepository: ArtistRepository,
     private val albumGenreRepository: AlbumGenreRepository,
     private val genreRepository: GenreRepository,
     private val trackRepository: TrackRepository,
     private val localLibraryScanner: LocalLibraryScanner,
+    private val metadataRepository: MetadataRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -67,14 +72,27 @@ class AlbumEditViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+
+    private var initialTitle: String? = null
+    private var initialArtist: String? = null
     private var initialDate: String? = null
-    private var initialImageUrl: String? = null
-    private var initialLabel: String? = null
+    private var initialImageUrl: String? = ""
+    private var initialLabel: String? = ""
     private var initialGenres: List<String> = emptyList()
+
+    val titleChanged: StateFlow<Boolean> = _uiState.map { state ->
+        val hasChanges = state.title != initialTitle
+        hasChanges && !state.isSaving
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val artistChanged: StateFlow<Boolean> = _uiState.map { state ->
+        val hasChanges = state.artist != initialArtist
+        hasChanges && !state.isSaving
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges = state.draftReleaseDate != initialDate || state.draftImageUrl != initialImageUrl
-                || state.draftLabel != initialLabel || state.draftGenres != initialGenres
+                || state.draftLabel != initialLabel || state.draftGenres != initialGenres || state.title != initialTitle || state.artist != initialArtist
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -84,14 +102,17 @@ class AlbumEditViewModel @Inject constructor(
 
     private fun loadAlbumData() {
         viewModelScope.launch {
-            val album = albumRepository.getAlbum(albumId).first()
+            val album = albumRepository.getByIdFull(albumId)
             val genres = albumGenreRepository.getAlbumGenres(albumId)
+            initialTitle = album.title
+            initialArtist = album.artistName
             initialDate = album.releaseDate
-            initialImageUrl = album.image
+            initialImageUrl = album.image ?: ""
             initialLabel = album.label
             initialGenres = genres
             _uiState.update { it.copy(
                 title = album.title,
+                artist = album.artistName,
                 draftReleaseDate = album.releaseDate ?: "",
                 draftImageUrl = album.image ?: "",
                 draftLabel = album.label ?: "",
@@ -105,6 +126,14 @@ class AlbumEditViewModel @Inject constructor(
 
 
 
+    }
+
+    fun onTitleChange(newTitle: String) {
+        _uiState.update { it.copy(title = newTitle) }
+    }
+
+    fun onArtistChange(newArtist: String) {
+        _uiState.update { it.copy(artist = newArtist) }
     }
 
     fun onReleaseDateChange(newDate: String) {
@@ -155,11 +184,13 @@ class AlbumEditViewModel @Inject constructor(
     }
 
 
-    fun onSave(){
+    fun onSave(onBack: () -> Unit){
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
 
             val currentAlbum = albumRepository.getAlbum(albumId).first()
+            val currentAlbumInfo = albumRepository.getByIdFull(albumId)
+            val currentArtist = artistRepository.getArtist(currentAlbumInfo.artistId).first()
 
             val newAlbum = currentAlbum.copy(
                 releaseDate = _uiState.value.draftReleaseDate,
@@ -167,6 +198,26 @@ class AlbumEditViewModel @Inject constructor(
                 label = _uiState.value.draftLabel)
             albumRepository.update(newAlbum)
             albumGenreRepository.updateAlbumGenres(albumId, _uiState.value.draftGenres)
+
+            if (initialTitle != _uiState.value.title){
+                metadataRepository.updateAlbum(
+                    newAlbumTitle = _uiState.value.title,
+                    oldAlbum = currentAlbum,
+                    newArtistName = _uiState.value.artist,
+                    oldArtist = currentArtist,
+                    newReleaseDate = _uiState.value.draftReleaseDate,
+                    newAlbumArt = _uiState.value.draftImageUrl
+                )
+            }
+
+            else if (initialArtist != _uiState.value.artist){
+                metadataRepository.updateArtist(
+                    newArtistName = _uiState.value.artist,
+                    oldArtist = currentArtist
+                )
+            }
+            _uiState.update { it.copy(isSaving = false) }
+            onBack()
         }
     }
 
@@ -184,6 +235,7 @@ class AlbumEditViewModel @Inject constructor(
 data class AlbumEditUiState(
     val isLoading: Boolean = false,
     val title: String = "",
+    val artist: String = "",
     val draftReleaseDate: String = "",
     val draftImageUrl: String = "",
     val availableImages: List<ImageOption> = emptyList(),

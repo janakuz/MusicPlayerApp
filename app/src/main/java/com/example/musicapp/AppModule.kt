@@ -31,6 +31,7 @@ import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.GenreRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.MoodRepository
 import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
 import com.example.musicapp.data.repository.OfflineAlbumGenreRepository
@@ -38,6 +39,7 @@ import com.example.musicapp.data.repository.OfflineAlbumRepository
 import com.example.musicapp.data.repository.OfflineArtistRepository
 import com.example.musicapp.data.repository.OfflineDynamicThemeRepository
 import com.example.musicapp.data.repository.OfflineGenreRepository
+import com.example.musicapp.data.repository.OfflineMetadataRepository
 import com.example.musicapp.data.repository.OfflineMoodRepository
 import com.example.musicapp.data.repository.OfflinePlayQueueRepository
 import com.example.musicapp.data.repository.OfflineTrackMoodRepository
@@ -288,11 +290,13 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAlbumRepository(albumDao: AlbumDao,
+                               trackDao: TrackDao,
                                musicbrainzApiService: MusicbrainzApiService,
                                coverArtArchiveApiService: CoverArtArchiveApiService,
                                discogsApiService: DiscogsApiService): AlbumRepository {
         return OfflineAlbumRepository(
             albumDao,
+            trackDao,
             musicbrainzApiService,
             coverArtArchiveApiService,
             discogsApiService)
@@ -304,9 +308,21 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAlbumArtistRepository(albumArtistDao: AlbumArtistDao): AlbumArtistRepository {
-        return OfflineAlbumArtistRepository(albumArtistDao)
+    fun provideAlbumArtistRepository(
+        albumArtistDao: AlbumArtistDao,
+        trackDao: TrackDao): AlbumArtistRepository {
+        return OfflineAlbumArtistRepository(albumArtistDao, trackDao)
     }
+
+    @Provides
+    @Singleton
+    fun provideMetadataRepository(
+        albumRepository: AlbumRepository,
+        artistRepository: ArtistRepository,
+        albumArtistRepository: AlbumArtistRepository): MetadataRepository {
+        return OfflineMetadataRepository(albumRepository, artistRepository, albumArtistRepository)
+    }
+
 
     @Provides
     @Singleton

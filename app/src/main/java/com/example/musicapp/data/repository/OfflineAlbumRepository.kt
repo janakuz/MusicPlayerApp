@@ -2,7 +2,9 @@ package com.example.musicapp.data.repository
 
 import android.util.Log
 import com.example.musicapp.data.dao.AlbumDao
+import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +20,7 @@ import kotlinx.coroutines.delay
 
 class OfflineAlbumRepository(
     private val albumDao: AlbumDao,
+    private val trackDao: TrackDao,
     private val musicbrainzApiService: MusicbrainzApiService,
     private val coverArtArchiveApiService: CoverArtArchiveApiService,
     private val discogsApiService: DiscogsApiService) : AlbumRepository {
@@ -57,6 +60,10 @@ class OfflineAlbumRepository(
 
     override suspend fun getById(id: Int): Album {
         return albumDao.getById(id)
+    }
+
+    override suspend fun getByIdFull(id: Int): AlbumInfo {
+        return albumDao.getByIdFull(id)
     }
 
     override suspend fun getByTitle(title: String, year: String?): Album? {
@@ -166,5 +173,9 @@ class OfflineAlbumRepository(
 
     override suspend fun deleteOrphaned() {
         albumDao.deleteOrphaned()
+    }
+
+    override suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int) {
+        trackDao.moveToAlbum(oldAlbumId, newAlbumId)
     }
 }
