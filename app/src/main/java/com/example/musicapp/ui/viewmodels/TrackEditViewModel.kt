@@ -3,6 +3,7 @@ package com.example.musicapp.ui.viewmodels
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -170,33 +171,40 @@ class TrackEditViewModel  @Inject constructor(
             trackMoodRepository.updateTrackMoods(trackId, _uiState.value.draftMoods)
 
 
-            if (initialAlbum != _uiState.value.album) {
-                val track = trackRepository.getTrackInfo(trackId).first()
-                val currentAlbum = albumRepository.getAlbum(track.albumId).first()
-                val currentAlbumInfo = albumRepository.getByIdFull(track.albumId)
-                val currentArtist = artistRepository.getArtist(currentAlbumInfo.artistId).first()
+            try {
 
-                metadataRepository.updateAlbum(
-                    newAlbumTitle = _uiState.value.album,
-                    oldAlbum = currentAlbum,
-                    newArtistName = _uiState.value.artist,
-                    oldArtist = currentArtist,
-                    newReleaseDate = null,
-                    newAlbumArt = null
-                )
+                if (initialAlbum != _uiState.value.album) {
+                    val track = trackRepository.getTrackInfo(trackId).first()
+                    val currentAlbum = albumRepository.getAlbum(track.albumId).first()
+                    val currentAlbumInfo = albumRepository.getByIdFull(track.albumId)
+                    val currentArtist =
+                        artistRepository.getArtist(currentAlbumInfo.artistId).first()
+
+//                    metadataRepository.updateAlbum(
+//                        newAlbumTitle = _uiState.value.album,
+//                        oldAlbum = currentAlbum,
+//                        newArtistName = _uiState.value.artist,
+//                        oldArtist = currentArtist,
+//                        newReleaseDate = null,
+//                        newAlbumArt = null
+//                    )
+                } else if (initialArtist != _uiState.value.artist) {
+                    val track = trackRepository.getTrackInfo(trackId).first()
+                    val currentArtist = artistRepository.getArtist(track.artistId).first()
+//                    metadataRepository.updateArtist(
+//                        newArtistName = _uiState.value.artist,
+//                        oldArtist = currentArtist
+//                    )
+//
+                }
+                _uiState.update { it.copy(isSaving = false) }
+                onBack()
             }
-
-            else if (initialArtist != _uiState.value.artist){
-                val track = trackRepository.getTrackInfo(trackId).first()
-                val currentArtist = artistRepository.getArtist(track.artistId).first()
-                metadataRepository.updateArtist(
-                    newArtistName = _uiState.value.artist,
-                    oldArtist = currentArtist
-                )
+            catch (e: Exception){
+                Log.d("SaveError", "Failed to save: ${e.message}", e)
+                _uiState.update { it.copy(isSaving = false) }
 
             }
-            _uiState.update { it.copy(isSaving = false) }
-            onBack()
 
 
         }

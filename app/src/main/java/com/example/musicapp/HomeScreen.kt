@@ -271,7 +271,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
             composable("artist/edit/{artistId}") {
                 ArtistEditScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = {
+                        navController.navigate(HomeScreen.Artists.name) {
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
 

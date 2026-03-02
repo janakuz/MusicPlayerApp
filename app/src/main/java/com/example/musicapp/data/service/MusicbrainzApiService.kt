@@ -1,6 +1,7 @@
 package com.example.musicapp.data.service
 
 import com.example.musicapp.data.dto.ArtistMBResponse
+import com.example.musicapp.data.dto.ArtistSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -20,4 +21,11 @@ interface MusicbrainzApiService {
         @Query("fmt") format: String = "json",
         @Query("inc") inc: String = "url-rels+tags"
     ) : ArtistMBResponse
+
+    @GET("artist/")
+    suspend fun findArtist(
+        @Query("query") query: String,
+        @Query("fmt") format: String = "json"
+    ) : ArtistSearchResponse
+
 }

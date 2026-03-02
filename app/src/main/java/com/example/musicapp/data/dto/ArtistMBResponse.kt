@@ -37,4 +37,22 @@ data class UrlWrapper(
     val resource: String?
 )
 
+data class ArtistSearchInfo(
+    val id: String,
+    val name: String,
+    @SerializedName("sort-name") val sortName: String?,
+    val type: String?,
+    val disambiguation: String?,
+    val country: String?,
+    val area: Area?,
+    val tags: List<Tag>?,
+    @SerializedName("begin-area") val beginArea: Area?,
+    @SerializedName("life-span") val lifeSpan: LifeSpan?,
+)
+
+data class ArtistSearchResponse(
+    val created: String,
+    val count: Int,
+    val artists: List<ArtistSearchInfo>
+)
 

@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -199,25 +200,32 @@ class AlbumEditViewModel @Inject constructor(
             albumRepository.update(newAlbum)
             albumGenreRepository.updateAlbumGenres(albumId, _uiState.value.draftGenres)
 
-            if (initialTitle != _uiState.value.title){
-                metadataRepository.updateAlbum(
-                    newAlbumTitle = _uiState.value.title,
-                    oldAlbum = currentAlbum,
-                    newArtistName = _uiState.value.artist,
-                    oldArtist = currentArtist,
-                    newReleaseDate = _uiState.value.draftReleaseDate,
-                    newAlbumArt = _uiState.value.draftImageUrl
-                )
-            }
+            try {
+//                if (initialTitle != _uiState.value.title) {
+//                    metadataRepository.updateAlbum(
+//                        newAlbumTitle = _uiState.value.title,
+//                        oldAlbum = currentAlbum,
+//                        newArtistName = _uiState.value.artist,
+//                        oldArtist = currentArtist,
+//                        newReleaseDate = _uiState.value.draftReleaseDate,
+//                        newAlbumArt = _uiState.value.draftImageUrl
+//                    )
+//                } else if (initialArtist != _uiState.value.artist) {
+//                    metadataRepository.updateArtist(
+//                        newArtistName = _uiState.value.artist,
+//                        oldArtist = currentArtist
+//                    )
+//                }
 
-            else if (initialArtist != _uiState.value.artist){
-                metadataRepository.updateArtist(
-                    newArtistName = _uiState.value.artist,
-                    oldArtist = currentArtist
-                )
+                _uiState.update { it.copy(isSaving = false) }
+                onBack()
+
             }
-            _uiState.update { it.copy(isSaving = false) }
-            onBack()
+            catch (e: Exception){
+                Log.d("SaveError", "Failed to save: ${e.message}", e)
+                _uiState.update { it.copy(isSaving = false) }
+
+            }
         }
     }
 

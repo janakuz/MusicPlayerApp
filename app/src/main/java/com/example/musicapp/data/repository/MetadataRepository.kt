@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
@@ -10,20 +11,21 @@ interface MetadataRepository {
 
     suspend fun enrichMetadata(isManual: Boolean) : Flow<ScanProgress>
 
-    suspend fun updateAlbum(
-        newAlbumTitle: String,
-        oldAlbum: Album,
-        newArtistName: String,
-        oldArtist: Artist,
-        newReleaseDate: String?,
-        newAlbumArt: String?
-    )
+//    suspend fun updateAlbum(
+//        newAlbumTitle: String,
+//        oldAlbum: Album,
+//        newArtistName: String,
+//        oldArtist: Artist,
+//        newReleaseDate: String?,
+//        newAlbumArt: String?
+//    )
 
     suspend fun updateArtist(
         newArtistName: String,
         oldArtist: Artist,
-        newAlbumMeta: AlbumMetadataResult? = null
-    )
+        mbArtist: ArtistSearchInfo? = null,
+        albumToMove: Album? = null,
+    ) : Artist
 }
 
 data class AlbumMetadataResult(

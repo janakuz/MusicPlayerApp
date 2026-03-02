@@ -6,9 +6,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,8 +28,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -58,6 +62,9 @@ import kotlin.math.absoluteValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
+import com.example.musicapp.data.dto.ArtistSearchInfo
+import androidx.compose.foundation.lazy.items
+import com.example.musicapp.ui.viewmodels.NameEditUiState
 
 
 @Composable
@@ -184,12 +191,66 @@ fun BioReferenceText(text: String, onCopy: (String) -> Unit) {
 }
 
 @Composable
+fun ArtistDisambiguationDialog(
+    matches: List<ArtistSearchInfo>,
+    onArtistSelected: (ArtistSearchInfo) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Multiple Artists Found") },
+        text = {
+            LazyColumn {
+                items(matches) { artist ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onArtistSelected(artist) }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = artist.name,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            if (!artist.disambiguation.isNullOrEmpty()) {
+                                Text(
+                                    text = artist.disambiguation,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (!artist.country.isNullOrEmpty()) {
+                                Text(
+                                    text = artist.country,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun ArtistEditScreen(
     onNavigateBack: () -> Unit,
+//    onNavigateBack: (Int) -> Unit,
 ){
     val artistEditViewModel: ArtistEditViewModel = hiltViewModel()
 
     val artistEditUiState by artistEditViewModel.uiState.collectAsState()
+    val nameEditWorkflowState by artistEditViewModel.workflowState.collectAsState()
     val images = artistEditUiState.discogsImages.map { it.resourceUrl }
     val canSave by artistEditViewModel.canSave.collectAsState()
 
@@ -199,7 +260,7 @@ fun ArtistEditScreen(
     val handleBack = {
         if (canSave)
             showDiscardDialog = true
-        else onNavigateBack()
+        else { onNavigateBack() }
     }
 
     if (showDiscardDialog) {
@@ -278,22 +339,43 @@ fun ArtistEditScreen(
 
             }
 
-            if (artistEditUiState.isSaving) {
-                Surface(
-                    color = Color.Black.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Text("Saving...", color = Color.White)
+            when (nameEditWorkflowState) {
+                is NameEditUiState.Saving -> {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Saving...", color = Color.White)
+                        }
                     }
+                    BackHandler(enabled = true) { }
                 }
 
-                BackHandler(enabled = true) { }
+                is NameEditUiState.DisambiguationNeeded -> {
+                    ArtistDisambiguationDialog(
+                        matches = (nameEditWorkflowState as NameEditUiState.DisambiguationNeeded).matches,
+                        onArtistSelected = { selectedArtist ->
+                            artistEditViewModel.onArtistSelected(selectedArtist, onNavigateBack)
+                        },
+                        onDismiss = {
+                            artistEditViewModel.resetName()
+                        }
+                    )
+                }
+
+                is NameEditUiState.Error -> {
+                }
+
+                else -> { }
             }
-
-
         }
+
     }
 
     BackHandler(enabled = canSave) {
