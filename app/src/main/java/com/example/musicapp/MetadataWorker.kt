@@ -10,26 +10,12 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.example.musicapp.data.dto.ArtistSummary
-import com.example.musicapp.data.dto.DiscogsAlbumArtist
-import com.example.musicapp.data.dto.DiscogsSearchResponse
-import com.example.musicapp.data.dto.ReleaseSearchResponse
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.data.repository.AlbumArtistRepository
-import com.example.musicapp.data.repository.AlbumRepository
-import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
-import com.example.musicapp.data.repository.ScanProgress
+import com.example.musicapp.data.repository.impl.ScanProgress
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.yield
 import retrofit2.HttpException
 import java.io.IOException
-import kotlin.math.min
 
 @HiltWorker
 class MetadataWorker @AssistedInject constructor(

@@ -135,26 +135,21 @@ class ArtistEditViewModel @Inject constructor(
                     onBack()
 
                 }
-
-
-
-            catch (e: SocketTimeoutException) {
-            _workflowState.value = NameEditUiState.Error("MusicBrainz is taking too long. Please try again.")
-            _uiState.update { it.copy(isSaving = false) }
-            } catch (e: Exception) {
-            _workflowState.value = NameEditUiState.Error("Network error: ${e.message}")
-            _uiState.update { it.copy(isSaving = false) }
-            } catch (e: Exception) {
+                catch (e: SocketTimeoutException) {
+                    _workflowState.value = NameEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    _workflowState.value = NameEditUiState.Error("Network error: ${e.message}")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
                     Log.d("SaveError", "Failed to save: ${e.message}", e)
                     _uiState.update { it.copy(isSaving = false) }
-
                 }
             }
         }
     }
 
-    fun performFinalSave(artistResult: ArtistSearchInfo, oldArtist: Artist, onBack: () -> Unit) {
-        viewModelScope.launch {
+    suspend fun performFinalSave(artistResult: ArtistSearchInfo, oldArtist: Artist, onBack: () -> Unit) {
             val updatedArtist = metadataRepository.updateArtist(
                 newArtistName = _uiState.value.name,
                 oldArtist = oldArtist,
@@ -163,7 +158,6 @@ class ArtistEditViewModel @Inject constructor(
             _uiState.update { it.copy(id = updatedArtist.id) }
             _workflowState.value = NameEditUiState.Saved
             onBack()
-        }
     }
 
     fun onArtistSelected(artistResult: ArtistSearchInfo, onBack: () -> Unit){

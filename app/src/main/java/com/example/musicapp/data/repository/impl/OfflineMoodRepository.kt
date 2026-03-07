@@ -1,7 +1,8 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import com.example.musicapp.data.dao.MoodDao
 import com.example.musicapp.data.entity.Mood
+import com.example.musicapp.data.repository.MoodRepository
 import com.example.musicapp.normalizeGenre
 import kotlinx.coroutines.flow.Flow
 

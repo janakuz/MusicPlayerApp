@@ -1,4 +1,4 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import android.util.Log
 import com.example.musicapp.data.dao.AlbumDao
@@ -9,6 +9,7 @@ import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import kotlinx.coroutines.flow.Flow
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
@@ -62,7 +63,7 @@ class OfflineAlbumRepository(
         return albumDao.getById(id)
     }
 
-    override suspend fun getByIdFull(id: Int): AlbumInfo {
+    override suspend fun getByIdFull(id: Int): List<AlbumInfo> {
         return albumDao.getByIdFull(id)
     }
 

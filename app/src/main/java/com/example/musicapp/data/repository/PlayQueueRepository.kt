@@ -1,8 +1,8 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.PlayQueueItemUUID
 import com.example.musicapp.data.dto.QueueItemFull
 import com.example.musicapp.data.entity.QueueItem
+import com.example.musicapp.data.repository.impl.PlaybackSession
 import kotlinx.coroutines.flow.Flow
 
 interface PlayQueueRepository {

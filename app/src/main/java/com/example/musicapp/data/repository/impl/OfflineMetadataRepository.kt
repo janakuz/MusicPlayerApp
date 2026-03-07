@@ -1,22 +1,22 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import android.util.Log
-import androidx.work.workDataOf
-import com.example.musicapp.data.dto.ArtistCredit
 import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.dto.ArtistSummary
 import com.example.musicapp.data.dto.DiscogsAlbumArtist
-import com.example.musicapp.data.dto.DiscogsSearchResponse
-import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.repository.AlbumArtistRepository
+import com.example.musicapp.data.repository.AlbumMetadataResult
+import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.isSimilar
 import com.example.musicapp.normalizeForMatching
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.yield
 import kotlin.math.min
 
 class OfflineMetadataRepository(
@@ -64,6 +64,7 @@ class OfflineMetadataRepository(
 
             val newAlbum = album.copy(
                 mbId = mbAlbum.id,
+//                TODO: switch to this when doing full rescan mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
                 image = newAlbumArt,
                 label = labelName,
                 releaseDate = newReleaseDate,
@@ -335,7 +336,7 @@ class OfflineMetadataRepository(
             return existingArtist
         }
 
-        //else, replace current with new info
+        //else, we need new artist. if artist only -> replace current with new info, if album -> create new
         val artist = getArtistDataMusicBrainz(
             artistCredit = ArtistSummary(
                 id = mbArtist.id,
@@ -345,85 +346,135 @@ class OfflineMetadataRepository(
             artistName = newArtistName,
             currentArtist = oldArtist
         )
-        val newBio = artistRepository.getArtistBio(mbArtist.id, newArtistName)
-        artistRepository.update(
-            oldArtist.copy(
-                name = newArtistName,
-                searchKey = newArtistName.normalizeForMatching(),
-                mbId = artist.mbId,
-                image = if (artist.image == null || artist.image == "") oldArtist.image else artist.image,
-                discogsId = if (artist.discogsId == null || artist.discogsId != "") oldArtist.discogsId else artist.discogsId,
-                bio =  newBio,
-                isEnriched = true,
-                enrichmentAttempted = true
-            )
-        )
 
-        return oldArtist
+        val newBio = artistRepository.getArtistBio(mbArtist.id, newArtistName)
+
+        if (albumToMove == null) {
+            artistRepository.update(
+                oldArtist.copy(
+                    name = newArtistName,
+                    searchKey = newArtistName.normalizeForMatching(),
+                    mbId = artist.mbId,
+                    image = if (artist.image == null || artist.image == "") oldArtist.image else artist.image,
+                    discogsId = if (artist.discogsId == null || artist.discogsId != "") oldArtist.discogsId else artist.discogsId,
+                    bio = newBio,
+                    isEnriched = true,
+                    enrichmentAttempted = true
+                )
+            )
+
+            return oldArtist
+        }
+        else{
+            val toInsert =
+                Artist(
+                    name = newArtistName,
+                    searchKey = newArtistName.normalizeForMatching(),
+                    mbId = artist.mbId,
+                    image = artist.image,
+                    discogsId = if (artist.discogsId == null || artist.discogsId != "") oldArtist.discogsId else artist.discogsId,
+                    bio = newBio,
+                    isEnriched = true,
+                    enrichmentAttempted = true
+                )
+            val newId = artistRepository.insertWithReturn(
+                toInsert
+                ).toInt()
+            albumArtistRepository.updateAlbumArtist(
+                albumId = albumToMove.id,
+                oldArtistId = oldArtist.id,
+                newArtistId = newId
+            )
+
+            artistRepository.deleteOrphaned()
+            return artist.copy(id = newId)
+        }
     }
 
-//    override suspend fun updateAlbum(
-//        newAlbumTitle: String,
-//        oldAlbum: Album,
-//        newArtistName: String,
-//        oldArtist: Artist,
-//        newReleaseDate: String?,
-//        newAlbumArt: String?
-//    ) {
-//         Log.d("update album", "starting update")
-//
-//        if (oldAlbum.title.normalizeForMatching() == newAlbumTitle.normalizeForMatching() && oldAlbum.mbId != null) { //assume cleanup/article fix
-//            albumRepository.update(
-//                oldAlbum.copy(
-//                    title = newAlbumTitle,
-//                    searchKey = newAlbumTitle.normalizeForMatching()
-//                )
-//            )
-//            Log.d("update album", "only title")
-//            return
-//        }
-//
-//        val albumData = getAlbumData(
-//            album = oldAlbum,
-//            albumTitle = newAlbumTitle,
-//            artistName = newArtistName,
-//            releaseDate = newReleaseDate,
-//            albumArt = newAlbumArt,
-//            isUpdate = true
-//        )
-//
-//        if (oldAlbum.mbId == null || oldAlbum.mbId != albumData.album.mbId && (albumData.album.id == 0 || albumData.album.id == oldAlbum.id)) { // currently no mbId or album with new mbId doesn't exist in db
-//            albumRepository.update(
-//                oldAlbum.copy(
-//                    title = newAlbumTitle,
-//                    searchKey = newAlbumTitle.normalizeForMatching(),
-//                    mbId = albumData.album.mbId,
-//                    image =  albumData.album.image,
-//                    label = albumData.album.label,
-//                    releaseDate = if (newReleaseDate == "") oldAlbum.releaseDate else newReleaseDate,
-//                    isEnriched = true
-//                )
-//            )
-//            Log.d("update album", "replace")
-//        } else if (oldAlbum.mbId == albumData.album.mbId && oldAlbum.id == albumData.album.id) { // same mbId, same album, presumably has info, only update name
-//            albumRepository.update(
-//                oldAlbum.copy(
-//                    title = newAlbumTitle,
-//                    searchKey = newAlbumTitle.normalizeForMatching()
-//                )
-//            )
-//            Log.d("update album", "only title 2")
-//
-//        } else if (oldAlbum.mbId != albumData.album.mbId && newAlbumTitle.normalizeForMatching() == albumData.album.title.normalizeForMatching()) {
-//            albumRepository.update(albumData.album.copy(title =  newAlbumTitle, searchKey = newAlbumTitle.normalizeForMatching()))
-//            albumRepository.moveTracks(oldAlbum.id, albumData.album.id)
-//            albumRepository.deleteOrphaned()
-//            Log.d("update album", "move to existing")
-//        }
-//
-//        updateArtist(newArtistName, oldArtist, albumData)
-//
-//    }
+    override suspend fun updateAlbum(
+        newAlbumTitle: String,
+        oldAlbum: Album,
+        newArtistName: String,
+        oldArtist: Artist?,
+        newReleaseDate: String?,
+        newAlbumArt: String?
+    ) : AlbumArtistUpdate {
+         Log.d("update album", "starting update")
+
+        if (oldAlbum.title.normalizeForMatching() == newAlbumTitle.normalizeForMatching() && oldAlbum.mbId != null) { //assume cleanup/article fix
+            albumRepository.update(
+                oldAlbum.copy(
+                    title = newAlbumTitle,
+                    searchKey = newAlbumTitle.normalizeForMatching()
+                )
+            )
+            Log.d("update album", "only title")
+            return AlbumArtistUpdate(oldAlbum, oldArtist)
+        }
+
+        val albumData = getAlbumData(
+            album = oldAlbum,
+            albumTitle = newAlbumTitle,
+            artistName = newArtistName,
+            releaseDate = newReleaseDate,
+            albumArt = newAlbumArt,
+            isUpdate = true
+        )
+
+
+        if (oldAlbum.mbId != null && oldAlbum.mbId==albumData.album.mbId && oldAlbum.id==albumData.album.id){ //same album
+            albumRepository.update(
+                oldAlbum.copy(
+                    title = newAlbumTitle,
+                    searchKey = newAlbumTitle.normalizeForMatching()
+                )
+            )
+            Log.d("update album", "title only 2")
+            return AlbumArtistUpdate(oldAlbum, oldArtist)
+        }
+
+        var albumToMove: Album? = null
+        if (oldAlbum.mbId != null && oldAlbum.mbId != albumData.album.mbId && albumData.album.id != 0){ //different existing album
+            albumRepository.update(albumData.album.copy(title =  newAlbumTitle, searchKey = newAlbumTitle.normalizeForMatching()))
+            albumRepository.moveTracks(oldAlbum.id, albumData.album.id)
+            albumRepository.deleteOrphaned()
+            albumToMove = albumData.album
+        }
+
+        //else, replace current
+        else {
+            Log.d("update album", "replace")
+            albumRepository.update(
+                oldAlbum.copy(
+                    title = newAlbumTitle,
+                    searchKey = newAlbumTitle.normalizeForMatching(),
+                    mbId = albumData.album.mbId,
+                    image = albumData.album.image,
+                    label = albumData.album.label,
+                    releaseDate = if (newReleaseDate == null || newReleaseDate == "") oldAlbum.releaseDate else newReleaseDate,
+                    isEnriched = true
+                )
+            )
+            albumToMove = oldAlbum
+        }
+
+        var updatedArtist: Artist? = null
+        val mbAlbumArtists = albumData.mbResponse?.releases?.find { it.id==albumData.album.mbId }?.artistCredit ?: emptyList()
+        if (mbAlbumArtists.size == 1 && oldArtist != null) {
+            updatedArtist = updateArtist(
+                newArtistName,
+                oldArtist,
+                ArtistSearchInfo(
+                    id = mbAlbumArtists[0].artist.id,
+                    name = mbAlbumArtists[0].artist.name,
+                    sortName = mbAlbumArtists[0].artist.sortName,
+                ),
+                albumToMove = albumToMove
+            )
+        }
+
+        return AlbumArtistUpdate(albumToMove, updatedArtist)
+    }
 
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
         val currentAlbumArtists =
@@ -566,3 +617,7 @@ data class ScanProgress(
     val currentAlbum: String = ""
 )
 
+data class AlbumArtistUpdate(
+    val album: Album,
+    val artist: Artist?
+)

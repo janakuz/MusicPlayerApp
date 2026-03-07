@@ -1,12 +1,12 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import android.util.Log
 import com.example.musicapp.data.dao.ArtistDao
 import com.example.musicapp.data.dto.ArtistDicogsResponse
 import com.example.musicapp.data.dto.ArtistMBResponse
 import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.dto.ArtistSearchResponse
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
@@ -81,7 +81,8 @@ class OfflineArtistRepository(
     }
 
     override suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo> {
-        return musicbrainzApiService.findArtist("artist:${artistName}").artists
+        val query = """artist:"${artistName.normalizeForMatching()}" """
+        return musicbrainzApiService.findArtist(query).artists
     }
 
     override suspend fun insertAll(artists: List<Artist>) {

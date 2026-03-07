@@ -177,8 +177,8 @@ class TrackEditViewModel  @Inject constructor(
                     val track = trackRepository.getTrackInfo(trackId).first()
                     val currentAlbum = albumRepository.getAlbum(track.albumId).first()
                     val currentAlbumInfo = albumRepository.getByIdFull(track.albumId)
-                    val currentArtist =
-                        artistRepository.getArtist(currentAlbumInfo.artistId).first()
+//                    val currentArtist =
+//                        artistRepository.getArtist(currentAlbumInfo.artistId).first()
 
 //                    metadataRepository.updateAlbum(
 //                        newAlbumTitle = _uiState.value.album,

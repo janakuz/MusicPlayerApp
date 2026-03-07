@@ -30,7 +30,7 @@ interface AlbumRepository {
 
     suspend fun getById(id: Int): Album
 
-    suspend fun getByIdFull(id: Int): AlbumInfo
+    suspend fun getByIdFull(id: Int): List<AlbumInfo>
 
     suspend fun getByTitle(title: String, year: String?): Album?
 

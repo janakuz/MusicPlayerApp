@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -73,6 +74,8 @@ import com.example.musicapp.normalizeForMatching
 import com.example.musicapp.normalizeGenre
 import com.example.musicapp.toTitleCase
 import com.example.musicapp.ui.viewmodels.AlbumEditViewModel
+import com.example.musicapp.ui.viewmodels.NameEditUiState
+import com.example.musicapp.ui.viewmodels.TitleEditUiState
 
 
 @Composable
@@ -244,11 +247,12 @@ fun GenrePicker(
 
 @Composable
 fun AlbumEditScreen(
-    onNavigateBack: () -> Unit,
-){
+    onNavigateBack: (Int?) -> Unit,
+    ){
     val albumEditViewModel: AlbumEditViewModel = hiltViewModel()
 
     val albumEditUiState by albumEditViewModel.uiState.collectAsState()
+    val titleEditWorkflowState by albumEditViewModel.workflowState.collectAsState()
     val images = albumEditUiState.availableImages
     val canSave by albumEditViewModel.canSave.collectAsState()
     val suggestions by albumEditViewModel.genreSuggestions.collectAsState()
@@ -259,7 +263,7 @@ fun AlbumEditScreen(
     val handleBack = {
         if (canSave)
             showDiscardDialog = true
-        else onNavigateBack()
+        else onNavigateBack(null)
     }
 
     if (showDiscardDialog) {
@@ -270,7 +274,7 @@ fun AlbumEditScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
-                    onNavigateBack()
+                    onNavigateBack(null)
                 }) {
                     Text("Discard")
                 }
@@ -334,7 +338,7 @@ fun AlbumEditScreen(
                         value = albumEditUiState.artist,
                         onValueChange = { albumEditViewModel.onArtistChange(it) },
                         label = { Text("Artist") },
-                        enabled = true,
+                        enabled = !albumEditUiState.multipleArtists,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -384,18 +388,40 @@ fun AlbumEditScreen(
                 }
             }
 
-            if (albumEditUiState.isSaving) {
-                Surface(
-                    color = Color.Black.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Text("Saving...", color = Color.White)
+            when (titleEditWorkflowState) {
+                is TitleEditUiState.Saving -> {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Saving...", color = Color.White)
+                        }
                     }
+                    BackHandler(enabled = true) { }
                 }
 
-                BackHandler(enabled = true) { }
+                is TitleEditUiState.DisambiguationNeeded -> {
+                    ArtistDisambiguationDialog(
+                        matches = (titleEditWorkflowState as TitleEditUiState.DisambiguationNeeded).matches,
+                        onArtistSelected = { selectedArtist ->
+                            albumEditViewModel.onArtistSelected(selectedArtist, onNavigateBack)
+                        },
+                        onDismiss = {
+                            albumEditViewModel.resetName()
+                        }
+                    )
+                }
+
+                is TitleEditUiState.Error -> {
+                }
+
+                else -> { }
             }
 
         }

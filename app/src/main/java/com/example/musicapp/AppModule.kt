@@ -1,15 +1,11 @@
 package com.example.musicapp
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.work.WorkManager
 import coil.ImageLoader
 import coil.disk.DiskCache
@@ -33,19 +29,19 @@ import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.MoodRepository
-import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
-import com.example.musicapp.data.repository.OfflineAlbumGenreRepository
-import com.example.musicapp.data.repository.OfflineAlbumRepository
-import com.example.musicapp.data.repository.OfflineArtistRepository
-import com.example.musicapp.data.repository.OfflineDynamicThemeRepository
-import com.example.musicapp.data.repository.OfflineGenreRepository
-import com.example.musicapp.data.repository.OfflineMetadataRepository
-import com.example.musicapp.data.repository.OfflineMoodRepository
-import com.example.musicapp.data.repository.OfflinePlayQueueRepository
-import com.example.musicapp.data.repository.OfflineTrackMoodRepository
-import com.example.musicapp.data.repository.OfflineTrackRepository
-import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
-import com.example.musicapp.data.repository.OfflineWorkerManagerRepository
+import com.example.musicapp.data.repository.impl.OfflineAlbumArtistRepository
+import com.example.musicapp.data.repository.impl.OfflineAlbumGenreRepository
+import com.example.musicapp.data.repository.impl.OfflineAlbumRepository
+import com.example.musicapp.data.repository.impl.OfflineArtistRepository
+import com.example.musicapp.data.repository.impl.OfflineDynamicThemeRepository
+import com.example.musicapp.data.repository.impl.OfflineGenreRepository
+import com.example.musicapp.data.repository.impl.OfflineMetadataRepository
+import com.example.musicapp.data.repository.impl.OfflineMoodRepository
+import com.example.musicapp.data.repository.impl.OfflinePlayQueueRepository
+import com.example.musicapp.data.repository.impl.OfflineTrackMoodRepository
+import com.example.musicapp.data.repository.impl.OfflineTrackRepository
+import com.example.musicapp.data.repository.impl.OfflineUserPreferencesRepository
+import com.example.musicapp.data.repository.impl.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
@@ -66,7 +62,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
-import java.util.Queue
 import javax.inject.Qualifier
 import javax.inject.Singleton
 

@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.LocalLibraryScanner
 import com.example.musicapp.MetadataWorker
+import com.example.musicapp.data.dto.ArtistSearchInfo
+import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.net.SocketTimeoutException
 import javax.inject.Inject
 import kotlin.text.toInt
 
@@ -53,6 +57,8 @@ class AlbumEditViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AlbumEditUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _workflowState = MutableStateFlow<TitleEditUiState>(TitleEditUiState.Idle)
+    val workflowState = _workflowState.asStateFlow()
 
     private val _genreQuery = MutableStateFlow("")
 
@@ -103,22 +109,24 @@ class AlbumEditViewModel @Inject constructor(
 
     private fun loadAlbumData() {
         viewModelScope.launch {
-            val album = albumRepository.getByIdFull(albumId)
+            val albums = albumRepository.getByIdFull(albumId)
+            val album = albums[0]
             val genres = albumGenreRepository.getAlbumGenres(albumId)
             initialTitle = album.title
-            initialArtist = album.artistName
+            initialArtist = if (albums.size == 1) album.artistName else "Various Artists"
             initialDate = album.releaseDate
             initialImageUrl = album.image ?: ""
             initialLabel = album.label
             initialGenres = genres
             _uiState.update { it.copy(
                 title = album.title,
-                artist = album.artistName,
+                artist = if (albums.size == 1) album.artistName else "Various Artists",
                 draftReleaseDate = album.releaseDate ?: "",
                 draftImageUrl = album.image ?: "",
                 draftLabel = album.label ?: "",
                 availableImages = if (album.image != null) listOf(ImageOption(url = album.image, source = "")) else emptyList(),
-                draftGenres = genres
+                draftGenres = genres,
+                multipleArtists = albums.size > 1
             )
             }
 
@@ -165,7 +173,10 @@ class AlbumEditViewModel @Inject constructor(
         val options = mutableListOf<ImageOption>()
         val albumTracks = trackRepository.getAlbumTracks(albumId)
 
-        val localImages = localLibraryScanner.findAllAlbumArtOptions(context, albumTracks[0].fileUri)
+        val localImages =
+            if (albumTracks.isNotEmpty())
+                localLibraryScanner.findAllAlbumArtOptions(context, albumTracks[0].fileUri)
+            else null
         val localImageOptions = localImages?.map { ImageOption(url = it, source = "Local") } ?: emptyList()
 
         options.addAll(localImageOptions)
@@ -185,13 +196,36 @@ class AlbumEditViewModel @Inject constructor(
     }
 
 
-    fun onSave(onBack: () -> Unit){
+    fun onArtistSelected(artistResult: ArtistSearchInfo, onBack: (Int?) -> Unit){
+        viewModelScope.launch {
+            val album = (_workflowState.value as TitleEditUiState.DisambiguationNeeded).album
+            _workflowState.value = TitleEditUiState.Saving(album)
+            val currentAlbumInfo = albumRepository.getByIdFull(albumId)
+            val currentArtist = artistRepository.getArtist(currentAlbumInfo[0].artistId).first()
+            performFinalSave(
+                artistResult,
+                currentArtist,
+                album,
+                onBack
+                )
+
+        }
+    }
+
+    fun resetName(){
+        _uiState.update { it.copy(
+            artist = initialArtist ?: ""
+        ) }
+    }
+
+
+    fun onSave(onBack: (Int?) -> Unit){
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
 
             val currentAlbum = albumRepository.getAlbum(albumId).first()
             val currentAlbumInfo = albumRepository.getByIdFull(albumId)
-            val currentArtist = artistRepository.getArtist(currentAlbumInfo.artistId).first()
+            val currentArtist = if (currentAlbumInfo.size == 1) artistRepository.getArtist(currentAlbumInfo[0].artistId).first() else null
 
             val newAlbum = currentAlbum.copy(
                 releaseDate = _uiState.value.draftReleaseDate,
@@ -200,34 +234,83 @@ class AlbumEditViewModel @Inject constructor(
             albumRepository.update(newAlbum)
             albumGenreRepository.updateAlbumGenres(albumId, _uiState.value.draftGenres)
 
-            try {
-//                if (initialTitle != _uiState.value.title) {
-//                    metadataRepository.updateAlbum(
-//                        newAlbumTitle = _uiState.value.title,
-//                        oldAlbum = currentAlbum,
-//                        newArtistName = _uiState.value.artist,
-//                        oldArtist = currentArtist,
-//                        newReleaseDate = _uiState.value.draftReleaseDate,
-//                        newAlbumArt = _uiState.value.draftImageUrl
-//                    )
-//                } else if (initialArtist != _uiState.value.artist) {
-//                    metadataRepository.updateArtist(
-//                        newArtistName = _uiState.value.artist,
-//                        oldArtist = currentArtist
-//                    )
-//                }
-
-                _uiState.update { it.copy(isSaving = false) }
-                onBack()
+            if (initialTitle != _uiState.value.title){
+                try {
+                    _workflowState.value = TitleEditUiState.Saving(currentAlbum)
+                    val newIds = metadataRepository.updateAlbum(
+                        newAlbumTitle = _uiState.value.title,
+                        oldAlbum = currentAlbum,
+                        newArtistName = _uiState.value.artist,
+                        oldArtist = currentArtist,
+                        newReleaseDate = _uiState.value.draftReleaseDate,
+                        newAlbumArt = _uiState.value.draftImageUrl
+                    )
+                    _workflowState.value = TitleEditUiState.Saved
+                    _uiState.update { it.copy(isSaving = false) }
+                    onBack(newIds.artist?.id)
+                }
+                catch (e: SocketTimeoutException) {
+                    _workflowState.value = TitleEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    _workflowState.value = TitleEditUiState.Error("Network error: ${e.message}")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    Log.d("SaveError", "Failed to save: ${e.message}", e)
+                    _uiState.update { it.copy(isSaving = false) }
+                }
 
             }
-            catch (e: Exception){
-                Log.d("SaveError", "Failed to save: ${e.message}", e)
-                _uiState.update { it.copy(isSaving = false) }
+            else if (initialArtist != _uiState.value.artist){
+                try {
+                    _workflowState.value = TitleEditUiState.Saving(currentAlbum)
+
+                    val searchResults = artistRepository.findArtistMB(_uiState.value.artist)
+                    if (searchResults.isEmpty()) {
+                        _workflowState.value = TitleEditUiState.Error("No artist found")
+                    } else if (searchResults.size > 1) {
+                        _workflowState.value = TitleEditUiState.DisambiguationNeeded(searchResults, currentAlbum)
+                        return@launch
+                    } else {
+                        performFinalSave(searchResults[0], currentArtist!!, currentAlbum, onBack)
+                    }
+
+                }
+                catch (e: SocketTimeoutException) {
+                    _workflowState.value = TitleEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    _workflowState.value = TitleEditUiState.Error("Network error: ${e.message}")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    Log.d("SaveError", "Failed to save: ${e.message}", e)
+                    _uiState.update { it.copy(isSaving = false) }
+                }
 
             }
+
+            _uiState.update { it.copy(isSaving = false) }
+            onBack(null)
+
         }
     }
+
+    suspend fun performFinalSave(
+        artistResult: ArtistSearchInfo,
+        oldArtist: Artist,
+        oldAlbum: Album,
+        onBack: (Int?) -> Unit) {
+            val newId = metadataRepository.updateArtist(
+                newArtistName = _uiState.value.artist,
+                oldArtist = oldArtist,
+                mbArtist = artistResult,
+                albumToMove = oldAlbum
+            )
+//            _uiState.update { it.copy(id = updatedArtist.id) }
+            _workflowState.value = TitleEditUiState.Saved
+            onBack(newId.id)
+    }
+
 
     fun resetToOriginal() {
         _uiState.update { it.copy(
@@ -249,6 +332,7 @@ data class AlbumEditUiState(
     val availableImages: List<ImageOption> = emptyList(),
     val draftLabel: String = "",
     val draftGenres: List<String> = emptyList(),
+    val multipleArtists: Boolean = false,
     val isSaving: Boolean = false
 )
 
@@ -256,3 +340,11 @@ data class ImageOption(
     val url: String,
     val source: String
 )
+
+sealed class TitleEditUiState {
+    object Idle : TitleEditUiState()
+    data class Saving(val album: Album) : TitleEditUiState()
+    data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>, val album: Album) : TitleEditUiState()
+    object Saved : TitleEditUiState()
+    data class Error(val message: String) : TitleEditUiState() // Show toast
+}

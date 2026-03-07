@@ -1,6 +1,7 @@
 package com.example.musicapp
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +24,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.screens.AllTracksScreen
 import com.example.musicapp.ui.screens.ArtistView
@@ -218,7 +222,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
-                        onEdit = { album -> navController.navigate("album/edit/${album.id}") }
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/all_albums", ) }
                     )
                 }
 
@@ -250,7 +254,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         sortRequest = artistDetailSort,
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)},
-                        onEdit = { album -> navController.navigate("album/edit/${album.id}") }
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") }
                     )
                 }
 
@@ -273,15 +277,32 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 ArtistEditScreen(
                     onNavigateBack = {
                         navController.navigate(HomeScreen.Artists.name) {
+                            popUpTo(HomeScreen.Artists.name)
                             launchSingleTop = true
                         }
                     }
                 )
             }
 
-            composable("album/edit/{albumId}") {
+            composable("album/edit/{albumId}/{source}") { backStackEntry ->
+                val source = backStackEntry.arguments?.getString("source") ?: "all_albums"
+                val albumId = backStackEntry.arguments?.getString("albumId")
+                Log.d("back", source)
                 AlbumEditScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { id ->
+                        when(source) {
+                            "all_albums" -> navController.popBackStack()
+                            "artist_view" -> navController.navigate(HomeScreen.Artists.name)
+//                                if (id != null) navController.navigate("artists/${id}"){
+//                                popUpTo("album/edit/{albumId}/{source}"){
+//                                    inclusive=true
+//                                }
+//                                launchSingleTop = true
+//                            }
+//                                             else navController.popBackStack()
+                            else -> navController.popBackStack()
+                        }
+                    }
                 )
             }
 

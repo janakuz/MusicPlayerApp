@@ -70,7 +70,7 @@ interface AlbumDao {
             "JOIN album_artists aa ON al.id=aa.albumId " +
             "JOIN artists ar on ar.id=aa.artistId " +
             "WHERE al.id=:id")
-    suspend fun getByIdFull(id: Int): AlbumInfo
+    suspend fun getByIdFull(id: Int): List<AlbumInfo>
 
     @Query("SELECT * " +
             "FROM albums where searchKey=:title and " +
