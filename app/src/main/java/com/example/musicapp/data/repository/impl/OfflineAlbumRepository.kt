@@ -176,7 +176,12 @@ class OfflineAlbumRepository(
         albumDao.deleteOrphaned()
     }
 
-    override suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int) {
-        trackDao.moveToAlbum(oldAlbumId, newAlbumId)
+    override suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>?) {
+        val trackIds = if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAlbumTracks(oldAlbumId).map { it.trackId }
+        trackDao.moveToAlbum(oldAlbumId, newAlbumId, trackIds)
+    }
+
+    override suspend fun getAlbumByMbid(mbid: String): Album? {
+        return albumDao.getAlbumByMbid(mbid)
     }
 }

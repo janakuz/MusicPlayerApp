@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.entity.Artist
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -90,5 +91,9 @@ interface AlbumDao {
     @Query("DELETE FROM albums WHERE id NOT IN " +
             "(SELECT DISTINCT albumId from tracks)")
     suspend fun deleteOrphaned()
+
+
+    @Query("SELECT * FROM albums where mbId=:mbId")
+    suspend fun getAlbumByMbid(mbId: String): Album?
 
 }

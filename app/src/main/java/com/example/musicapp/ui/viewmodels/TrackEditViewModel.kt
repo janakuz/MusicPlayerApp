@@ -8,6 +8,10 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.dto.ArtistSearchInfo
+import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
@@ -31,6 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.net.SocketTimeoutException
 import javax.inject.Inject
 import kotlin.text.toInt
 
@@ -52,6 +57,8 @@ class TrackEditViewModel  @Inject constructor(
     private val _uiState = MutableStateFlow(TrackEditUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _workflowState = MutableStateFlow<AlbumArtistEditUiState>(AlbumArtistEditUiState.Idle)
+    val workflowState = _workflowState.asStateFlow()
 
     private val _moodQuery = MutableStateFlow("")
 
@@ -156,6 +163,45 @@ class TrackEditViewModel  @Inject constructor(
         return path
     }
 
+
+    fun resetName(){
+        _uiState.update { it.copy(
+            artist = initialArtist ?: ""
+        ) }
+    }
+
+    fun onArtistSelected(artistResult: ArtistSearchInfo, onBack: () -> Unit){
+        viewModelScope.launch {
+            val album = (_workflowState.value as AlbumArtistEditUiState.DisambiguationNeeded).album
+            _workflowState.value = AlbumArtistEditUiState.Saving(album)
+            val currentTrack = trackRepository.getTrackById(trackId).first()
+            val trackInfo = trackRepository.getTrackInfo(trackId).first()
+            val currentArtist = artistRepository.getArtist(trackInfo.artistId).first()
+            performFinalSave(
+                artistResult,
+                currentArtist,
+                currentTrack,
+                onBack
+            )
+
+        }
+    }
+
+    suspend fun performFinalSave(
+        artistResult: ArtistSearchInfo,
+        oldArtist: Artist,
+        track: Track,
+        onBack: () -> Unit) {
+        val newId = metadataRepository.updateArtist(
+            newArtistName = _uiState.value.artist,
+            oldArtist = oldArtist,
+            mbArtist = artistResult,
+            track = track
+        )
+        _workflowState.value = AlbumArtistEditUiState.Saved
+        onBack()
+    }
+
     fun onSave(onBack: () -> Unit){
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -170,15 +216,40 @@ class TrackEditViewModel  @Inject constructor(
             trackRepository.update(newTrack)
             trackMoodRepository.updateTrackMoods(trackId, _uiState.value.draftMoods)
 
+            val newAlbumId = currentTrack.albumId
 
-            try {
 
-                if (initialAlbum != _uiState.value.album) {
-                    val track = trackRepository.getTrackInfo(trackId).first()
-                    val currentAlbum = albumRepository.getAlbum(track.albumId).first()
-                    val currentAlbumInfo = albumRepository.getByIdFull(track.albumId)
-//                    val currentArtist =
-//                        artistRepository.getArtist(currentAlbumInfo.artistId).first()
+            if (initialAlbum != _uiState.value.album) {
+//                    val track = trackRepository.getTrackInfo(trackId).first()
+                val currentAlbum = albumRepository.getAlbum(currentTrack.albumId).first()
+                val currentAlbumInfo = albumRepository.getByIdFull(currentTrack.albumId)
+                val currentArtist = if (currentAlbumInfo.size == 1) artistRepository.getArtist(currentAlbumInfo[0].artistId).first() else null
+
+                try {
+                    _workflowState.value = AlbumArtistEditUiState.Saving(currentAlbum)
+                    val newIds = metadataRepository.updateAlbum(
+                        newAlbumTitle = _uiState.value.album,
+                        oldAlbum = currentAlbum,
+                        newArtistName = _uiState.value.artist,
+                        oldArtist = currentArtist,
+                        track = currentTrack
+                    )
+                    _workflowState.value = AlbumArtistEditUiState.Saved
+                    _uiState.update { it.copy(isSaving = false) }
+                    onBack()
+                }
+                catch (e: SocketTimeoutException) {
+                    _workflowState.value = AlbumArtistEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    _workflowState.value = AlbumArtistEditUiState.Error("Network error: ${e.message}")
+                    _uiState.update { it.copy(isSaving = false) }
+                } catch (e: Exception) {
+                    Log.d("SaveError", "Failed to save: ${e.message}", e)
+                    _uiState.update { it.copy(isSaving = false) }
+                }
+
+
 
 //                    metadataRepository.updateAlbum(
 //                        newAlbumTitle = _uiState.value.album,
@@ -188,9 +259,42 @@ class TrackEditViewModel  @Inject constructor(
 //                        newReleaseDate = null,
 //                        newAlbumArt = null
 //                    )
-                } else if (initialArtist != _uiState.value.artist) {
+            }
+            if (initialArtist != _uiState.value.artist) {
                     val track = trackRepository.getTrackInfo(trackId).first()
-                    val currentArtist = artistRepository.getArtist(track.artistId).first()
+                    val currentArtist = artistRepository.getArtist(currentTrack.artistId).first()
+                    try {
+                        _workflowState.value = AlbumArtistEditUiState.Saving()
+
+                        val searchResults = artistRepository.findArtistMB(_uiState.value.artist)
+                        if (searchResults.isEmpty()) {
+                            _workflowState.value = AlbumArtistEditUiState.Error("No artist found")
+                        } else if (searchResults.size > 1) {
+                            _workflowState.value = AlbumArtistEditUiState.DisambiguationNeeded(searchResults,)
+                            return@launch
+                        } else {
+                            metadataRepository.updateArtist(
+                                newArtistName = _uiState.value.artist,
+                                oldArtist = currentArtist,
+                                mbArtist = searchResults[0],
+                                track = currentTrack.copy(albumId = track.albumId)
+                            )
+                        }
+                        _workflowState.value = AlbumArtistEditUiState.Saved
+                        _uiState.update { it.copy(isSaving = false) }
+                        onBack()
+                    }
+                    catch (e: SocketTimeoutException) {
+                        _workflowState.value = AlbumArtistEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                        _uiState.update { it.copy(isSaving = false) }
+                    } catch (e: Exception) {
+                        _workflowState.value = AlbumArtistEditUiState.Error("Network error: ${e.message}")
+                        _uiState.update { it.copy(isSaving = false) }
+                    } catch (e: Exception) {
+                        Log.d("SaveError", "Failed to save: ${e.message}", e)
+                        _uiState.update { it.copy(isSaving = false) }
+                    }
+
 //                    metadataRepository.updateArtist(
 //                        newArtistName = _uiState.value.artist,
 //                        oldArtist = currentArtist
@@ -199,12 +303,6 @@ class TrackEditViewModel  @Inject constructor(
                 }
                 _uiState.update { it.copy(isSaving = false) }
                 onBack()
-            }
-            catch (e: Exception){
-                Log.d("SaveError", "Failed to save: ${e.message}", e)
-                _uiState.update { it.copy(isSaving = false) }
-
-            }
 
 
         }

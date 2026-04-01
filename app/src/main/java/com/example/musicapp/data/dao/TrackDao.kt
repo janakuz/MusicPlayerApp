@@ -152,7 +152,13 @@ interface TrackDao {
     @Query("UPDATE tracks SET artistId = :newArtistId WHERE albumId = :albumId AND artistId = :oldArtistId")
     suspend fun updateArtistForAlbum(albumId: Int, oldArtistId: Int, newArtistId: Int)
 
-    @Query("UPDATE tracks SET albumId = :newAlbumId WHERE albumId = :oldAlbumId")
-    suspend fun moveToAlbum(oldAlbumId: Int, newAlbumId: Int)
+    @Query("UPDATE tracks SET albumId = :newAlbumId WHERE albumId = :oldAlbumId AND " +
+            "tracks.id in (:tracks)")
+    suspend fun moveToAlbum(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>)
+
+
+    @Query("UPDATE tracks SET artistId = :newArtistId WHERE artistId = :oldArtistId AND " +
+            "tracks.id in (:tracks)")
+    suspend fun moveToArtist(oldArtistId: Int, newArtistId: Int, tracks: List<Int>)
 
 }

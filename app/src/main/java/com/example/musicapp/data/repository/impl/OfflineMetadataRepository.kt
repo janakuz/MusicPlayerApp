@@ -5,7 +5,9 @@ import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.dto.ArtistSummary
 import com.example.musicapp.data.dto.DiscogsAlbumArtist
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.entity.AlbumArtist
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumMetadataResult
 import com.example.musicapp.data.repository.AlbumRepository
@@ -41,7 +43,8 @@ class OfflineMetadataRepository(
 
         if (mbAlbumSearch != null && mbAlbumSearch.releases.isNotEmpty()) {
             while (i < mbAlbumSearch.releases.size && mbAlbumSearch.releases[i].title.lowercase()
-                    .normalizeForMatching() != albumTitle.lowercase().normalizeForMatching()
+                    .normalizeForMatching() != albumTitle.lowercase().normalizeForMatching() &&
+                artistName.normalizeForMatching() !in mbAlbumSearch.releases[i].artistCredit.map { it.artist.name.normalizeForMatching() }
             ) {
                 i++
             }
@@ -49,7 +52,6 @@ class OfflineMetadataRepository(
 
         if (mbAlbumSearch != null && i == mbAlbumSearch.releases.size) i = 0
 
-        Log.d("find album", i.toString())
 
         if (mbAlbumSearch != null && mbAlbumSearch.releases.isNotEmpty() &&
             mbAlbumSearch.releases[i].title.lowercase()
@@ -63,8 +65,8 @@ class OfflineMetadataRepository(
             val newReleaseDate = releaseDate ?: mbAlbum.date
 
             val newAlbum = album.copy(
-                mbId = mbAlbum.id,
-//                TODO: switch to this when doing full rescan mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
+//                mbId = mbAlbum.id,
+                mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
                 image = newAlbumArt,
                 label = labelName,
                 releaseDate = newReleaseDate,
@@ -303,8 +305,9 @@ class OfflineMetadataRepository(
         newArtistName: String,
         oldArtist: Artist,
         mbArtist: ArtistSearchInfo?,
-        albumToMove: Album?
-        ) : Artist {
+        albumToMove: Album?,
+        track: Track?
+    ) : Artist {
 
         if (mbArtist == null){
             artistRepository.update(oldArtist.copy(name = newArtistName, searchKey = newArtistName.normalizeForMatching()))
@@ -320,6 +323,13 @@ class OfflineMetadataRepository(
         if (existingArtist != null){ //different artist
             if (existingArtist.name != newArtistName)
                 artistRepository.update(existingArtist.copy(name =  newArtistName, searchKey = newArtistName.normalizeForMatching()))
+
+            if (track != null){
+                artistRepository.moveTracks(oldArtist.id, existingArtist.id, listOf(track.id))
+                albumArtistRepository.insert(AlbumArtist(albumId = track.albumId, artistId = existingArtist.id))
+                artistRepository.deleteOrphaned()
+                return existingArtist
+            }
 
             //if editing album, move only that album, else move all albums
             val artistAlbums = if (albumToMove == null) albumArtistRepository.getAllAlbumsByArtistFull(oldArtist.id).first() else listOf(albumToMove)
@@ -349,7 +359,7 @@ class OfflineMetadataRepository(
 
         val newBio = artistRepository.getArtistBio(mbArtist.id, newArtistName)
 
-        if (albumToMove == null) {
+        if (albumToMove == null && track == null) {
             artistRepository.update(
                 oldArtist.copy(
                     name = newArtistName,
@@ -380,11 +390,16 @@ class OfflineMetadataRepository(
             val newId = artistRepository.insertWithReturn(
                 toInsert
                 ).toInt()
-            albumArtistRepository.updateAlbumArtist(
-                albumId = albumToMove.id,
-                oldArtistId = oldArtist.id,
-                newArtistId = newId
-            )
+            if (albumToMove != null) {
+                albumArtistRepository.updateAlbumArtist(
+                    albumId = albumToMove.id,
+                    oldArtistId = oldArtist.id,
+                    newArtistId = newId
+                )
+            }
+            else if (track != null) {
+                artistRepository.moveTracks(oldArtist.id, newId, listOf(track.id))
+            }
 
             artistRepository.deleteOrphaned()
             return artist.copy(id = newId)
@@ -397,9 +412,9 @@ class OfflineMetadataRepository(
         newArtistName: String,
         oldArtist: Artist?,
         newReleaseDate: String?,
-        newAlbumArt: String?
+        newAlbumArt: String?,
+        track: Track?
     ) : AlbumArtistUpdate {
-         Log.d("update album", "starting update")
 
         if (oldAlbum.title.normalizeForMatching() == newAlbumTitle.normalizeForMatching() && oldAlbum.mbId != null) { //assume cleanup/article fix
             albumRepository.update(
@@ -408,7 +423,6 @@ class OfflineMetadataRepository(
                     searchKey = newAlbumTitle.normalizeForMatching()
                 )
             )
-            Log.d("update album", "only title")
             return AlbumArtistUpdate(oldAlbum, oldArtist)
         }
 
@@ -422,28 +436,42 @@ class OfflineMetadataRepository(
         )
 
 
-        if (oldAlbum.mbId != null && oldAlbum.mbId==albumData.album.mbId && oldAlbum.id==albumData.album.id){ //same album
+        val existingAlbum = albumRepository.getAlbumByMbid(albumData.album.mbId ?: "")
+        if (oldAlbum.mbId != null && oldAlbum.mbId==albumData.album.mbId && existingAlbum != null){ //same album
             albumRepository.update(
                 oldAlbum.copy(
                     title = newAlbumTitle,
                     searchKey = newAlbumTitle.normalizeForMatching()
                 )
             )
-            Log.d("update album", "title only 2")
+
             return AlbumArtistUpdate(oldAlbum, oldArtist)
         }
 
         var albumToMove: Album? = null
-        if (oldAlbum.mbId != null && oldAlbum.mbId != albumData.album.mbId && albumData.album.id != 0){ //different existing album
-            albumRepository.update(albumData.album.copy(title =  newAlbumTitle, searchKey = newAlbumTitle.normalizeForMatching()))
-            albumRepository.moveTracks(oldAlbum.id, albumData.album.id)
-            albumRepository.deleteOrphaned()
-            albumToMove = albumData.album
+        if (oldAlbum.mbId != null && oldAlbum.mbId != albumData.album.mbId && existingAlbum != null){ //different existing album
+            albumRepository.update(
+                albumData.album.copy(
+                    title = newAlbumTitle,
+                    searchKey = newAlbumTitle.normalizeForMatching()
+                )
+            )
+
+            if (track == null) {
+                albumRepository.moveTracks(oldAlbum.id, albumData.album.id)
+                albumRepository.deleteOrphaned()
+                albumToMove = albumData.album
+            }
+            else{
+                albumRepository.moveTracks(oldAlbum.id, albumData.album.id, listOf(track.id))
+                albumRepository.deleteOrphaned()
+
+                return AlbumArtistUpdate(albumData.album, oldArtist)
+            }
         }
 
         //else, replace current
-        else {
-            Log.d("update album", "replace")
+        if (track == null) {
             albumRepository.update(
                 oldAlbum.copy(
                     title = newAlbumTitle,
@@ -456,6 +484,27 @@ class OfflineMetadataRepository(
                 )
             )
             albumToMove = oldAlbum
+        }
+
+        else{
+            val toInsert = Album(
+                title = newAlbumTitle,
+                searchKey = newAlbumTitle.normalizeForMatching(),
+                image = albumData.album.image,
+                duration = track.duration,
+                numTracks = 1,
+                mbId = albumData.album.mbId,
+                label = albumData.album.label,
+                discogsId = albumData.album.discogsId,
+                releaseDate = albumData.album.releaseDate,
+                isEnriched = albumData.album.mbId != null || albumData.album.discogsId != null,
+                enrichmentAttempted = true
+            )
+            val newId = albumRepository.insertWithReturn(toInsert).toInt()
+            albumRepository.moveTracks(oldAlbum.id, newId, listOf(track.id))
+            albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = oldArtist!!.id))
+            albumRepository.deleteOrphaned()
+            return AlbumArtistUpdate(toInsert, oldArtist)
         }
 
         var updatedArtist: Artist? = null

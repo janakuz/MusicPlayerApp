@@ -148,10 +148,11 @@ object AppModule {
     @Singleton
     fun provideArtistRepository(
         artistDao: ArtistDao,
+        trackDao: TrackDao,
         musicbrainzApiService: MusicbrainzApiService,
         discogsApiService: DiscogsApiService,
         lastfmApiService: LastfmApiService): ArtistRepository {
-        return OfflineArtistRepository(artistDao, musicbrainzApiService, discogsApiService, lastfmApiService)
+        return OfflineArtistRepository(artistDao, trackDao, musicbrainzApiService, discogsApiService, lastfmApiService)
     }
 
     @Provides

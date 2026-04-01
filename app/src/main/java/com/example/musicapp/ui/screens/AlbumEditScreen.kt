@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QuestionMark
@@ -36,7 +35,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
@@ -60,22 +58,18 @@ import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.musicapp.ui.components.EditTopBar
-import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
 import kotlin.math.absoluteValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import com.example.musicapp.R
-import com.example.musicapp.normalizeForMatching
 import com.example.musicapp.normalizeGenre
 import com.example.musicapp.toTitleCase
 import com.example.musicapp.ui.viewmodels.AlbumEditViewModel
-import com.example.musicapp.ui.viewmodels.NameEditUiState
-import com.example.musicapp.ui.viewmodels.TitleEditUiState
+import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
 
 
 @Composable
@@ -389,7 +383,7 @@ fun AlbumEditScreen(
             }
 
             when (titleEditWorkflowState) {
-                is TitleEditUiState.Saving -> {
+                is AlbumArtistEditUiState.Saving -> {
                     Surface(
                         color = Color.Black.copy(alpha = 0.5f),
                         modifier = Modifier.fillMaxSize()
@@ -406,9 +400,9 @@ fun AlbumEditScreen(
                     BackHandler(enabled = true) { }
                 }
 
-                is TitleEditUiState.DisambiguationNeeded -> {
+                is AlbumArtistEditUiState.DisambiguationNeeded -> {
                     ArtistDisambiguationDialog(
-                        matches = (titleEditWorkflowState as TitleEditUiState.DisambiguationNeeded).matches,
+                        matches = (titleEditWorkflowState as AlbumArtistEditUiState.DisambiguationNeeded).matches,
                         onArtistSelected = { selectedArtist ->
                             albumEditViewModel.onArtistSelected(selectedArtist, onNavigateBack)
                         },
@@ -418,7 +412,7 @@ fun AlbumEditScreen(
                     )
                 }
 
-                is TitleEditUiState.Error -> {
+                is AlbumArtistEditUiState.Error -> {
                 }
 
                 else -> { }

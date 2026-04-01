@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.components.EditTopBar
+import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
 import com.example.musicapp.ui.viewmodels.TrackEditViewModel
 
 
@@ -51,6 +52,7 @@ fun TrackEditScreen(
     val trackEditViewModel: TrackEditViewModel = hiltViewModel()
 
     val trackEditUiState by trackEditViewModel.uiState.collectAsState()
+    val albumArtistEditWorkflowState by trackEditViewModel.workflowState.collectAsState()
     val canSave by trackEditViewModel.canSave.collectAsState()
     val suggestions by trackEditViewModel.moodSuggestions.collectAsState()
 
@@ -96,7 +98,6 @@ fun TrackEditScreen(
                 ExtendedFloatingActionButton(
                     onClick = {
                         trackEditViewModel.onSave(onNavigateBack)
-                        onNavigateBack()
                     },
                     text = { Text("Save") },
                     icon = { Icon(Icons.Default.Check, null) }
@@ -218,23 +219,45 @@ fun TrackEditScreen(
 
             }
 
-            if (trackEditUiState.isSaving) {
-                Surface(
-                    color = Color.Black.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Text("Saving...", color = Color.White)
+            when (albumArtistEditWorkflowState) {
+                is AlbumArtistEditUiState.Saving -> {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Saving...", color = Color.White)
+                        }
                     }
+                    BackHandler(enabled = true) { }
                 }
 
-                BackHandler(enabled = true) { }
+                is AlbumArtistEditUiState.DisambiguationNeeded -> {
+                    ArtistDisambiguationDialog(
+                        matches = (albumArtistEditWorkflowState as AlbumArtistEditUiState.DisambiguationNeeded).matches,
+                        onArtistSelected = { selectedArtist ->
+                            trackEditViewModel.onArtistSelected(selectedArtist, onNavigateBack)
+                        },
+                        onDismiss = {
+                            trackEditViewModel.resetName()
+                        }
+                    )
+                }
+
+                is AlbumArtistEditUiState.Error -> {
+                }
+
+                else -> {}
             }
         }
 
-
     }
+
 
     BackHandler(enabled = canSave) {
         showDiscardDialog = true

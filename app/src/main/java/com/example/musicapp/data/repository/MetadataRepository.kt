@@ -5,6 +5,7 @@ import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.repository.impl.AlbumArtistUpdate
 import com.example.musicapp.data.repository.impl.ScanProgress
 import kotlinx.coroutines.flow.Flow
@@ -18,8 +19,9 @@ interface MetadataRepository {
         oldAlbum: Album,
         newArtistName: String,
         oldArtist: Artist?,
-        newReleaseDate: String?,
-        newAlbumArt: String?
+        newReleaseDate: String? = null,
+        newAlbumArt: String? = null,
+        track: Track? = null
     ) : AlbumArtistUpdate
 
     suspend fun updateArtist(
@@ -27,6 +29,7 @@ interface MetadataRepository {
         oldArtist: Artist,
         mbArtist: ArtistSearchInfo? = null,
         albumToMove: Album? = null,
+        track: Track? = null,
     ) : Artist
 }
 

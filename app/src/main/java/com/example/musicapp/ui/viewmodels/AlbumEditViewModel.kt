@@ -6,7 +6,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.LocalLibraryScanner
-import com.example.musicapp.MetadataWorker
 import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
@@ -57,7 +56,7 @@ class AlbumEditViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AlbumEditUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _workflowState = MutableStateFlow<TitleEditUiState>(TitleEditUiState.Idle)
+    private val _workflowState = MutableStateFlow<AlbumArtistEditUiState>(AlbumArtistEditUiState.Idle)
     val workflowState = _workflowState.asStateFlow()
 
     private val _genreQuery = MutableStateFlow("")
@@ -198,14 +197,14 @@ class AlbumEditViewModel @Inject constructor(
 
     fun onArtistSelected(artistResult: ArtistSearchInfo, onBack: (Int?) -> Unit){
         viewModelScope.launch {
-            val album = (_workflowState.value as TitleEditUiState.DisambiguationNeeded).album
-            _workflowState.value = TitleEditUiState.Saving(album)
+            val album = (_workflowState.value as AlbumArtistEditUiState.DisambiguationNeeded).album
+            _workflowState.value = AlbumArtistEditUiState.Saving(album)
             val currentAlbumInfo = albumRepository.getByIdFull(albumId)
             val currentArtist = artistRepository.getArtist(currentAlbumInfo[0].artistId).first()
             performFinalSave(
                 artistResult,
                 currentArtist,
-                album,
+                album!!,
                 onBack
                 )
 
@@ -236,7 +235,7 @@ class AlbumEditViewModel @Inject constructor(
 
             if (initialTitle != _uiState.value.title){
                 try {
-                    _workflowState.value = TitleEditUiState.Saving(currentAlbum)
+                    _workflowState.value = AlbumArtistEditUiState.Saving(currentAlbum)
                     val newIds = metadataRepository.updateAlbum(
                         newAlbumTitle = _uiState.value.title,
                         oldAlbum = currentAlbum,
@@ -245,15 +244,15 @@ class AlbumEditViewModel @Inject constructor(
                         newReleaseDate = _uiState.value.draftReleaseDate,
                         newAlbumArt = _uiState.value.draftImageUrl
                     )
-                    _workflowState.value = TitleEditUiState.Saved
+                    _workflowState.value = AlbumArtistEditUiState.Saved
                     _uiState.update { it.copy(isSaving = false) }
                     onBack(newIds.artist?.id)
                 }
                 catch (e: SocketTimeoutException) {
-                    _workflowState.value = TitleEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                    _workflowState.value = AlbumArtistEditUiState.Error("MusicBrainz is taking too long. Please try again.")
                     _uiState.update { it.copy(isSaving = false) }
                 } catch (e: Exception) {
-                    _workflowState.value = TitleEditUiState.Error("Network error: ${e.message}")
+                    _workflowState.value = AlbumArtistEditUiState.Error("Network error: ${e.message}")
                     _uiState.update { it.copy(isSaving = false) }
                 } catch (e: Exception) {
                     Log.d("SaveError", "Failed to save: ${e.message}", e)
@@ -263,13 +262,13 @@ class AlbumEditViewModel @Inject constructor(
             }
             else if (initialArtist != _uiState.value.artist){
                 try {
-                    _workflowState.value = TitleEditUiState.Saving(currentAlbum)
+                    _workflowState.value = AlbumArtistEditUiState.Saving(currentAlbum)
 
                     val searchResults = artistRepository.findArtistMB(_uiState.value.artist)
                     if (searchResults.isEmpty()) {
-                        _workflowState.value = TitleEditUiState.Error("No artist found")
+                        _workflowState.value = AlbumArtistEditUiState.Error("No artist found")
                     } else if (searchResults.size > 1) {
-                        _workflowState.value = TitleEditUiState.DisambiguationNeeded(searchResults, currentAlbum)
+                        _workflowState.value = AlbumArtistEditUiState.DisambiguationNeeded(searchResults, currentAlbum)
                         return@launch
                     } else {
                         performFinalSave(searchResults[0], currentArtist!!, currentAlbum, onBack)
@@ -277,10 +276,10 @@ class AlbumEditViewModel @Inject constructor(
 
                 }
                 catch (e: SocketTimeoutException) {
-                    _workflowState.value = TitleEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                    _workflowState.value = AlbumArtistEditUiState.Error("MusicBrainz is taking too long. Please try again.")
                     _uiState.update { it.copy(isSaving = false) }
                 } catch (e: Exception) {
-                    _workflowState.value = TitleEditUiState.Error("Network error: ${e.message}")
+                    _workflowState.value = AlbumArtistEditUiState.Error("Network error: ${e.message}")
                     _uiState.update { it.copy(isSaving = false) }
                 } catch (e: Exception) {
                     Log.d("SaveError", "Failed to save: ${e.message}", e)
@@ -307,7 +306,7 @@ class AlbumEditViewModel @Inject constructor(
                 albumToMove = oldAlbum
             )
 //            _uiState.update { it.copy(id = updatedArtist.id) }
-            _workflowState.value = TitleEditUiState.Saved
+            _workflowState.value = AlbumArtistEditUiState.Saved
             onBack(newId.id)
     }
 
@@ -341,10 +340,10 @@ data class ImageOption(
     val source: String
 )
 
-sealed class TitleEditUiState {
-    object Idle : TitleEditUiState()
-    data class Saving(val album: Album) : TitleEditUiState()
-    data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>, val album: Album) : TitleEditUiState()
-    object Saved : TitleEditUiState()
-    data class Error(val message: String) : TitleEditUiState() // Show toast
+sealed class AlbumArtistEditUiState {
+    object Idle : AlbumArtistEditUiState()
+    data class Saving(val album: Album? = null) : AlbumArtistEditUiState()
+    data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>, val album: Album? = null) : AlbumArtistEditUiState()
+    object Saved : AlbumArtistEditUiState()
+    data class Error(val message: String) : AlbumArtistEditUiState() // Show toast
 }
