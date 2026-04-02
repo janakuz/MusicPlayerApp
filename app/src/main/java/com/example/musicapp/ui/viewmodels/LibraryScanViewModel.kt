@@ -17,6 +17,7 @@ import com.example.musicapp.LocalLibraryScanner
 import com.example.musicapp.MetadataWorker
 import com.example.musicapp.data.repository.WorkerManagerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +37,13 @@ data class ScanUiState(
     val error: String? = null
 )
 
+sealed class Phase {
+    object Idle : Phase()
+    object Scanning : Phase()
+    object Enriching : Phase()
+    data class Error(val error: String): Phase()
+}
+
 @HiltViewModel
 class LibraryScanViewModel @Inject constructor(
     private val scanner: LocalLibraryScanner,
@@ -45,19 +53,24 @@ class LibraryScanViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
+    private val _workflowState = MutableStateFlow<Phase>(Phase.Idle)
+    val workflowState = _workflowState.asStateFlow()
+
     init {
         observeEnrichment()
     }
 
     fun startScan(context: Context) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isScanning = true, error = null) }
+            _workflowState.value = Phase.Scanning
             try {
                 scanner.scanAll(context) { progress ->
                     _uiState.update { it.copy(scanProgress = progress) }
                 }
 
                 _uiState.update { it.copy(isScanning = false, isEnriching = true) }
+                _workflowState.value = Phase.Enriching
 
                 workerManagerRepository.startWorker(true)
 
@@ -80,6 +93,7 @@ class LibraryScanViewModel @Inject constructor(
 //                )
             } catch (e: Exception) {
                 _uiState.update { it.copy(isScanning = false, error = e.message) }
+                _workflowState.value = Phase.Error(e.message.toString())
             }
         }
     }
@@ -94,6 +108,7 @@ class LibraryScanViewModel @Inject constructor(
                 val albumTitle = info.progress.getString("albumTitle") ?: ""
 
                 if (info.state == WorkInfo.State.RUNNING) {
+                    _workflowState.value = Phase.Enriching
                     _uiState.update { it.copy(
                         isEnriching = true,
                         enrichmentProgress = if (total > 0) current.toFloat() / total else 0f,
@@ -101,6 +116,7 @@ class LibraryScanViewModel @Inject constructor(
                     ) }
                 } else if (info.state.isFinished) {
                     _uiState.update { it.copy(isEnriching = false, isScanning = false) }
+                    _workflowState.value = Phase.Idle
                 }
             }
             .launchIn(viewModelScope)

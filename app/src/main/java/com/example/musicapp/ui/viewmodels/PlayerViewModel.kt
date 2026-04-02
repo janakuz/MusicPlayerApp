@@ -193,7 +193,8 @@ class PlayerViewModel @Inject constructor (
                                 duration = mediaItem?.mediaMetadata?.durationMs ?: 0L,
                                 fileUri = mediaItem?.requestMetadata?.mediaUri.toString(),
                                 albumId = mediaItem?.mediaMetadata?.extras?.getInt("albumId") ?: 0,
-                                artistId = mediaItem?.mediaMetadata?.extras?.getInt("artistId") ?: 0
+                                artistId = mediaItem?.mediaMetadata?.extras?.getInt("artistId") ?: 0,
+                                filePath = ""
                             )
                             _currentTrack.value = PlayQueueItemUUID(
                                 queueId = mediaItem?.mediaId ?: "",

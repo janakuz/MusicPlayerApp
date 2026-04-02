@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.musicapp.ui.theme.MusicAppTheme
+import com.example.musicapp.ui.viewmodels.Phase
 
 
 @Composable
@@ -42,6 +43,7 @@ fun ScanLibraryScreen(
     viewModel: LibraryScanViewModel = hiltViewModel(),
     isInitial: Boolean = false) {
     val uiState by viewModel.uiState.collectAsState()
+    val workflowState by viewModel.workflowState.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -71,52 +73,62 @@ fun ScanLibraryScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        if (uiState.isScanning) {
-            LinearProgressIndicator(
-                progress = { uiState.scanProgress },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
-            )
-            Text("Importing ${ (uiState.scanProgress).toInt() }%")
+        when (workflowState) {
+            is Phase.Scanning -> {
+//        if (uiState.isScanning) {
+                LinearProgressIndicator(
+                    progress = { uiState.scanProgress / 100f },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
+                )
+                Text("Importing ${(uiState.scanProgress).toInt()}%")
 
-        }
-        else if (uiState.isEnriching){
-            Text("Tracks imported! Retrieving metadata...")
+            }
 
-            Spacer(Modifier.height(8.dp))
+            is Phase.Enriching -> {
+                //       else if (uiState.isEnriching){
+                Text("Tracks imported! Retrieving metadata...")
 
-            LinearProgressIndicator(
-                progress = { uiState.enrichmentProgress },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
-            )
+                Spacer(Modifier.height(8.dp))
 
-            Spacer(Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { uiState.enrichmentProgress },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
+                )
 
-            Text("${uiState.statusMessage}")
-        }
+                Spacer(Modifier.height(8.dp))
 
-        else {
+                Text("${uiState.statusMessage}")
+            }
 
-            val context = LocalContext.current
-            val permission =
-                Manifest.permission.READ_MEDIA_AUDIO
+            is Phase.Error -> {
+                Text((workflowState as Phase.Error).error)
+            }
 
-            val launcher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestPermission(),
-                onResult = { granted ->
-                    if (granted) {
-                        viewModel.startScan(context)
-                    } else {
-                        Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+//        else {
+            is Phase.Idle -> {
+                val context = LocalContext.current
+                val permission =
+                    Manifest.permission.READ_MEDIA_AUDIO
+
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+                    onResult = { granted ->
+                        if (granted) {
+                            viewModel.startScan(context)
+                        } else {
+                            Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                }
-            )
+                )
 
-            Button(
-                onClick = { launcher.launch(permission) },
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 16.dp),
-                shape = RoundedCornerShape(16.dp)) {
-                Text("Start Import")
+                Button(
+                    onClick = { launcher.launch(permission) },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Start Import")
+                }
             }
         }
     }

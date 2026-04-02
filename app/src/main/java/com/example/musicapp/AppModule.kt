@@ -315,8 +315,9 @@ object AppModule {
     fun provideMetadataRepository(
         albumRepository: AlbumRepository,
         artistRepository: ArtistRepository,
+        trackRepository: TrackRepository,
         albumArtistRepository: AlbumArtistRepository): MetadataRepository {
-        return OfflineMetadataRepository(albumRepository, artistRepository, albumArtistRepository)
+        return OfflineMetadataRepository(albumRepository, artistRepository, trackRepository, albumArtistRepository)
     }
 
 

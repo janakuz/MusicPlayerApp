@@ -176,6 +176,14 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
 }
 
 
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tracks add filePath TEXT NOT NULL DEFAULT '';")
+    }
+}
+
+
+
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
     MIGRATION_5_6,
@@ -184,5 +192,6 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_8_9,
     MIGRATION_9_10,
     MIGRATION_10_11,
-    MIGRATION_11_12
+    MIGRATION_11_12,
+    MIGRATION_12_13
 )

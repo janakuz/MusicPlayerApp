@@ -13,6 +13,7 @@ import com.example.musicapp.data.repository.AlbumMetadataResult
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
+import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.isSimilar
 import com.example.musicapp.normalizeForMatching
 import kotlinx.coroutines.delay
@@ -24,6 +25,7 @@ import kotlin.math.min
 class OfflineMetadataRepository(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
+    private val trackRepository: TrackRepository,
     private val albumArtistRepository: AlbumArtistRepository
 ) : MetadataRepository {
 
@@ -540,7 +542,20 @@ class OfflineMetadataRepository(
 
             val album = albumRepository.getAlbum(albumArtist.albumId).first()
             val albumResponse = getAlbumData(album, albumTitle, artistName, releaseDate, albumArt)
-            albumRepository.update(albumResponse.album)
+            Log.d("scan enrich album", albumTitle)
+//            if (album.mbId == null && album.discogsId == null) {
+                albumRepository.update(albumResponse.album)
+//            }
+//            else if (album.mbId != null && album.mbId != albumResponse.album.mbId){
+//                val newId = albumRepository.insertWithReturn(albumResponse.album).toInt()
+//                val allTracks = trackRepository.getAlbumTracks(album.id)
+//                val toMove = allTracks.filter { track ->
+//                    track.filePath.contains(artistName)
+//                }.map { it.trackId }
+//                albumRepository.moveTracks(album.id, newId, toMove)
+//                albumArtistRepository.insert(AlbumArtist(albumId =  newId, artistId = albumArtist.artistId))
+//                Log.d("scan split album", "here")
+//            }
 
             var toInsert = false
             var toUpdate = false
@@ -548,7 +563,10 @@ class OfflineMetadataRepository(
 
             var currentArtist = artistRepository.getArtist(albumArtist.artistId).first()
             if (albumResponse.mbResponse != null) {
-                val mbAlbumArtists = albumResponse.mbResponse.releases.find { it.id==albumResponse.album.mbId }?.artistCredit ?: emptyList()
+                val mbAlbumArtists = albumResponse.mbResponse.releases.find {release ->
+                    val matchesGroup = release.releaseGroup?.id == albumResponse.album.mbId
+                    val matchesRelease = release.id == albumResponse.album.mbId
+                    matchesGroup || matchesRelease}?.artistCredit ?: emptyList()
                 for (artistCredit in mbAlbumArtists) {
                     val artist = artistCredit.artist
                     if (currentArtist.mbId == null) {
@@ -613,6 +631,7 @@ class OfflineMetadataRepository(
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
                 artistRepository.update(currentArtist)
             }
+            Log.d("scan", "after artist $artistName")
 
             val progress = ScanProgress(
                 current = current+1,
