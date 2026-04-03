@@ -1,5 +1,9 @@
 package com.example.musicapp.ui.screens
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -43,6 +47,7 @@ import com.example.musicapp.R
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.model.GridItem
+import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
@@ -160,6 +165,35 @@ fun ArtistView(
 
     val artistDetailViewModel: ArtistDetailViewModel = hiltViewModel()
 
+
+    data class DeleteEvent(val id: Int, val name: String)
+
+    var pendingDeletion by remember { mutableStateOf<DeleteEvent?>(null) }
+
+
+    val context = LocalContext.current
+    val deleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && pendingDeletion != null) {
+            artistDetailViewModel.finalizeDeletion(pendingDeletion!!.id)
+        } else {
+            artistDetailViewModel.clearPendingDeletion()
+        }
+    }
+
+    val pendingUris by artistDetailViewModel.pendingDeleteUris.collectAsState()
+
+    LaunchedEffect(pendingUris) {
+        if (pendingUris.isNotEmpty()) {
+            val pendingIntent = artistDetailViewModel.getDeleteIntent(context, pendingUris)
+            deleteLauncher.launch(
+                IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+            )
+        }
+    }
+
+
     LaunchedEffect(sortRequest) {
         sortRequest?.let {
             artistDetailViewModel.setSort(it)
@@ -181,10 +215,23 @@ fun ArtistView(
                 onAddToQueue = onAddToQueue,
                 onPlayNext = onPlayNext,
                 header = {FullArtistHeader(artist)},
-                onEdit = onEdit
+                onEdit = onEdit,
+                onDelete = {id, title -> pendingDeletion = DeleteEvent(id, title)}
             )
 
     }
+
+    pendingDeletion?.let { item ->
+        DeleteConfirmationDialog(
+            text = item.name,
+            onConfirm = {
+                artistDetailViewModel.prepareDeletion(item.id)
+                pendingDeletion = null
+            },
+            onDismiss = { pendingDeletion = null },
+        )
+    }
+
 
 }
 

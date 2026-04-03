@@ -1,16 +1,23 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.app.PendingIntent
+import android.content.Context
+import android.provider.MediaStore
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.repository.AlbumArtistRepository
+import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,6 +39,8 @@ import javax.inject.Inject
 class ArtistDetailViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumArtistRepository: AlbumArtistRepository,
+    private val albumRepository: AlbumRepository,
+    private val trackRepository: TrackRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
     ) : ViewModel() {
@@ -42,6 +51,10 @@ class ArtistDetailViewModel @Inject constructor(
 
     private val artistId: Int = savedStateHandle.get<String>("artistId")?.toInt()
         ?: throw IllegalStateException("artistId not found in SavedStateHandle")
+
+
+    private val _pendingDeleteUris = MutableStateFlow<List<String>>(emptyList())
+    val pendingDeleteUris = _pendingDeleteUris.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val artistDetailUiState: StateFlow<ArtistDetailUiState> = combine(
@@ -74,6 +87,37 @@ class ArtistDetailViewModel @Inject constructor(
             userPreferencesRepository.updateArtistAlbumsSort(option)
         }
     }
+
+    fun prepareDeletion(albumId: Int) {
+        viewModelScope.launch {
+            val uris = trackRepository.getAlbumTracks(albumId).map { it.fileUri }
+            _pendingDeleteUris.value = uris
+        }
+    }
+
+
+    fun finalizeDeletion(albumId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            albumRepository.deleteById(albumId)
+            artistRepository.deleteOrphaned()
+            albumRepository.deleteOrphaned()
+
+            clearPendingDeletion()
+        }
+
+    }
+
+    fun clearPendingDeletion() {
+        _pendingDeleteUris.value = emptyList()
+    }
+
+    fun getDeleteIntent(context: Context, uriStrings: List<String>): PendingIntent {
+        val uris = uriStrings.map { it.toUri() }
+        return MediaStore.createDeleteRequest(context.contentResolver, uris)
+    }
+
+
 
 }
 

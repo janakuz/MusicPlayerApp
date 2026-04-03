@@ -110,8 +110,13 @@ class OfflineArtistRepository(
         artistDao.delete(artist)
     }
 
+    override suspend fun deleteById(artistId: Int) {
+        artistDao.deleteById(artistId)
+    }
+
     override suspend fun deleteOrphaned() {
         artistDao.deleteOrphaned()
+        artistDao.deleteOrphanedTracks()
     }
 
     override suspend fun moveTracks(
@@ -121,6 +126,10 @@ class OfflineArtistRepository(
     ) {
         val trackIds = if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAllTracksByArtist(oldArtistId).first().map { it.trackId }
         trackDao.moveToArtist(oldArtistId, newArtistId, trackIds)
+    }
+
+    override suspend fun getTrackUrisByArtist(artistId: Int): List<String> {
+        return trackDao.getTrackUrisByArtist(artistId)
     }
 
     override suspend fun insertAllString(names: List<String>) {

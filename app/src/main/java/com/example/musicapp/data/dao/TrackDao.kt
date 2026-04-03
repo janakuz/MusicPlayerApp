@@ -161,4 +161,7 @@ interface TrackDao {
             "tracks.id in (:tracks)")
     suspend fun moveToArtist(oldArtistId: Int, newArtistId: Int, tracks: List<Int>)
 
+
+    @Query("SELECT fileUri FROM tracks WHERE artistId = :artistId")
+    suspend fun getTrackUrisByArtist(artistId: Int): List<String>
 }

@@ -140,7 +140,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { playerViewModel.playNextListIds(selection.selectedTrackIds) },
                         onAddToQueue = { playerViewModel.addToQueueListIds(selection.selectedTrackIds) },
                         onRemoveFromQueue = { playerViewModel.removeFromQueue(selection.selectedQueueIds) },
-                        isQueueScreen = (currentRoute == "nowPlaying")
+                        isQueueScreen = (currentRoute == "nowPlaying"),
+                        onDelete = {selectionViewModel.requestDeletionOfSelected()}
                     )
                 }
                 if (selectedTabIndex >= 0 && currentRoute != HomeScreen.Scan.name && !selectionMode) {

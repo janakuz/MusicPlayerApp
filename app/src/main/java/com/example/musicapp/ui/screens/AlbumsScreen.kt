@@ -1,6 +1,10 @@
 package com.example.musicapp.ui.screens
 
+import android.app.Activity
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,12 +20,18 @@ import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
+import androidx.room.Delete
 import com.example.musicapp.HomeScreen
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 
 
@@ -34,6 +44,7 @@ fun AlbumsGrid(
     onClick: ((GridItem) -> Unit)? = null,
     onEdit: (GridItem) -> Unit,
     header: (@Composable () -> Unit)? = null,
+    onDelete: (Int, String) -> Unit
     ){
 
 
@@ -62,7 +73,8 @@ fun AlbumsGrid(
         textStyle = MaterialTheme.typography.bodyMedium,
         onClick = onClick,
         header = header,
-        onEdit = onEdit
+        onEdit = onEdit,
+        onDelete = onDelete
     )
 }
 
@@ -74,8 +86,36 @@ fun AllAlbumsScreen(
     onAddToQueue: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
-    ) {
+) {
     val albumViewModel: AllAlbumsViewModel = hiltViewModel()
+
+    data class DeleteEvent(val id: Int, val name: String)
+
+    var pendingDeletion by remember { mutableStateOf<DeleteEvent?>(null) }
+
+
+    val context = LocalContext.current
+    val deleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && pendingDeletion != null) {
+            albumViewModel.finalizeDeletion(pendingDeletion!!.id)
+        } else {
+            albumViewModel.clearPendingDeletion()
+        }
+    }
+
+    val pendingUris by albumViewModel.pendingDeleteUris.collectAsState()
+
+    LaunchedEffect(pendingUris) {
+        if (pendingUris.isNotEmpty()) {
+            val pendingIntent = albumViewModel.getDeleteIntent(context, pendingUris)
+            deleteLauncher.launch(
+                IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+            )
+        }
+    }
+
 
     LaunchedEffect(sortRequest) {
         sortRequest?.let {
@@ -92,8 +132,22 @@ fun AllAlbumsScreen(
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
         onClick = onClick,
-        onEdit = onEdit
+        onEdit = onEdit,
+        onDelete = {id, title -> pendingDeletion = DeleteEvent(id, title)}
     )
+
+    pendingDeletion?.let { item ->
+        DeleteConfirmationDialog(
+            text = item.name,
+            onConfirm = {
+                albumViewModel.prepareDeletion(item.id)
+                pendingDeletion = null
+            },
+            onDismiss = { pendingDeletion = null },
+        )
+    }
+
+
 }
 
 

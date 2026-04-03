@@ -146,6 +146,9 @@ class ArtistEditViewModel @Inject constructor(
                     _uiState.update { it.copy(isSaving = false) }
                 }
             }
+            else{
+                onBack()
+            }
         }
     }
 

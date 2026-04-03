@@ -54,6 +54,8 @@ interface AlbumRepository {
 
     suspend fun delete(album: Album)
 
+    suspend fun deleteById(albumId: Int)
+
     suspend fun deleteOrphaned()
 
     suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>? = emptyList())

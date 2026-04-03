@@ -1,5 +1,9 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.app.PendingIntent
+import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.lifecycle.ViewModel
@@ -25,10 +29,14 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
+import androidx.core.net.toUri
+import com.example.musicapp.data.repository.AlbumRepository
+import kotlinx.coroutines.Dispatchers
 
 @HiltViewModel
 class AllArtistsViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
+    private val albumRepository: AlbumRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
@@ -36,7 +44,8 @@ class AllArtistsViewModel @Inject constructor(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-
+    private val _pendingDeleteUris = MutableStateFlow<List<String>>(emptyList())
+    val pendingDeleteUris = _pendingDeleteUris.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val artistListUiState: StateFlow<ArtistListUiState> = userPreferencesRepository.artistSortOption
@@ -62,6 +71,33 @@ class AllArtistsViewModel @Inject constructor(
 
     init {
         Log.d("Artists VM", "CREATED ${hashCode()}")
+    }
+
+    fun getDeleteIntent(context: Context, uriStrings: List<String>): PendingIntent {
+        val uris = uriStrings.map { it.toUri() }
+        return MediaStore.createDeleteRequest(context.contentResolver, uris)
+    }
+
+    fun prepareDeletion(artistId: Int) {
+        viewModelScope.launch {
+            val uris = artistRepository.getTrackUrisByArtist(artistId)
+            _pendingDeleteUris. value = uris
+        }
+    }
+
+    fun finalizeDeletion(artistId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            artistRepository.deleteById(artistId)
+            artistRepository.deleteOrphaned()
+            albumRepository.deleteOrphaned()
+
+            clearPendingDeletion()
+        }
+    }
+
+    fun clearPendingDeletion(){
+        _pendingDeleteUris.value = emptyList()
     }
 
 

@@ -1,14 +1,21 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.app.PendingIntent
+import android.content.Context
+import android.provider.MediaStore
 import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,16 +30,22 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.map
 
 @HiltViewModel
 class AllAlbumsViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
+    private val artistRepository: ArtistRepository,
+    private val trackRepository: TrackRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
+
+    private val _pendingDeleteUris = MutableStateFlow<List<String>>(emptyList())
+    val pendingDeleteUris = _pendingDeleteUris.asStateFlow()
 
 
 
@@ -73,6 +86,35 @@ class AllAlbumsViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferencesRepository.updateAlbumSort(option)
         }
+    }
+
+    fun prepareDeletion(albumId: Int) {
+        viewModelScope.launch {
+            val uris = trackRepository.getAlbumTracks(albumId).map { it.fileUri }
+            _pendingDeleteUris.value = uris
+        }
+    }
+
+
+    fun finalizeDeletion(albumId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            albumRepository.deleteById(albumId)
+            artistRepository.deleteOrphaned()
+            albumRepository.deleteOrphaned()
+
+            clearPendingDeletion()
+        }
+
+    }
+
+    fun clearPendingDeletion() {
+        _pendingDeleteUris.value = emptyList()
+    }
+
+    fun getDeleteIntent(context: Context, uriStrings: List<String>): PendingIntent {
+        val uris = uriStrings.map { it.toUri() }
+        return MediaStore.createDeleteRequest(context.contentResolver, uris)
     }
 
 }

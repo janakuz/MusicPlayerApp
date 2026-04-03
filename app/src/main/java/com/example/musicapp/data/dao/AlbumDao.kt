@@ -1,5 +1,6 @@
 package com.example.musicapp.data.dao
 
+import androidx.annotation.MainThread
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -92,6 +93,8 @@ interface AlbumDao {
             "(SELECT DISTINCT albumId from tracks)")
     suspend fun deleteOrphaned()
 
+    @Query("DELETE FROM albums WHERE id=:albumId")
+    suspend fun deleteById(albumId: Int)
 
     @Query("SELECT * FROM albums where mbId=:mbId")
     suspend fun getAlbumByMbid(mbId: String): Album?

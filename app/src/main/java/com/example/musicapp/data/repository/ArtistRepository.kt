@@ -45,7 +45,11 @@ interface ArtistRepository {
 
     suspend fun delete(artist: Artist)
 
+    suspend fun deleteById(artistId: Int)
+
     suspend fun deleteOrphaned()
 
     suspend fun moveTracks(oldArtistId: Int, newArtistId: Int, tracks: List<Int>? = emptyList())
+
+    suspend fun getTrackUrisByArtist(artistId: Int): List<String>
 }

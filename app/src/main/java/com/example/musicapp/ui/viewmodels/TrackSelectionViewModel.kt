@@ -3,13 +3,16 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,6 +26,9 @@ class TrackSelectionViewModel @Inject constructor (): ViewModel() {
 
     private val _selectedTrackUUIDs = MutableStateFlow<Set<String>>(emptySet())
     val selectedTrackUUIDs = _selectedTrackUUIDs.asStateFlow()
+
+    private val _deletionRequestTrigger = MutableSharedFlow<Unit>(replay = 0)
+    val deletionRequestTrigger = _deletionRequestTrigger.asSharedFlow()
 
     val selectionState: StateFlow<SelectionState> =
         combine (
@@ -68,6 +74,11 @@ class TrackSelectionViewModel @Inject constructor (): ViewModel() {
         _selectionMode.value = _selectedTrackUUIDs.value.isNotEmpty()
     }
 
+    fun requestDeletionOfSelected() {
+        viewModelScope.launch {
+            _deletionRequestTrigger.emit(Unit)
+        }
+    }
 
 }
 

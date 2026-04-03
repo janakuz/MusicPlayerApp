@@ -73,7 +73,8 @@ fun SelectionTopBar(
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit,
     onRemoveFromQueue: (() -> Unit)? = null,
-    isQueueScreen: Boolean = false
+    isQueueScreen: Boolean = false,
+    onDelete: () -> Unit,
     ){
     TopAppBar(
         title = {
@@ -129,6 +130,13 @@ fun SelectionTopBar(
                             }
                         )
                     }
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        onClick = {
+                            onDelete()
+                            expanded = false
+                        }
+                    )
                 }
             }
         }

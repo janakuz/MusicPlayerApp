@@ -17,12 +17,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +62,8 @@ fun ImageWithTextColumn(
     modifier: Modifier = Modifier,
     item: GridItem? = null,
     albumArtist: String = "",
-    onClick: ((GridItem) -> Unit)? = null
+    onClick: ((GridItem) -> Unit)? = null,
+    onDelete: (Int, String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -74,37 +77,15 @@ fun ImageWithTextColumn(
                 },
                 onLongClick = { expanded = true }
             ) else Modifier).fillMaxWidth(),
-
-//            .then(if (onClick != null) Modifier.clickable {
-//                if (item != null) {
-//                    onClick(item)
-//                }
-//            } else Modifier).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val defaultImage = if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_groups_24)
-//        val default = if (isAlbum)
-//            Icon(
-//                imageVector = Icons.Default.Album,
-//                contentDescription = null,
-//                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-////                modifier = Modifier.size(40.dp)
-//            )
-//        else Icon(
-//            imageVector = Icons.Rounded.Groups,
-//            contentDescription = null,
-//            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-////            modifier = Modifier.size(40.dp)
-//        )
         Surface(modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-//            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clip(imageShape),
-//            contentAlignment = Alignment.Center,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         ) {
-//            if (image != "" && image.lowercase() != "null") {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(image)
@@ -126,35 +107,6 @@ fun ImageWithTextColumn(
                         .aspectRatio(1f),
                     contentScale = ContentScale.Crop
                 )
-//            }
-//            else {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-////                        .aspectRatio(1f)
-////                        .clip(imageShape)
-//                        .background(MaterialTheme.colorScheme.surfaceVariant),
-//                    contentAlignment = Alignment.Center
-//                )
-//                {
-//                    if (!isAlbum) {
-//                        Icon(
-//                            imageVector = Icons.Rounded.Groups,
-//                            contentDescription = null,
-//                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-//                            modifier = Modifier.size(80.dp)
-//                        )
-//                    }
-//                    else{
-//                        Icon(
-//                            imageVector = Icons.Default.Album,
-//                            contentDescription = null,
-//                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-//                            modifier = Modifier.size(100.dp)
-//                        )
-//                    }
-//                }
-//            }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -172,6 +124,8 @@ fun ImageWithTextColumn(
             )
         }
     }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     DropdownMenu(
         expanded = expanded,
@@ -197,5 +151,33 @@ fun ImageWithTextColumn(
             }
         )
 
+        DropdownMenuItem(
+            text = { Text("Delete")},
+            onClick = {
+                if (item != null) onDelete(item.id, item.displayName)
+//                showDeleteDialog = true
+                expanded = false
+            }
+        )
+
     }
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    text: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+){
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("Delete ${text}?") },
+        text = { Text("This will permanently remove the files from your SD card.") },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm()
+            }) { Text("Delete") }
+        }
+    )
+
 }
