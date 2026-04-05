@@ -1,6 +1,9 @@
 package com.example.musicapp.ui.screens
 
+import android.app.AlertDialog
 import android.text.Layout
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,10 +14,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +46,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
+import com.example.musicapp.data.dto.Release
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.data.entity.Album
@@ -45,6 +55,10 @@ import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AlbumDetailViewModel
+import com.example.musicapp.ui.viewmodels.NewAlbum
+import com.example.musicapp.ui.viewmodels.RefetchAlbumState
+import com.example.musicapp.ui.viewmodels.RefetchAlbumTracksState
+import com.example.musicapp.ui.viewmodels.RefetchState
 import java.nio.file.WatchEvent
 
 
@@ -210,6 +224,9 @@ fun AlbumView(
     val tracksUiState by albumDetailViewModel.albumTracksUiState.collectAsState()
     val tracks = tracksUiState.tracks
 
+    val moveToAlbum by albumDetailViewModel.currentNewAlbum.collectAsState()
+    val pendingMoveIds by albumDetailViewModel.pendingMoveIds.collectAsState()
+    val moveState by albumDetailViewModel.moveState.collectAsState()
 
     val visualTracks = tracks.map { track -> VisualTrack(key = track.trackId, data = track) }
 
@@ -236,24 +253,132 @@ fun AlbumView(
 //                )
 //        )
 
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        TrackList(
-            visualTracks,
-            onClick = {track -> onTrackClick(track.data, tracks)},
-            onPlayNext = onPlayNext,
-            onAddToQueue = onAddToQueue,
-            showTrackNum = true,
-            header = {FullHeader(
-                album,
-                gradientColors)
-            },
-            footer = {
-                if (album.label != null && album.label != "") Footer(album.label) else null
-            },
-            onEdit = onEdit
+            TrackList(
+                visualTracks,
+                onClick = { track -> onTrackClick(track.data, tracks) },
+                onPlayNext = onPlayNext,
+                onAddToQueue = onAddToQueue,
+                showTrackNum = true,
+                header = {
+                    FullHeader(
+                        album,
+                        gradientColors
+                    )
+                },
+                footer = {
+                    if (album.label != null && album.label != "") Footer(album.label) else null
+                },
+                onEdit = onEdit,
+                onMove = { ids -> albumDetailViewModel.prepareMove(ids) }
             )
+
+            when (moveState) {
+                is RefetchAlbumTracksState.Saving -> {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Saving...", color = Color.White)
+                        }
+                    }
+                    BackHandler(enabled = true) { }
+                }
+
+                is RefetchAlbumTracksState.DisambiguationNeeded -> {
+                    AlbumDisambiguationDialog(
+                        matches = (moveState as RefetchAlbumTracksState.DisambiguationNeeded).matches,
+                        onAlbumSelected = { selectedAlbum ->
+                            albumDetailViewModel.onAlbumSelected(selectedAlbum)
+                        },
+                        onDismiss = {
+                            albumDetailViewModel.reset()
+                        }
+                    )
+                }
+
+                is RefetchAlbumTracksState.InputExpected -> {
+                    SplitAlbumDialog(
+                        onSave = {albumDetailViewModel.splitToAlbum(pendingMoveIds, moveToAlbum.artist ?: "", moveToAlbum.title ?: "")},
+                        onDismiss = {albumDetailViewModel.reset()},
+                        onAlbumChange = {title -> albumDetailViewModel.onTitleChange(title)},
+                        onArtistChange = {name -> albumDetailViewModel.onArtistChange(name)},
+                        uiState = moveToAlbum
+                    )
+                }
+
+                is RefetchAlbumTracksState.Error -> {
+                    Text(text = (moveState as RefetchAlbumTracksState.Error).message)
+                }
+
+                else -> {}
+            }
+
+
+
+        }
 //        }
     }
+
+}
+
+
+@Composable
+fun SplitAlbumDialog(
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+    onArtistChange: (String) -> Unit,
+    onAlbumChange: (String) -> Unit,
+    uiState: NewAlbum
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Input New Artist and Title") },
+        confirmButton = {
+            TextButton(onClick = { onSave() }) {
+            Text("Find Album")
+            }
+        },
+        text = {
+            LazyColumn {
+                item {
+                    OutlinedTextField(
+                        value = uiState.title ?: "" ,
+                        onValueChange = { onAlbumChange(it) },
+                        label = { Text("Album Title") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.artist ?: "",
+                        onValueChange = { onArtistChange(it) },
+                        label = { Text("Artist") },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+            }
+        }
+    )
 
 }
 

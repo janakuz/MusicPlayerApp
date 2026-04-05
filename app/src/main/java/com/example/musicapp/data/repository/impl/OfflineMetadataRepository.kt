@@ -39,14 +39,15 @@ class OfflineMetadataRepository(
         releaseDate: String?,
         ) : Album {
         val newAlbumArt =
-            if ((albumArt == null || albumArt == "" || isUpdate) && albumRepository.getAlbumArt(mbAlbum.id) != null) albumRepository.getAlbumArt(mbAlbum.id) else albumArt
+            if ((albumArt == null || albumArt == "" || isUpdate) && albumRepository.getAlbumArt(mbAlbum.releaseGroup?.id ?: mbAlbum.id) != null)
+                albumRepository.getAlbumArt(mbAlbum.releaseGroup?.id ?: mbAlbum.id) else albumArt
         val labelName =
             if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) mbAlbum.labelInfo[0].label!!.name else ""
         val newReleaseDate = releaseDate ?: mbAlbum.date
 
         val newAlbum = album.copy(
 //                mbId = mbAlbum.id,
-            mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
+            mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id, //TODO:add column to save if group or release. add argument to getAlbumArt and getAllCAAOptions. Add service method.
             image = newAlbumArt,
             label = labelName,
             releaseDate = newReleaseDate,
@@ -454,7 +455,7 @@ class OfflineMetadataRepository(
             )
 
             val updated = currentAlbum.copy(
-                mbId = album.id,
+                mbId = new.mbId,
                 image = new.image,
                 discogsId = new.discogsId,
                 releaseDate = new.releaseDate,
@@ -535,7 +536,7 @@ class OfflineMetadataRepository(
             )
 
             val updated = current.copy(
-                mbId = album.id,
+                mbId = new.mbId,
                 image = new.image,
                 discogsId = new.discogsId,
                 releaseDate = new.releaseDate,
@@ -562,6 +563,7 @@ class OfflineMetadataRepository(
             }
 
             albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = artistId))
+            albumArtistRepository.removeArtistFromAlbum(oldAlbumId, artistId)
             albumRepository.moveTracks(
                 oldAlbumId,
                 newId,
@@ -573,6 +575,40 @@ class OfflineMetadataRepository(
                 existing.id,
                 tracksToMove
             )
+        }
+    }
+
+    override suspend fun moveToUnenriched(
+        album: String,
+        artist: String,
+        tracksToMove: List<Int>,
+        oldAlbumId: Int
+    ) {
+        val newArtist = artistRepository.getArtistByName(artist.normalizeForMatching())
+        if (newArtist.isNotEmpty() && newArtist.size == 1){
+            val trackInfos = trackRepository.getTracksByIds(tracksToMove.toSet())
+            val totalDuration = trackInfos.sumOf { it.duration }
+
+            val newAlbum = Album(
+                title = album,
+                searchKey = album.normalizeForMatching(),
+                duration = totalDuration,
+                numTracks = tracksToMove.size,
+                image = null,
+                label = null,
+                discogsId = null,
+                releaseDate = null,
+                mbId = null
+                )
+
+            val newId = albumRepository.insertWithReturn(newAlbum).toInt()
+            albumArtistRepository.removeArtistFromAlbum(oldAlbumId, newArtist[0].id)
+            albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = newArtist[0].id))
+            albumRepository.moveTracks(
+                oldAlbumId,
+                newId,
+                tracksToMove)
+
         }
     }
 

@@ -156,4 +156,6 @@ interface AlbumArtistDao {
     @Query("UPDATE album_artists SET artistId = :newArtistId WHERE albumId = :albumId AND artistId = :oldArtistId")
     suspend fun updateArtistForAlbum(albumId: Int, oldArtistId: Int, newArtistId: Int)
 
+    @Query("DELETE FROM album_artists WHERE albumId = :albumId AND artistId = :artistId")
+    suspend fun deleteArtistFromAlbum(albumId: Int, artistId: Int)
 }

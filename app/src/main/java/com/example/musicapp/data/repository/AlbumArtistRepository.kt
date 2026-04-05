@@ -33,4 +33,6 @@ interface AlbumArtistRepository {
 
     suspend fun updateAlbumArtist(albumId: Int, oldArtistId: Int, newArtistId: Int)
 
+    suspend fun removeArtistFromAlbum(albumId: Int, artistId: Int)
+
 }

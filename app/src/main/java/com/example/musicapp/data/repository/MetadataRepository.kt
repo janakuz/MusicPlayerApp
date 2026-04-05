@@ -50,6 +50,13 @@ interface MetadataRepository {
         oldAlbumId: Int
 
     )
+
+    suspend fun moveToUnenriched(
+        album: String,
+        artist: String,
+        tracksToMove: List<Int>,
+        oldAlbumId: Int
+    )
 }
 
 data class AlbumMetadataResult(

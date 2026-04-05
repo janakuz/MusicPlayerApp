@@ -577,7 +577,8 @@ fun TrackList(
                         },
                     ),
                     onEdit = onEdit,
-                    onDelete = {ids -> pendingDeletion = DeleteEvent(ids)}
+                    onDelete = {ids -> pendingDeletion = DeleteEvent(ids)},
+                    onMove = onMove
                 )
 
             }

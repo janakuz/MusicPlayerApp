@@ -262,7 +262,7 @@ fun ArtistView(
                 }
 
                 is RefetchAlbumState.Error -> {
-                    Text(text = (refetchUiState as RefetchState.Error).message)
+                    Text(text = (refetchUiState as RefetchAlbumState.Error).message)
                 }
 
                 else -> {}

@@ -42,7 +42,7 @@ interface ArtistDao {
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
 
-    @Query("SELECT * FROM artists where LOWER(name)=LOWER(:name)")
+    @Query("SELECT * FROM artists where LOWER(searchKey)=LOWER(:name)")
     suspend fun getArtistByName(name: String): List<Artist>
 
     @Query("SELECT * FROM artists where searchKey=:name " +

@@ -71,4 +71,8 @@ class OfflineAlbumArtistRepository(
         albumArtistDao.updateArtistForAlbum(albumId, oldArtistId, newArtistId)
         trackDao.updateArtistForAlbum(albumId, oldArtistId, newArtistId)
     }
+
+    override suspend fun removeArtistFromAlbum(albumId: Int, artistId: Int) {
+        albumArtistDao.deleteArtistFromAlbum(albumId, artistId)
+    }
 }
