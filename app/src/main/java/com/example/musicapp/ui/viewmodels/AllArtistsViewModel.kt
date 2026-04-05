@@ -30,19 +30,27 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import androidx.core.net.toUri
+import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 
 @HiltViewModel
 class AllArtistsViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
+    private val metadataRepository: MetadataRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
+
+    private val _refetchState = MutableStateFlow<RefetchState>(RefetchState.Idle)
+    val refetchState = _refetchState.asStateFlow()
+
 
     private val _pendingDeleteUris = MutableStateFlow<List<String>>(emptyList())
     val pendingDeleteUris = _pendingDeleteUris.asStateFlow()
@@ -100,6 +108,53 @@ class AllArtistsViewModel @Inject constructor(
         _pendingDeleteUris.value = emptyList()
     }
 
+    fun refetchMetadata(id: Int){
+        viewModelScope.launch {
+            val artist = artistRepository.getArtist(id).first()
+            _refetchState.value = RefetchState.Saving
+            val searchResults = artistRepository.findArtistMB(artist.searchKey)
+            if (searchResults.isEmpty()) {
+                _refetchState.value = RefetchState.Error("No artist found")
+            } else if (searchResults.size > 1) {
+                _refetchState.value = RefetchState.DisambiguationNeeded(searchResults, artist)
+                return@launch
+            } else {
+                performFinalSave(searchResults[0], artist)
+            }
+
+            _refetchState.value = RefetchState.Saved
+
+        }
+    }
+
+    fun reset(){
+        _refetchState.value = RefetchState.Idle
+    }
+
+    suspend fun performFinalSave(
+        artistResult: ArtistSearchInfo,
+        oldArtist: Artist,
+    ) {
+        val newId = metadataRepository.refetchArtist(
+            mbArtist = artistResult,
+            currentArtist = oldArtist
+        )
+        _refetchState.value = RefetchState.Saved
+    }
+
+    fun onArtistSelected(artistResult: ArtistSearchInfo){
+        viewModelScope.launch {
+            val currentArtist = (_refetchState.value as RefetchState.DisambiguationNeeded).artist
+            _refetchState.value = RefetchState.Saving
+            performFinalSave(
+                artistResult,
+                currentArtist,
+            )
+
+        }
+    }
+
+
 
 }
 
@@ -107,3 +162,12 @@ data class ArtistListUiState(
     val isLoading: Boolean = true,
     val artists: List<Artist> = emptyList(),
     val error: String? = null)
+
+
+sealed class RefetchState {
+    object Idle: RefetchState()
+    data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>, val artist: Artist) : RefetchState()
+    object Saving: RefetchState()
+    object Saved : RefetchState()
+    data class Error(val message: String) : RefetchState()
+}

@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.dto.ArtistSummary
 import com.example.musicapp.data.dto.DiscogsAlbumArtist
+import com.example.musicapp.data.dto.Release
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
 import com.example.musicapp.data.entity.Artist
@@ -29,6 +30,31 @@ class OfflineMetadataRepository(
     private val albumArtistRepository: AlbumArtistRepository
 ) : MetadataRepository {
 
+
+    private suspend fun getAlbumMB(
+        mbAlbum: Release,
+        album: Album,
+        albumArt: String?,
+        isUpdate: Boolean = false,
+        releaseDate: String?,
+        ) : Album {
+        val newAlbumArt =
+            if ((albumArt == null || albumArt == "" || isUpdate) && albumRepository.getAlbumArt(mbAlbum.id) != null) albumRepository.getAlbumArt(mbAlbum.id) else albumArt
+        val labelName =
+            if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) mbAlbum.labelInfo[0].label!!.name else ""
+        val newReleaseDate = releaseDate ?: mbAlbum.date
+
+        val newAlbum = album.copy(
+//                mbId = mbAlbum.id,
+            mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
+            image = newAlbumArt,
+            label = labelName,
+            releaseDate = newReleaseDate,
+            isEnriched = true,
+            enrichmentAttempted = true
+        )
+        return newAlbum
+    }
 
     private suspend fun getAlbumData(
         album: Album,
@@ -60,21 +86,22 @@ class OfflineMetadataRepository(
                 .normalizeForMatching() == albumTitle.lowercase().normalizeForMatching()
         ) {
             val mbAlbum = mbAlbumSearch.releases[i]
-            val newAlbumArt =
-                if (albumArt == null || albumArt == "" || isUpdate) albumRepository.getAlbumArt(mbAlbum.id) else albumArt
-            val labelName =
-                if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) mbAlbum.labelInfo[0].label!!.name else ""
-            val newReleaseDate = releaseDate ?: mbAlbum.date
-
-            val newAlbum = album.copy(
-//                mbId = mbAlbum.id,
-                mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
-                image = newAlbumArt,
-                label = labelName,
-                releaseDate = newReleaseDate,
-                isEnriched = true,
-                enrichmentAttempted = true
-            )
+            val newAlbum = getAlbumMB(mbAlbum, album, albumArt, isUpdate, releaseDate)
+//            val newAlbumArt =
+//                if (albumArt == null || albumArt == "" || isUpdate) albumRepository.getAlbumArt(mbAlbum.id) else albumArt
+//            val labelName =
+//                if (mbAlbum.labelInfo != null && mbAlbum.labelInfo[0].label != null) mbAlbum.labelInfo[0].label!!.name else ""
+//            val newReleaseDate = releaseDate ?: mbAlbum.date
+//
+//            val newAlbum = album.copy(
+////                mbId = mbAlbum.id,
+//                mbId = mbAlbum.releaseGroup?.id ?: mbAlbum.id,
+//                image = newAlbumArt,
+//                label = labelName,
+//                releaseDate = newReleaseDate,
+//                isEnriched = true,
+//                enrichmentAttempted = true
+//            )
             return AlbumMetadataResult(mbAlbumSearch, null, newAlbum)
         } else {
             val discogsResponse =
@@ -328,7 +355,8 @@ class OfflineMetadataRepository(
 
             if (track != null){
                 artistRepository.moveTracks(oldArtist.id, existingArtist.id, listOf(track.id))
-                albumArtistRepository.insert(AlbumArtist(albumId = track.albumId, artistId = existingArtist.id))
+//                albumArtistRepository.insert(AlbumArtist(albumId = track.albumId, artistId = existingArtist.id))
+                albumArtistRepository.updateAlbumArtist(albumId = track.albumId, oldArtistId = oldArtist.id, newArtistId = existingArtist.id)
                 artistRepository.deleteOrphaned()
                 return existingArtist
             }
@@ -405,6 +433,146 @@ class OfflineMetadataRepository(
 
             artistRepository.deleteOrphaned()
             return artist.copy(id = newId)
+        }
+    }
+
+    override suspend fun refetchAlbum(
+        album: Release,
+        currentAlbum: Album
+    ) {
+        val existing = albumRepository.getAlbumByMbid(album.releaseGroup?.id ?: album.id)
+        if (existing != null) {
+            albumRepository.moveTracks(currentAlbum.id, existing.id)
+        }
+        else {
+            val new = getAlbumMB(
+                mbAlbum = album,
+                album = currentAlbum,
+                albumArt = currentAlbum.image,
+                isUpdate = true,
+                releaseDate = album.date
+            )
+
+            val updated = currentAlbum.copy(
+                mbId = album.id,
+                image = new.image,
+                discogsId = new.discogsId,
+                releaseDate = new.releaseDate,
+                label = new.label,
+                enrichmentAttempted = true,
+                isEnriched = true
+            )
+
+            albumRepository.update(updated)
+        }
+    }
+
+    override suspend fun refetchArtist(
+        mbArtist: ArtistSearchInfo,
+        currentArtist: Artist) {
+        val existing = artistRepository.getArtistByMbid(mbArtist.id)
+        if (existing != null){
+            val albums = albumArtistRepository.getAllAlbumsByArtistFull(currentArtist.id).first()
+            for (album in albums){
+                albumArtistRepository.updateAlbumArtist(
+                    album.id,
+                    currentArtist.id,
+                    existing.id)
+            }
+
+            artistRepository.deleteOrphaned()
+        }
+        else {
+            val new = getArtistDataMusicBrainz(
+                artistCredit = ArtistSummary(
+                    id = mbArtist.id,
+                    name = mbArtist.name,
+                    sortName = mbArtist.sortName.toString(),
+                ),
+                artistName = mbArtist.name,
+                currentArtist = currentArtist
+            )
+
+            val updated = currentArtist.copy(
+                mbId = mbArtist.id,
+                discogsId = new.discogsId,
+                image = new.image,
+                bio = new.bio,
+                enrichmentAttempted = true,
+                isEnriched = true
+            )
+
+            artistRepository.update(updated)
+        }
+    }
+
+    override suspend fun moveToAlbum(
+        album: Release,
+        tracksToMove: List<Int>,
+        oldAlbumId: Int
+    ) {
+        val existing = albumRepository.getAlbumByMbid(album.releaseGroup?.id ?: album.id)
+        if (existing == null) {
+            val trackInfos = trackRepository.getTracksByIds(tracksToMove.toSet())
+            val totalDuration = trackInfos.sumOf { it.duration }
+            val current = Album(
+                title = album.title,
+                searchKey = album.title.normalizeForMatching(),
+                duration = totalDuration,
+                numTracks = tracksToMove.size,
+                mbId = album.releaseGroup?.id ?: album.id,
+                image = null,
+                label = null,
+                discogsId = null,
+                releaseDate = null,
+            )
+            val new = getAlbumMB(
+                mbAlbum = album,
+                album = current,
+                albumArt = current.image,
+                isUpdate = true,
+                releaseDate = album.date
+            )
+
+            val updated = current.copy(
+                mbId = album.id,
+                image = new.image,
+                discogsId = new.discogsId,
+                releaseDate = new.releaseDate,
+                label = new.label,
+                enrichmentAttempted = true,
+                isEnriched = true
+            )
+
+            val newId = albumRepository.insertWithReturn(updated).toInt()
+            val artist = artistRepository.getArtistByMbid(album.artistCredit[0].artist.id)
+            var artistId = artist?.id ?: -1
+            if (artist == null){
+                val new = getArtistDataMusicBrainz(
+                    artistCredit = ArtistSummary(
+                        id = album.artistCredit[0].artist.id,
+                        name = album.artistCredit[0].artist.name,
+                        sortName = album.artistCredit[0].artist.sortName.toString(),
+                    ),
+                    artistName = album.artistCredit[0].artist.name,
+                    currentArtist = Artist(name = album.artistCredit[0].artist.name, searchKey = album.artistCredit[0].artist.name.normalizeForMatching())
+                )
+
+                artistId = artistRepository.insertWithReturn(new).toInt()
+            }
+
+            albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = artistId))
+            albumRepository.moveTracks(
+                oldAlbumId,
+                newId,
+                tracksToMove)
+        }
+        else{
+            albumRepository.moveTracks(
+                oldAlbumId,
+                existing.id,
+                tracksToMove
+            )
         }
     }
 

@@ -144,7 +144,7 @@ interface AlbumArtistDao {
     WHERE aa.albumId = :albumId
     ORDER BY ar.name ASC
     """)
-    fun getAllAlbumArtists(albumId: Int): List<Artist>
+    suspend fun getAllAlbumArtists(albumId: Int): List<Artist>
 
     @Query("""
     SELECT ar.*, aa.albumId AS albumId

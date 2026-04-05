@@ -174,7 +174,7 @@ class AlbumEditViewModel @Inject constructor(
 
         val localImages =
             if (albumTracks.isNotEmpty())
-                localLibraryScanner.findAllAlbumArtOptions(context, albumTracks[0].fileUri)
+                localLibraryScanner.findAllAlbumArtOptions(context, albumTracks[0].filePath)
             else null
         val localImageOptions = localImages?.map { ImageOption(url = it, source = "Local") } ?: emptyList()
 

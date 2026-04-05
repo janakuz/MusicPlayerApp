@@ -2,7 +2,6 @@ package com.example.musicapp.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
@@ -20,9 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.capitalize
 import com.example.musicapp.LibraryScreen
-import com.example.musicapp.data.dto.TrackInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +72,8 @@ fun SelectionTopBar(
     onRemoveFromQueue: (() -> Unit)? = null,
     isQueueScreen: Boolean = false,
     onDelete: () -> Unit,
+    onMove: () -> Unit,
+    moveEnabled: Boolean = false,
     ){
     TopAppBar(
         title = {
@@ -134,9 +133,22 @@ fun SelectionTopBar(
                         text = { Text("Delete") },
                         onClick = {
                             onDelete()
+                            onClear()
                             expanded = false
                         }
                     )
+
+                    if (moveEnabled) {
+                        DropdownMenuItem(
+                            text = { (Text("Split to Album")) },
+                            onClick = {
+                                onMove()
+                                onClear()
+                                expanded = false
+                            }
+                        )
+                    }
+
                 }
             }
         }

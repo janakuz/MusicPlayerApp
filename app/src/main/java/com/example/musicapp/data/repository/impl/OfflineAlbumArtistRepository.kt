@@ -31,7 +31,7 @@ class OfflineAlbumArtistRepository(
         return albumArtistDao.getAlbumsByArtistFull(artistId)
     }
 
-    override fun getAllAlbumArtists(albumId: Int): List<Artist> {
+    override suspend fun getAllAlbumArtists(albumId: Int): List<Artist> {
         return albumArtistDao.getAllAlbumArtists(albumId)
     }
 

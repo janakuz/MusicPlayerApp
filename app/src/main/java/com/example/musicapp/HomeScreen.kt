@@ -1,6 +1,5 @@
 package com.example.musicapp
 
-import android.annotation.SuppressLint
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
@@ -24,14 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NamedNavArgument
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.screens.AllTracksScreen
 import com.example.musicapp.ui.screens.ArtistView
@@ -134,6 +129,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
                 if (selectionMode){
                     val selection by selectionViewModel.selectionState.collectAsState()
+                    val moveEnabled by selectionViewModel.moveEnabled.collectAsState()
                     SelectionTopBar(
                         count = selection.count,
                         onClear = { selectionViewModel.clearSelection() },
@@ -141,7 +137,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { playerViewModel.addToQueueListIds(selection.selectedTrackIds) },
                         onRemoveFromQueue = { playerViewModel.removeFromQueue(selection.selectedQueueIds) },
                         isQueueScreen = (currentRoute == "nowPlaying"),
-                        onDelete = {selectionViewModel.requestDeletionOfSelected()}
+                        onDelete = {selectionViewModel.requestDeletionOfSelected() },
+                        onMove = { selectionViewModel.requestMove() },
+                        moveEnabled = moveEnabled
                     )
                 }
                 if (selectedTabIndex >= 0 && currentRoute != HomeScreen.Scan.name && !selectionMode) {

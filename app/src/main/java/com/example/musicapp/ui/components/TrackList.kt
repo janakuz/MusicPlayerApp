@@ -193,6 +193,7 @@ fun TrackRow(
     modifier: Modifier = Modifier,
     reorderModifier: Modifier = Modifier,
     onDelete: (List<Int>) -> Unit,
+    onMove: ((List<Int>) -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -207,6 +208,18 @@ fun TrackRow(
             onDelete(idsToDelete.toList())
         }
     }
+
+
+    LaunchedEffect(Unit) {
+        selectionViewModel.moveTrigger.collect {
+            if (onMove != null) {
+                val idsToMove = selection.selectedTrackIds
+                onMove(idsToMove.toList())
+            }
+        }
+    }
+
+
     Column {
 
         Row(
@@ -468,6 +481,7 @@ fun TrackList(
     onAddToQueue: (TrackInfo) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
     onEdit: (TrackInfo) -> Unit,
+    onMove: ((List<Int>) -> Unit)? = null,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,

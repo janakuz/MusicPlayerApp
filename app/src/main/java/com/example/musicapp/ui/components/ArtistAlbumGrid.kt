@@ -36,6 +36,7 @@ fun Grid(
     onClick: ((GridItem) -> Unit)? = null,
     header: (@Composable () -> Unit)? = null,
     onDelete: (Int, String) -> Unit,
+    onRefetch: (Int) -> Unit,
 ) {
 
     LazyVerticalGrid(
@@ -75,7 +76,8 @@ fun Grid(
                     onAddToQueue = onAddToQueue,
                     onEdit = onEdit,
                     item = item,
-                    onDelete = onDelete
+                    onDelete = onDelete,
+                    onRefetch = onRefetch
                 )
             }
         }

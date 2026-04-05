@@ -64,6 +64,7 @@ fun ImageWithTextColumn(
     albumArtist: String = "",
     onClick: ((GridItem) -> Unit)? = null,
     onDelete: (Int, String) -> Unit,
+    onRefetch: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -156,6 +157,14 @@ fun ImageWithTextColumn(
             onClick = {
                 if (item != null) onDelete(item.id, item.displayName)
 //                showDeleteDialog = true
+                expanded = false
+            }
+        )
+
+        DropdownMenuItem(
+            text = {Text("Refetch Metadata")},
+            onClick = {
+                if (item != null) onRefetch(item.id)
                 expanded = false
             }
         )

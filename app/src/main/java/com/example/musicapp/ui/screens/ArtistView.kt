@@ -1,11 +1,14 @@
 package com.example.musicapp.ui.screens
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +56,8 @@ import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
+import com.example.musicapp.ui.viewmodels.RefetchAlbumState
+import com.example.musicapp.ui.viewmodels.RefetchState
 
 @Composable
 fun ArtistDetailHeader(
@@ -205,19 +212,64 @@ fun ArtistView(
     val artist = artistDetailUiState.artist
     val albums = artistDetailUiState.albums
 
+    val refetchUiState by artistDetailViewModel.refetchState.collectAsState()
+
 
     if (artist != null) {
 
+        Box(modifier = Modifier.fillMaxSize()) {
             AlbumsGrid(
                 albums,
                 showReleaseDate = true,
                 onClick = onAlbumClick,
                 onAddToQueue = onAddToQueue,
                 onPlayNext = onPlayNext,
-                header = {FullArtistHeader(artist)},
+                header = { FullArtistHeader(artist) },
                 onEdit = onEdit,
-                onDelete = {id, title -> pendingDeletion = DeleteEvent(id, title)}
+                onDelete = { id, title -> pendingDeletion = DeleteEvent(id, title) },
+                onRefetch = { id -> artistDetailViewModel.refetchMetadata(id) }
             )
+
+
+            when (refetchUiState) {
+                is RefetchAlbumState.Saving -> {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Saving...", color = Color.White)
+                        }
+                    }
+                    BackHandler(enabled = true) { }
+                }
+
+                is RefetchAlbumState.DisambiguationNeeded -> {
+                    AlbumDisambiguationDialog(
+                        matches = (refetchUiState as RefetchAlbumState.DisambiguationNeeded).matches,
+                        onAlbumSelected = { selectedAlbum ->
+                            artistDetailViewModel.onAlbumSelected(selectedAlbum)
+                        },
+                        onDismiss = {
+                            artistDetailViewModel.reset()
+                        }
+                    )
+                }
+
+                is RefetchAlbumState.Error -> {
+                    Text(text = (refetchUiState as RefetchState.Error).message)
+                }
+
+                else -> {}
+            }
+
+
+        }
 
     }
 

@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.dto.DiscogsSearchResponse
+import com.example.musicapp.data.dto.Release
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
@@ -31,6 +32,24 @@ interface MetadataRepository {
         albumToMove: Album? = null,
         track: Track? = null,
     ) : Artist
+
+    suspend fun refetchAlbum(
+        album: Release,
+        currentAlbum: Album
+
+    )
+
+    suspend fun refetchArtist(
+        mbArtist: ArtistSearchInfo,
+        currentArtist: Artist
+    )
+
+    suspend fun moveToAlbum(
+        album: Release,
+        tracksToMove: List<Int>,
+        oldAlbumId: Int
+
+    )
 }
 
 data class AlbumMetadataResult(
