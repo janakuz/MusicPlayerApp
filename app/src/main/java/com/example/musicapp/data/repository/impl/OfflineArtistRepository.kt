@@ -1,18 +1,23 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import android.util.Log
 import com.example.musicapp.data.dao.ArtistDao
+import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.dto.ArtistDicogsResponse
 import com.example.musicapp.data.dto.ArtistMBResponse
+import com.example.musicapp.data.dto.ArtistSearchInfo
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
 import com.example.musicapp.normalizeForMatching
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 class OfflineArtistRepository(
     private val artistDao: ArtistDao,
+    private val trackDao: TrackDao,
     private val musicbrainzApiService: MusicbrainzApiService,
     private val discogsApiService: DiscogsApiService,
     private val lastfmApiService: LastfmApiService) : ArtistRepository {
@@ -78,6 +83,11 @@ class OfflineArtistRepository(
 
     }
 
+    override suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo> {
+        val query = """artist:"${artistName.normalizeForMatching()}" """
+        return musicbrainzApiService.findArtist(query).artists
+    }
+
     override suspend fun insertAll(artists: List<Artist>) {
         artistDao.insertAll(artists)
     }
@@ -100,8 +110,26 @@ class OfflineArtistRepository(
         artistDao.delete(artist)
     }
 
+    override suspend fun deleteById(artistId: Int) {
+        artistDao.deleteById(artistId)
+    }
+
     override suspend fun deleteOrphaned() {
         artistDao.deleteOrphaned()
+        artistDao.deleteOrphanedTracks()
+    }
+
+    override suspend fun moveTracks(
+        oldArtistId: Int,
+        newArtistId: Int,
+        tracks: List<Int>?
+    ) {
+        val trackIds = if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAllTracksByArtist(oldArtistId).first().map { it.trackId }
+        trackDao.moveToArtist(oldArtistId, newArtistId, trackIds)
+    }
+
+    override suspend fun getTrackUrisByArtist(artistId: Int): List<String> {
+        return trackDao.getTrackUrisByArtist(artistId)
     }
 
     override suspend fun insertAllString(names: List<String>) {

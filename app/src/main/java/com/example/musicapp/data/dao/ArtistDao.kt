@@ -42,7 +42,7 @@ interface ArtistDao {
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
 
-    @Query("SELECT * FROM artists where LOWER(name)=LOWER(:name)")
+    @Query("SELECT * FROM artists where LOWER(searchKey)=LOWER(:name)")
     suspend fun getArtistByName(name: String): List<Artist>
 
     @Query("SELECT * FROM artists where searchKey=:name " +
@@ -67,7 +67,14 @@ interface ArtistDao {
     @Delete
     suspend fun delete(artist: Artist)
 
+    @Query("DELETE FROM artists WHERE id=:artistId")
+    suspend fun deleteById(artistId: Int)
+
     @Query("DELETE FROM artists WHERE id NOT IN " +
             "(SELECT DISTINCT artistId from album_artists)")
     suspend fun deleteOrphaned()
+
+    @Query("DELETE FROM artists WHERE id NOT IN " +
+            "(SELECT DISTINCT artistId FROM tracks)")
+    suspend fun deleteOrphanedTracks()
 }

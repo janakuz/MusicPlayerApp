@@ -1,4 +1,4 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -11,11 +11,13 @@ import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.workDataOf
 import com.example.musicapp.MetadataWorker
+import com.example.musicapp.data.repository.WorkerManagerRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.concurrent.TimeUnit
 
-class OfflineWorkerManagerRepository(private val workManager: WorkManager) : WorkerManagerRepository {
+class OfflineWorkerManagerRepository(private val workManager: WorkManager) :
+    WorkerManagerRepository {
 
     override fun startWorker(manual: Boolean) {
 

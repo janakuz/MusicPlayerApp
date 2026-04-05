@@ -1,6 +1,6 @@
 package com.example.musicapp
 
-import android.annotation.SuppressLint
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.screens.AllTracksScreen
@@ -36,9 +35,12 @@ import com.example.musicapp.ui.screens.AllArtistsScreen
 import com.example.musicapp.ui.components.NowPlayingBar
 import com.example.musicapp.ui.components.SelectionTopBar
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.screens.AlbumEditScreen
 import com.example.musicapp.ui.screens.AllAlbumsScreen
+import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.ScanLibraryScreen
+import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 
@@ -80,6 +82,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val editRoutes = listOf<String>("artist/edit", "album/edit", "track/edit")
+
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel()
 
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
@@ -105,7 +109,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             Column {
                 val selectedTabIndex =
                     tabs.indexOfFirst { it.name == currentRoute }
-                if (currentRoute != "nowPlaying" && !selectionMode) {
+                if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all { currentRoute?.startsWith(it) == false }) {
                     LibraryTopBar(
                         currentScreen = routeToLibraryScreen(currentRoute),
                         onSearchClick = { },
@@ -125,13 +129,17 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
                 if (selectionMode){
                     val selection by selectionViewModel.selectionState.collectAsState()
+                    val moveEnabled by selectionViewModel.moveEnabled.collectAsState()
                     SelectionTopBar(
                         count = selection.count,
                         onClear = { selectionViewModel.clearSelection() },
                         onPlayNext = { playerViewModel.playNextListIds(selection.selectedTrackIds) },
                         onAddToQueue = { playerViewModel.addToQueueListIds(selection.selectedTrackIds) },
                         onRemoveFromQueue = { playerViewModel.removeFromQueue(selection.selectedQueueIds) },
-                        isQueueScreen = (currentRoute == "nowPlaying")
+                        isQueueScreen = (currentRoute == "nowPlaying"),
+                        onDelete = {selectionViewModel.requestDeletionOfSelected() },
+                        onMove = { selectionViewModel.requestMove() },
+                        moveEnabled = moveEnabled
                     )
                 }
                 if (selectedTabIndex >= 0 && currentRoute != HomeScreen.Scan.name && !selectionMode) {
@@ -198,6 +206,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
                         onAddToQueue = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onEdit = { artist -> navController.navigate("artist/edit/${artist.id}")}
                     )
                 }
 
@@ -212,6 +221,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/all_albums", ) }
                     )
                 }
 
@@ -228,6 +238,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { track ->
                             playerViewModel.addToQueue(track)
                         },
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
                     )
                 }
 
@@ -241,7 +252,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         sortRequest = artistDetailSort,
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id)},
-                        onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)}
+                        onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id)},
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") }
                     )
                 }
 
@@ -255,12 +267,52 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track)},
-                        onAddToQueue = { track -> playerViewModel.addToQueue(track)}
+                        onAddToQueue = { track -> playerViewModel.addToQueue(track)},
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
                     )
                 }
 
+            composable("artist/edit/{artistId}") {
+                ArtistEditScreen(
+                    onNavigateBack = {
+                        navController.navigate(HomeScreen.Artists.name) {
+                            popUpTo(HomeScreen.Artists.name)
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
 
-  //          }
+            composable("album/edit/{albumId}/{source}") { backStackEntry ->
+                val source = backStackEntry.arguments?.getString("source") ?: "all_albums"
+                val albumId = backStackEntry.arguments?.getString("albumId")
+                Log.d("back", source)
+                AlbumEditScreen(
+                    onNavigateBack = { id ->
+                        when(source) {
+                            "all_albums" -> navController.popBackStack()
+                            "artist_view" -> navController.navigate(HomeScreen.Artists.name)
+//                                if (id != null) navController.navigate("artists/${id}"){
+//                                popUpTo("album/edit/{albumId}/{source}"){
+//                                    inclusive=true
+//                                }
+//                                launchSingleTop = true
+//                            }
+//                                             else navController.popBackStack()
+                            else -> navController.popBackStack()
+                        }
+                    }
+                )
+            }
+
+            composable("track/edit/{trackId}") {
+                TrackEditScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+
+            //          }
 
             composable(HomeScreen.Scan.name) {
                 ScanLibraryScreen(
@@ -285,7 +337,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                      },
                      onAlbumClick = { albumId ->
                          navController.navigate("album/${albumId}")
-                     }
+                     },
+                     onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
                  )
             }
 

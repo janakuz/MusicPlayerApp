@@ -1,4 +1,4 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import android.content.Context
 import android.graphics.drawable.BitmapDrawable
@@ -7,6 +7,8 @@ import androidx.palette.graphics.Palette
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import com.example.musicapp.data.repository.DynamicThemeRepository
+import com.example.musicapp.data.repository.PlayerColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -33,7 +35,8 @@ class OfflineDynamicThemeRepository(
 
                     PlayerColors(
                         mainColor = swatch?.rgb?.let { Color(it) } ?: Color(0xFF121212),
-                        secondaryColor = palette.lightVibrantSwatch?.rgb?.let { Color(it) } ?: Color.Cyan,
+                        secondaryColor = palette.lightVibrantSwatch?.rgb?.let { Color(it) }
+                            ?: Color.Cyan,
                         onColor = swatch?.titleTextColor?.let { Color(it) } ?: Color.White
                     )
                 }

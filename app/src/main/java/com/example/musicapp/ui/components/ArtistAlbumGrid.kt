@@ -28,12 +28,15 @@ fun Grid(
     shape: Shape,
     isAlbum: Boolean,
     onPlayNext: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     showReleaseDate: Boolean = false,
     onClick: ((GridItem) -> Unit)? = null,
     header: (@Composable () -> Unit)? = null,
+    onDelete: (Int, String) -> Unit,
+    onRefetch: (Int) -> Unit,
 ) {
 
     LazyVerticalGrid(
@@ -71,7 +74,10 @@ fun Grid(
                     onClick = onClick,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
-                    item = item
+                    onEdit = onEdit,
+                    item = item,
+                    onDelete = onDelete,
+                    onRefetch = onRefetch
                 )
             }
         }

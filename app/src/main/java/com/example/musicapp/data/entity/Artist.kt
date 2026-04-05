@@ -20,4 +20,4 @@ data class Artist(
     val isEnriched: Boolean = false,
     @ColumnInfo(defaultValue = "0")
     val enrichmentAttempted: Boolean = false
-)
+)//TODO: Add country, maybe lifespan?

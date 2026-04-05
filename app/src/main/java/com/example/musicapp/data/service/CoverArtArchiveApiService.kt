@@ -6,7 +6,7 @@ import retrofit2.http.Path
 
 interface CoverArtArchiveApiService {
 
-    @GET("release/{mbid}")
+    @GET("release-group/{mbid}")
     suspend fun getAlbumImage(
         @Path("mbid") mbid: String
     ) : AlbumArtImage

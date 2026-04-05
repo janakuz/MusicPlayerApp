@@ -26,7 +26,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -42,7 +42,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -58,7 +58,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -68,7 +68,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -81,7 +81,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -92,7 +92,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -103,7 +103,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -114,7 +114,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -125,7 +125,7 @@ interface TrackDao {
 
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM tracks t
         JOIN artists ar on t.artistId=ar.id
         JOIN albums al on t.albumId=al.id
@@ -148,4 +148,20 @@ interface TrackDao {
 
     @Query("DELETE FROM tracks WHERE fileUri IN (:uris)")
     suspend fun deleteByUri(uris: List<String>)
+
+    @Query("UPDATE tracks SET artistId = :newArtistId WHERE albumId = :albumId AND artistId = :oldArtistId")
+    suspend fun updateArtistForAlbum(albumId: Int, oldArtistId: Int, newArtistId: Int)
+
+    @Query("UPDATE tracks SET albumId = :newAlbumId WHERE albumId = :oldAlbumId AND " +
+            "tracks.id in (:tracks)")
+    suspend fun moveToAlbum(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>)
+
+
+    @Query("UPDATE tracks SET artistId = :newArtistId WHERE artistId = :oldArtistId AND " +
+            "tracks.id in (:tracks)")
+    suspend fun moveToArtist(oldArtistId: Int, newArtistId: Int, tracks: List<Int>)
+
+
+    @Query("SELECT fileUri FROM tracks WHERE artistId = :artistId")
+    suspend fun getTrackUrisByArtist(artistId: Int): List<String>
 }

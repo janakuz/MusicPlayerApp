@@ -22,6 +22,7 @@ fun PlayQueueScreen(
     onTrackClick: (VisualTrack) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onEdit: (TrackInfo) -> Unit,
     playerViewModel: PlayerViewModel
 ){
     val lazyListState = rememberLazyListState()
@@ -69,6 +70,7 @@ fun PlayQueueScreen(
         strictHighlight = true,
         state = lazyListState,
         reorderable = reorderableLazyListState,
+        onEdit = onEdit
     //    playerViewModel = playerViewModel
     )
 

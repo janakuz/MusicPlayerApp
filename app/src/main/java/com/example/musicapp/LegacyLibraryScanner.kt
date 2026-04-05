@@ -417,7 +417,8 @@ class LegacyLibraryScanner @Inject constructor(
                     valence = null,
                     energy = null,
                     key = null,
-                    bpm = null
+                    bpm = null,
+                    filePath = entry.filePath,
                 )
                 toInsert += newTrack
             } else {

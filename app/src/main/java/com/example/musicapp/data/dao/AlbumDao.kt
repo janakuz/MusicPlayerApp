@@ -1,12 +1,15 @@
 package com.example.musicapp.data.dao
 
+import androidx.annotation.MainThread
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.entity.Artist
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -64,6 +67,13 @@ interface AlbumDao {
     @Query("SELECT * FROM albums WHERE id=:id")
     suspend fun getById(id: Int): Album
 
+    @Query("SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration " +
+            "FROM albums al " +
+            "JOIN album_artists aa ON al.id=aa.albumId " +
+            "JOIN artists ar on ar.id=aa.artistId " +
+            "WHERE al.id=:id")
+    suspend fun getByIdFull(id: Int): List<AlbumInfo>
+
     @Query("SELECT * " +
             "FROM albums where searchKey=:title and " +
             "releaseDate LIKE :year || '%'" +
@@ -82,5 +92,11 @@ interface AlbumDao {
     @Query("DELETE FROM albums WHERE id NOT IN " +
             "(SELECT DISTINCT albumId from tracks)")
     suspend fun deleteOrphaned()
+
+    @Query("DELETE FROM albums WHERE id=:albumId")
+    suspend fun deleteById(albumId: Int)
+
+    @Query("SELECT * FROM albums where mbId=:mbId")
+    suspend fun getAlbumByMbid(mbId: String): Album?
 
 }

@@ -9,19 +9,37 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
+import com.example.musicapp.data.dao.AlbumGenreDao
 import com.example.musicapp.data.dao.ArtistDao
+import com.example.musicapp.data.dao.GenreDao
+import com.example.musicapp.data.dao.MoodDao
 import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
+import com.example.musicapp.data.dao.TrackMoodDao
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.AlbumArtist
+import com.example.musicapp.data.entity.AlbumGenre
 import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.entity.Genre
 import com.example.musicapp.data.entity.QueueItem
 import com.example.musicapp.data.entity.Track
+import com.example.musicapp.data.entity.TrackMood
+import com.example.musicapp.data.entity.Mood
 import java.util.concurrent.Executors
 
 @Database(
-    entities = [Artist::class, Album::class, Track::class, AlbumArtist::class, QueueItem::class],
-    version = 10,
+    entities = [
+        Artist::class,
+        Album::class,
+        Track::class,
+        AlbumArtist::class,
+        QueueItem::class,
+        Genre::class,
+        AlbumGenre::class,
+        Mood::class,
+        TrackMood::class,
+        ],
+    version = 13,
     exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao
@@ -29,6 +47,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trackDao(): TrackDao
     abstract fun albumArtistDao(): AlbumArtistDao
     abstract fun queueDao(): QueueDao
+    abstract fun genreDao(): GenreDao
+    abstract fun albumGenreDao(): AlbumGenreDao
+    abstract fun moodDao(): MoodDao
+    abstract fun trackMoodDao(): TrackMoodDao
 
 
 

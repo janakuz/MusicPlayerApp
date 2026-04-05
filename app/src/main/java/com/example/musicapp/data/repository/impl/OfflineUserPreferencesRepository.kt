@@ -1,10 +1,11 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.components.SortField
@@ -12,7 +13,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 
-class OfflineUserPreferencesRepository(private val dataStore: DataStore<Preferences>) : UserPreferencesRepository {
+class OfflineUserPreferencesRepository(private val dataStore: DataStore<Preferences>) :
+    UserPreferencesRepository {
     private companion object {
         val ARTIST_SORT_FIELD = stringPreferencesKey("artist_sort_field")
         val ARTIST_SORT_ASC = booleanPreferencesKey("artist_sort_ascending")

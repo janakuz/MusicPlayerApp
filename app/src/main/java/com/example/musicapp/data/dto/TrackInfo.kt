@@ -9,6 +9,7 @@ data class TrackInfo(
     val trackNum: Int?,
     val duration: Long,
     val fileUri: String,
+    val filePath: String,
     val albumId: Int,
     val artistId: Int,
 

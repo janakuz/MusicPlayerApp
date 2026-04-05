@@ -1,8 +1,12 @@
 package com.example.musicapp.ui.components
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -80,6 +84,7 @@ import com.example.musicapp.R
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.TrackDeletionViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -178,6 +183,7 @@ fun TrackRow(
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
+    onEdit: (TrackInfo) -> Unit,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -185,13 +191,34 @@ fun TrackRow(
     useQueueId: Boolean = false,
     trackNum: Int = 0,
     modifier: Modifier = Modifier,
-    reorderModifier: Modifier = Modifier
+    reorderModifier: Modifier = Modifier,
+    onDelete: (List<Int>) -> Unit,
+    onMove: ((List<Int>) -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
     val selectionState by selectionViewModel.selectionState.collectAsState()
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
+    val selection by selectionViewModel.selectionState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        selectionViewModel.deletionRequestTrigger.collect {
+            val idsToDelete = selection.selectedTrackIds
+            onDelete(idsToDelete.toList())
+        }
+    }
+
+
+    LaunchedEffect(Unit) {
+        selectionViewModel.moveTrigger.collect {
+            if (onMove != null) {
+                val idsToMove = selection.selectedTrackIds
+                onMove(idsToMove.toList())
+            }
+        }
+    }
+
 
     Column {
 
@@ -296,6 +323,22 @@ fun TrackRow(
                             }
                         )
                     }
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = {
+                            onEdit(track.data)
+                            expanded = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        onClick = {
+                            onDelete(listOf(track.data.trackId))
+                            expanded = false
+                        }
+                    )
+
                 }
             }
         }
@@ -437,6 +480,8 @@ fun TrackList(
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
+    onEdit: (TrackInfo) -> Unit,
+    onMove: ((List<Int>) -> Unit)? = null,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -457,6 +502,46 @@ fun TrackList(
 
     val currentTrackId = if (strictHighlight) currentTrack?.queueId else currentTrack?.track?.trackId
 
+    val trackDeletionViewModel: TrackDeletionViewModel = hiltViewModel()
+
+    data class DeleteEvent(val ids: List<Int>)
+
+    var pendingDeletion by remember { mutableStateOf<DeleteEvent?>(null) }
+    val pendingUris by trackDeletionViewModel.pendingDeleteUris.collectAsState()
+
+
+    val context = LocalContext.current
+    val deleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && pendingDeletion != null) {
+            trackDeletionViewModel.finalizeDeletion(pendingUris)
+        } else {
+            trackDeletionViewModel.clearPendingDeletion()
+        }
+    }
+
+
+    LaunchedEffect(pendingUris) {
+        if (pendingUris.isNotEmpty()) {
+            val pendingIntent = trackDeletionViewModel.getDeleteIntent(context, pendingUris)
+            deleteLauncher.launch(
+                IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+            )
+        }
+    }
+
+    pendingDeletion?.let { item ->
+        DeleteConfirmationDialog(
+            text = "",
+            onConfirm = {
+                trackDeletionViewModel.prepareDeletion(item.ids)
+                pendingDeletion = null
+            },
+            onDismiss = { pendingDeletion = null },
+        )
+    }
+
     LazyColumn(state = state,
         ) {
         if (header != null){
@@ -469,7 +554,7 @@ fun TrackList(
                     artwork = track.albumArt.toString(),
                     title = track.title,
                     artist = track.artistName,
-                    isPlaying = currentTrackId==queueTrack.key,
+                    isPlaying = currentTrackId == queueTrack.key,
                     onClick = onClick,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
@@ -483,15 +568,17 @@ fun TrackList(
                     useQueueId = strictHighlight,
                     trackIndex = id,
                     onRemoveFromQueue = onRemoveFromQueue,
-                    reorderModifier = Modifier.
-                            draggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                            },
-                    onDragStopped = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                    },
-                )
+                    reorderModifier = Modifier.draggableHandle(
+                        onDragStarted = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                        },
+                        onDragStopped = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                        },
+                    ),
+                    onEdit = onEdit,
+                    onDelete = {ids -> pendingDeletion = DeleteEvent(ids)},
+                    onMove = onMove
                 )
 
             }

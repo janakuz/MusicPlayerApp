@@ -15,7 +15,7 @@ interface AlbumArtistRepository {
 
     fun getAllAlbumsByArtistFull(artistId: Int): Flow<List<Album>>
 
-    fun getAllAlbumArtists(albumId: Int): List<Artist>
+    suspend fun getAllAlbumArtists(albumId: Int): List<Artist>
 
     fun getAll(): Flow<List<AlbumInfo>>
 
@@ -32,5 +32,7 @@ interface AlbumArtistRepository {
     suspend fun delete(albumArtist: AlbumArtist)
 
     suspend fun updateAlbumArtist(albumId: Int, oldArtistId: Int, newArtistId: Int)
+
+    suspend fun removeArtistFromAlbum(albumId: Int, artistId: Int)
 
 }

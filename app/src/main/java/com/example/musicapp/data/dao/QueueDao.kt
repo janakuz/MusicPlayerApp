@@ -15,7 +15,7 @@ interface QueueDao {
 
     @Query("""
         SELECT q.orderIndex, q.uuid, q.shuffledIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM play_queue q
         JOIN tracks t on q.trackId=t.id
         JOIN artists ar on t.artistId=ar.id
@@ -25,7 +25,7 @@ interface QueueDao {
 
     @Query("""
         SELECT q.orderIndex, q.uuid, q.shuffledIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.albumId as albumId, t.artistId as artistId 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM play_queue q
         JOIN tracks t on q.trackId=t.id
         JOIN artists ar on t.artistId=ar.id

@@ -29,6 +29,7 @@ fun AllTracksScreen(
     onClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onEdit: (TrackInfo) -> Unit,
     sortRequest: SortOption?,
 ){
     val trackViewModel: AllTracksViewModel = hiltViewModel()
@@ -56,6 +57,7 @@ fun AllTracksScreen(
             onAddToQueue = onAddToQueue,
             showArtwork = true,
             state = sharedListState,
+            onEdit = onEdit
         )
 
         FastScrollbar(

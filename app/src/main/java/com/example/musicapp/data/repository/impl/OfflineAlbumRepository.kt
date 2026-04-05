@@ -1,12 +1,15 @@
-package com.example.musicapp.data.repository
+package com.example.musicapp.data.repository.impl
 
 import android.util.Log
 import com.example.musicapp.data.dao.AlbumDao
+import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import kotlinx.coroutines.flow.Flow
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.MusicbrainzApiService
@@ -18,6 +21,7 @@ import kotlinx.coroutines.delay
 
 class OfflineAlbumRepository(
     private val albumDao: AlbumDao,
+    private val trackDao: TrackDao,
     private val musicbrainzApiService: MusicbrainzApiService,
     private val coverArtArchiveApiService: CoverArtArchiveApiService,
     private val discogsApiService: DiscogsApiService) : AlbumRepository {
@@ -57,6 +61,10 @@ class OfflineAlbumRepository(
 
     override suspend fun getById(id: Int): Album {
         return albumDao.getById(id)
+    }
+
+    override suspend fun getByIdFull(id: Int): List<AlbumInfo> {
+        return albumDao.getByIdFull(id)
     }
 
     override suspend fun getByTitle(title: String, year: String?): Album? {
@@ -129,6 +137,21 @@ class OfflineAlbumRepository(
         }
     }
 
+    override suspend fun getAllCAAOptions(mbid: String): List<String> {
+        return try {
+            val response = coverArtArchiveApiService.getAlbumImage(mbid)
+            if (response.images.isNotEmpty()) {
+                response.images.map {it.image.replace("http://", "https://")}
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("AlbumArt", "Failed to fetch art for $mbid: ${e.message}")
+            emptyList()
+        }
+
+    }
+
     override suspend fun insertAll(albums: List<Album>) {
         albumDao.insertAll(albums)
     }
@@ -149,7 +172,20 @@ class OfflineAlbumRepository(
         albumDao.delete(album)
     }
 
+    override suspend fun deleteById(albumId: Int) {
+        albumDao.deleteById(albumId)
+    }
+
     override suspend fun deleteOrphaned() {
         albumDao.deleteOrphaned()
+    }
+
+    override suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>?) {
+        val trackIds = if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAlbumTracks(oldAlbumId).map { it.trackId }
+        trackDao.moveToAlbum(oldAlbumId, newAlbumId, trackIds)
+    }
+
+    override suspend fun getAlbumByMbid(mbid: String): Album? {
+        return albumDao.getAlbumByMbid(mbid)
     }
 }

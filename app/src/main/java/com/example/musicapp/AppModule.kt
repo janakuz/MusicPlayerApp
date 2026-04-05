@@ -1,39 +1,49 @@
 package com.example.musicapp
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.work.WorkManager
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import com.example.musicapp.data.dao.AlbumArtistDao
 import com.example.musicapp.data.dao.AlbumDao
+import com.example.musicapp.data.dao.AlbumGenreDao
 import com.example.musicapp.data.dao.ArtistDao
+import com.example.musicapp.data.dao.GenreDao
+import com.example.musicapp.data.dao.MoodDao
 import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
+import com.example.musicapp.data.dao.TrackMoodDao
 import com.example.musicapp.data.database.ALL_MIGRATIONS
 import com.example.musicapp.data.database.AppDatabase
 import com.example.musicapp.data.repository.AlbumArtistRepository
+import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
-import com.example.musicapp.data.repository.OfflineAlbumArtistRepository
-import com.example.musicapp.data.repository.OfflineAlbumRepository
-import com.example.musicapp.data.repository.OfflineArtistRepository
-import com.example.musicapp.data.repository.OfflineDynamicThemeRepository
-import com.example.musicapp.data.repository.OfflinePlayQueueRepository
-import com.example.musicapp.data.repository.OfflineTrackRepository
-import com.example.musicapp.data.repository.OfflineUserPreferencesRepository
-import com.example.musicapp.data.repository.OfflineWorkerManagerRepository
+import com.example.musicapp.data.repository.GenreRepository
+import com.example.musicapp.data.repository.MetadataRepository
+import com.example.musicapp.data.repository.MoodRepository
+import com.example.musicapp.data.repository.impl.OfflineAlbumArtistRepository
+import com.example.musicapp.data.repository.impl.OfflineAlbumGenreRepository
+import com.example.musicapp.data.repository.impl.OfflineAlbumRepository
+import com.example.musicapp.data.repository.impl.OfflineArtistRepository
+import com.example.musicapp.data.repository.impl.OfflineDynamicThemeRepository
+import com.example.musicapp.data.repository.impl.OfflineGenreRepository
+import com.example.musicapp.data.repository.impl.OfflineMetadataRepository
+import com.example.musicapp.data.repository.impl.OfflineMoodRepository
+import com.example.musicapp.data.repository.impl.OfflinePlayQueueRepository
+import com.example.musicapp.data.repository.impl.OfflineTrackMoodRepository
+import com.example.musicapp.data.repository.impl.OfflineTrackRepository
+import com.example.musicapp.data.repository.impl.OfflineUserPreferencesRepository
+import com.example.musicapp.data.repository.impl.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.WorkerManagerRepository
@@ -52,7 +62,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
-import java.util.Queue
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -139,10 +148,11 @@ object AppModule {
     @Singleton
     fun provideArtistRepository(
         artistDao: ArtistDao,
+        trackDao: TrackDao,
         musicbrainzApiService: MusicbrainzApiService,
         discogsApiService: DiscogsApiService,
         lastfmApiService: LastfmApiService): ArtistRepository {
-        return OfflineArtistRepository(artistDao, musicbrainzApiService, discogsApiService, lastfmApiService)
+        return OfflineArtistRepository(artistDao, trackDao, musicbrainzApiService, discogsApiService, lastfmApiService)
     }
 
     @Provides
@@ -276,11 +286,13 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAlbumRepository(albumDao: AlbumDao,
+                               trackDao: TrackDao,
                                musicbrainzApiService: MusicbrainzApiService,
                                coverArtArchiveApiService: CoverArtArchiveApiService,
                                discogsApiService: DiscogsApiService): AlbumRepository {
         return OfflineAlbumRepository(
             albumDao,
+            trackDao,
             musicbrainzApiService,
             coverArtArchiveApiService,
             discogsApiService)
@@ -292,14 +304,68 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAlbumArtistRepository(albumArtistDao: AlbumArtistDao): AlbumArtistRepository {
-        return OfflineAlbumArtistRepository(albumArtistDao)
+    fun provideAlbumArtistRepository(
+        albumArtistDao: AlbumArtistDao,
+        trackDao: TrackDao): AlbumArtistRepository {
+        return OfflineAlbumArtistRepository(albumArtistDao, trackDao)
     }
+
+    @Provides
+    @Singleton
+    fun provideMetadataRepository(
+        albumRepository: AlbumRepository,
+        artistRepository: ArtistRepository,
+        trackRepository: TrackRepository,
+        albumArtistRepository: AlbumArtistRepository): MetadataRepository {
+        return OfflineMetadataRepository(albumRepository, artistRepository, trackRepository, albumArtistRepository)
+    }
+
 
     @Provides
     @Singleton
     fun provideQueueDao(db: AppDatabase): QueueDao = db.queueDao()
 
+
+    @Provides
+    @Singleton
+    fun provideGenreDao(db: AppDatabase): GenreDao = db.genreDao()
+
+    @Provides
+    @Singleton
+    fun provideGenreRepository(genreDao: GenreDao): GenreRepository {
+        return OfflineGenreRepository(genreDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlbumGenreDao(db: AppDatabase): AlbumGenreDao = db.albumGenreDao()
+
+    @Provides
+    @Singleton
+    fun provideAlbumGenreRepository(albumGenreDao: AlbumGenreDao, genreDao: GenreDao): AlbumGenreRepository {
+        return OfflineAlbumGenreRepository(albumGenreDao, genreDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideMoodDao(db: AppDatabase): MoodDao = db.moodDao()
+
+    @Provides
+    @Singleton
+    fun provideMoodRepository(moodDao: MoodDao): MoodRepository {
+        return OfflineMoodRepository(moodDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTrackMoodDao(db: AppDatabase): TrackMoodDao = db.trackMoodDao()
+
+    @Provides
+    @Singleton
+    fun provideTrackMoodRepository(trackMoodDao: TrackMoodDao, moodDao: MoodDao): TrackMoodRepository {
+        return OfflineTrackMoodRepository(trackMoodDao, moodDao)
+    }
 
     @Provides
     @Singleton

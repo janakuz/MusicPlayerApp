@@ -2,6 +2,8 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dto.ArtistDicogsResponse
 import com.example.musicapp.data.dto.ArtistMBResponse
+import com.example.musicapp.data.dto.ArtistSearchInfo
+import com.example.musicapp.data.dto.ArtistSearchResponse
 import com.example.musicapp.data.entity.Artist
 import kotlinx.coroutines.flow.Flow
 
@@ -27,6 +29,8 @@ interface ArtistRepository {
 
     suspend fun getArtistBio(mbid: String?, name: String): String
 
+    suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo>
+
     suspend fun insertAll(artists: List<Artist>)
 
     suspend fun insertAllString(artists: List<String>)
@@ -41,5 +45,11 @@ interface ArtistRepository {
 
     suspend fun delete(artist: Artist)
 
+    suspend fun deleteById(artistId: Int)
+
     suspend fun deleteOrphaned()
+
+    suspend fun moveTracks(oldArtistId: Int, newArtistId: Int, tracks: List<Int>? = emptyList())
+
+    suspend fun getTrackUrisByArtist(artistId: Int): List<String>
 }
