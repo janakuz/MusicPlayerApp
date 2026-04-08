@@ -43,10 +43,12 @@ import com.example.musicapp.data.repository.impl.OfflineTrackRepository
 import com.example.musicapp.data.repository.impl.OfflineUserPreferencesRepository
 import com.example.musicapp.data.repository.impl.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.WorkerManagerRepository
+import com.example.musicapp.data.repository.impl.OfflineSearchRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
@@ -365,6 +367,13 @@ object AppModule {
     @Singleton
     fun provideTrackMoodRepository(trackMoodDao: TrackMoodDao, moodDao: MoodDao): TrackMoodRepository {
         return OfflineTrackMoodRepository(trackMoodDao, moodDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideSearchRepository(artistDao: ArtistDao, albumDao: AlbumDao, trackDao: TrackDao) : SearchRepository {
+        return OfflineSearchRepository(artistDao, albumDao, trackDao)
     }
 
     @Provides

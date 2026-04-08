@@ -67,7 +67,7 @@ interface AlbumDao {
     @Query("SELECT * FROM albums WHERE id=:id")
     suspend fun getById(id: Int): Album
 
-    @Query("SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration " +
+    @Query("SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks " +
             "FROM albums al " +
             "JOIN album_artists aa ON al.id=aa.albumId " +
             "JOIN artists ar on ar.id=aa.artistId " +
@@ -98,5 +98,13 @@ interface AlbumDao {
 
     @Query("SELECT * FROM albums where mbId=:mbId")
     suspend fun getAlbumByMbid(mbId: String): Album?
+
+    @Query("SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks " +
+            "FROM albums al " +
+            "JOIN album_artists aa ON al.id=aa.albumId " +
+            "JOIN artists ar on ar.id=aa.artistId " +
+            "WHERE LOWER(al.title) LIKE :query OR al.searchKey LIKE :query " +
+            "ORDER BY al.searchKey ASC")
+    fun searchAlbums(query: String): Flow<List<AlbumInfo>>
 
 }

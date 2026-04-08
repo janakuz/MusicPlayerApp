@@ -40,6 +40,7 @@ import com.example.musicapp.ui.screens.AllAlbumsScreen
 import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.ScanLibraryScreen
+import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
@@ -109,10 +110,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             Column {
                 val selectedTabIndex =
                     tabs.indexOfFirst { it.name == currentRoute }
-                if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all { currentRoute?.startsWith(it) == false }) {
+                if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all { currentRoute?.startsWith(it) == false } && currentRoute != "search") {
                     LibraryTopBar(
                         currentScreen = routeToLibraryScreen(currentRoute),
-                        onSearchClick = { },
+                        onSearchClick = { navController.navigate("search") },
                         onSortClick = { sort ->
                             when (currentRoute) {
                                 HomeScreen.Artists.name -> artistSort = sort
@@ -308,6 +309,15 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             composable("track/edit/{trackId}") {
                 TrackEditScreen(
                     onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("search") {
+                SearchResultsScreen (
+                    onArtistClick = {id -> navController.navigate("artist/$id")},
+                    onAlbumClick = {id -> navController.navigate("album/$id")},
+                    onTrackClick = {tracks, track -> playerViewModel.playTracks(tracks, track)},
+                    onBack = { navController.popBackStack() }
                 )
             }
 

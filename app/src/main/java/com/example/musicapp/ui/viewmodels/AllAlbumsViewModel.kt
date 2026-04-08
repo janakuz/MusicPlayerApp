@@ -86,7 +86,8 @@ class AllAlbumsViewModel @Inject constructor(
                 image = album.image,
                 duration = album.duration,
                 artistId = 0,
-                label = album.label
+                label = album.label,
+                numTracks = album.numTracks
             )
         }
         return albumInfos
