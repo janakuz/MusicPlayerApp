@@ -107,4 +107,12 @@ interface AlbumDao {
             "ORDER BY al.searchKey ASC")
     fun searchAlbums(query: String): Flow<List<AlbumInfo>>
 
+
+    @Query("SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks " +
+            "FROM albums al " +
+            "JOIN album_artists aa ON al.id=aa.albumId " +
+            "JOIN artists ar on ar.id=aa.artistId " +
+            "WHERE aa.artistId=:artistId AND (LOWER(al.title) LIKE :query OR al.searchKey LIKE :query) " +
+            "ORDER BY al.searchKey ASC")
+    fun searchArtistAlbums(query: String, artistId: Int): Flow<List<AlbumInfo>>
 }

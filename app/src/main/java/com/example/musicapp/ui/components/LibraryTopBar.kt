@@ -183,6 +183,7 @@ fun EditTopBar(
 @Composable
 fun SearchTopBar(
     query: String,
+    placeholder: String,
     onQueryChange: (String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -191,7 +192,7 @@ fun SearchTopBar(
             TextField(
                 value = query,
                 onValueChange = onQueryChange,
-                placeholder = { Text("Search...") },
+                placeholder = { Text(placeholder) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge,
                 singleLine = true

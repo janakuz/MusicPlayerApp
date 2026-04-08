@@ -23,10 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.screens.AllTracksScreen
 import com.example.musicapp.ui.screens.ArtistView
@@ -43,6 +45,7 @@ import com.example.musicapp.ui.screens.ScanLibraryScreen
 import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.SearchScope
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 
 enum class HomeScreen(@StringRes val title: Int) {
@@ -110,10 +113,24 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             Column {
                 val selectedTabIndex =
                     tabs.indexOfFirst { it.name == currentRoute }
-                if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all { currentRoute?.startsWith(it) == false } && currentRoute != "search") {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all { currentRoute?.startsWith(it) == false } && currentRoute?.startsWith("search") == false) {
                     LibraryTopBar(
                         currentScreen = routeToLibraryScreen(currentRoute),
-                        onSearchClick = { navController.navigate("search") },
+                        onSearchClick = {
+                            val artistId = navBackStackEntry?.arguments?.getString("artistId") ?: ""
+                            val albumId = navBackStackEntry?.arguments?.getString("albumId") ?: ""
+
+                            when {
+                                artistId != "" -> {
+                                    navController.navigate("search?scopeType=ARTIST&scopeId=$artistId")
+                                }
+                                albumId != "" -> {
+                                    navController.navigate("search?scopeType=ALBUM&scopeId=$albumId")
+                                }
+                                else -> navController.navigate("search")
+                            }
+                        },
                         onSortClick = { sort ->
                             when (currentRoute) {
                                 HomeScreen.Artists.name -> artistSort = sort
@@ -312,8 +329,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 )
             }
 
-            composable("search") {
+            composable(
+                route = "search?scopeType={scopeType}&scopeId={scopeId}",
+                arguments = listOf(
+                    navArgument("scopeType") { nullable = true; defaultValue = null },
+                    navArgument("scopeId") { type = NavType.IntType; defaultValue = -1 },
+                )
+            ) {backStackEntry ->
+//                val scopeType = backStackEntry.arguments?.getString("scopeType")
+//                val scopeId = backStackEntry.arguments?.getInt("scopeId") ?: -1
+
                 SearchResultsScreen (
+//                    scope = SearchScope(scopeType, scopeId.toInt()),
                     onArtistClick = {id -> navController.navigate("artist/$id")},
                     onAlbumClick = {id -> navController.navigate("album/$id")},
                     onTrackClick = {tracks, track -> playerViewModel.playTracks(tracks, track)},

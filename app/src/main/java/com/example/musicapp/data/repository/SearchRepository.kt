@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.Flow
 interface SearchRepository {
 
     fun globalSearch(userQuery: String): Flow<SearchResult>
+
+    fun searchWithinArtist(userQuery: String, artistId: Int): Flow<SearchResult>
+
+    fun searchWithinAlbum(userQuery: String, albumId: Int): Flow<SearchResult>
 }
 
 data class SearchResult(

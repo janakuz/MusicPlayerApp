@@ -45,6 +45,7 @@ import com.example.musicapp.model.GridItem
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.ui.components.TrackRow
 import com.example.musicapp.ui.components.formatDuration
+import com.example.musicapp.ui.viewmodels.SearchScope
 
 @Composable
 fun SearchResultsScreen(
@@ -64,7 +65,10 @@ fun SearchResultsScreen(
             SearchTopBar(
                 query = query,
                 onQueryChange = { query -> searchViewModel.onQueryChange(query) },
-                onClose = onBack
+                onClose = onBack,
+                placeholder = if (searchViewModel.scope?.scopeType == "ARTIST") "Search in artist..."
+                              else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
+                              else "Search..."
             )
         },
     ) { padding ->
@@ -116,13 +120,15 @@ fun SearchContent(
                                 onClick = { gridItem -> onArtistClick( gridItem.id) }
                             )
                         }
+
                     }
-                    val emptySlots = 3 - (results.artists.size % 3)
+                    val emptySlots = 3 - (row.size)
                     if (emptySlots < 3) {
                         repeat(emptySlots) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
+
                 }
             }
         }
@@ -161,13 +167,13 @@ fun SearchContent(
                             )
                         }
                     }
-
-                    val emptySlots = 3 - (results.albums.size % 3)
+                    val emptySlots = 3 - (row.size)
                     if (emptySlots < 3) {
                         repeat(emptySlots) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
+
                 }
             }
         }

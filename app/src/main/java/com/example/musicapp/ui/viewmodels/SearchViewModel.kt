@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.viewmodels
 
-import android.app.appsearch.SearchResults
+import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.repository.SearchRepository
@@ -15,17 +16,24 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val searchRepository: SearchRepository
+    private val searchRepository: SearchRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val scopeType: String? = savedStateHandle["scopeType"]
+    private val scopeId: Int = savedStateHandle.get<Int>("scopeId")?.toInt() ?: -1
 
     private val _searchQuery = MutableStateFlow<String>("")
     val searchQuery = _searchQuery.asStateFlow()
+
+    val scope = if (scopeType != null) {
+        SearchScope(scopeType, scopeId)
+    } else null
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val searchResults = _searchQuery
@@ -34,7 +42,11 @@ class SearchViewModel @Inject constructor(
             if (query.length < 2) {
                 flowOf(SearchResult())
             } else {
-                searchRepository.globalSearch(query)
+                when (scopeType){
+                    "ARTIST" -> searchRepository.searchWithinArtist(query, scopeId.toInt())
+                    "ALBUM" -> searchRepository.searchWithinAlbum(query, scopeId.toInt())
+                    else -> searchRepository.globalSearch(query)
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, SearchResult())
@@ -44,3 +56,10 @@ class SearchViewModel @Inject constructor(
         _searchQuery.value = query
     }
 }
+
+
+
+data class SearchScope (
+    val scopeType: String? = "global",
+    val scopeId: Int? = -1
+)
