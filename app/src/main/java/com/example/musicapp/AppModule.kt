@@ -26,6 +26,7 @@ import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
+import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.MoodRepository
@@ -48,6 +49,7 @@ import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.WorkerManagerRepository
+import com.example.musicapp.data.repository.impl.OfflineFilterRepository
 import com.example.musicapp.data.repository.impl.OfflineSearchRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
@@ -374,6 +376,12 @@ object AppModule {
     @Singleton
     fun provideSearchRepository(artistDao: ArtistDao, albumDao: AlbumDao, trackDao: TrackDao) : SearchRepository {
         return OfflineSearchRepository(artistDao, albumDao, trackDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFilterRepository(albumDao: AlbumDao) : FilterRepository {
+        return OfflineFilterRepository(albumDao)
     }
 
     @Provides

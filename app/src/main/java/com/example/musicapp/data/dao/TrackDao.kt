@@ -5,7 +5,9 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Track
 import kotlinx.coroutines.flow.Flow
@@ -198,4 +200,7 @@ interface TrackDao {
         ORDER BY t.title ASC
         """)
     fun searchAlbumTracks(query: String, albumId: Int): Flow<List<TrackInfo>>
+
+    @RawQuery(observedEntities = [Track::class])
+    fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
 }

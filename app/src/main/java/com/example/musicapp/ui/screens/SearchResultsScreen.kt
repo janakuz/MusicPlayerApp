@@ -156,6 +156,7 @@ fun SearchContent(
                                 image = album.image ?: "",
                                 text = album.title,
                                 isAlbum = true,
+                                albumArtist = album.releaseDate ?: "",
                                 imageModifier = Modifier.size(80.dp),
                                 textStyle = MaterialTheme.typography.bodyMedium,
                                 onPlayNext = {},

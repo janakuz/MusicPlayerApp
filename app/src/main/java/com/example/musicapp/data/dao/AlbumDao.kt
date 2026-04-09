@@ -6,7 +6,9 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.dto.AlbumInfo
 import com.example.musicapp.data.entity.Album
 import com.example.musicapp.data.entity.Artist
@@ -115,4 +117,16 @@ interface AlbumDao {
             "WHERE aa.artistId=:artistId AND (LOWER(al.title) LIKE :query OR al.searchKey LIKE :query) " +
             "ORDER BY al.searchKey ASC")
     fun searchArtistAlbums(query: String, artistId: Int): Flow<List<AlbumInfo>>
+
+    @RawQuery(observedEntities = [Album::class])
+    fun getFilteredAlbums(query: SupportSQLiteQuery): Flow<List<AlbumInfo>>
+
+    @Query("SELECT MIN(releaseDate) FROM albums WHERE releaseDate > 0")
+    fun getMinYear(): Flow<Int>
+
+    @Query("SELECT MAX(releaseDate) FROM albums WHERE releaseDate > 0")
+    fun getMaxYear(): Flow<Int>
+
+    @Query("SELECT DISTINCT label FROM albums WHERE label IS NOT NULL AND label != '' ORDER BY label ASC")
+    fun getAllLabels(): Flow<List<String>>
 }
