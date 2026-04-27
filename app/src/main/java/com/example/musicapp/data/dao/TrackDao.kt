@@ -5,7 +5,9 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Track
 import kotlinx.coroutines.flow.Flow
@@ -164,4 +166,41 @@ interface TrackDao {
 
     @Query("SELECT fileUri FROM tracks WHERE artistId = :artistId")
     suspend fun getTrackUrisByArtist(artistId: Int): List<String>
+
+    @Query("""
+        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
+        FROM tracks t
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE LOWER(t.title) LIKE :query
+        ORDER BY t.title ASC
+        """)
+    fun searchTracks(query: String): Flow<List<TrackInfo>>
+
+
+    @Query("""
+        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
+        FROM tracks t
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE t.artistId=:artistId AND LOWER(t.title) LIKE :query
+        ORDER BY t.title ASC
+        """)
+    fun searchArtistTracks(query: String, artistId: Int): Flow<List<TrackInfo>>
+
+    @Query("""
+        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
+        FROM tracks t
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE t.albumId=:albumId AND LOWER(t.title) LIKE :query
+        ORDER BY t.title ASC
+        """)
+    fun searchAlbumTracks(query: String, albumId: Int): Flow<List<TrackInfo>>
+
+    @RawQuery(observedEntities = [Track::class])
+    fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
 }

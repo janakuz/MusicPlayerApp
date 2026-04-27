@@ -33,7 +33,7 @@ interface ArtistDao {
             "WHEN name LIKE 'The %' THEN SUBSTR(name, 5)" +
             "WHEN name LIKE 'A %' THEN SUBSTR(name, 3)" +
             "WHEN name LIKE 'An %' THEN SUBSTR(name, 4)" +
-            "WHEN name LIKE '[^a-zA-Z0-9]%' THEN SUBSTR(name, 2)" +
+            "WHEN name GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(name, 2)" +
             "ELSE name " +
             "END COLLATE NOCASE DESC")
     fun getAllArtistsSortedDesc(): Flow<List<Artist>>
@@ -77,4 +77,10 @@ interface ArtistDao {
     @Query("DELETE FROM artists WHERE id NOT IN " +
             "(SELECT DISTINCT artistId FROM tracks)")
     suspend fun deleteOrphanedTracks()
+
+
+    @Query("SELECT * FROM artists " +
+            "WHERE searchKey LIKE :query OR LOWER(name) LIKE :query " +
+            "ORDER BY searchKey ASC")
+    fun searchArtists(query: String): Flow<List<Artist>>
 }

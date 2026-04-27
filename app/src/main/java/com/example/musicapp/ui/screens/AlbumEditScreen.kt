@@ -6,6 +6,9 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Public
 import com.example.musicapp.ui.viewmodels.ImageOption
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,8 +64,12 @@ import com.example.musicapp.ui.components.EditTopBar
 import kotlin.math.absoluteValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import com.example.musicapp.R
@@ -167,12 +174,28 @@ fun GenrePicker(
     suggestions: List<String>,
     onGenreQueryChange: (String) -> Unit,
     onGenresChange: (List<String>) -> Unit,
-    label: String
+    label: String,
+    titleCase: Boolean = true,
 ) {
     var textFieldValue by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val dummyFocusRequester = remember { FocusRequester() }
+
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+        .focusRequester(dummyFocusRequester)
+        .focusable()
+        .clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null
+        ){
+            dummyFocusRequester.requestFocus()
+        }
+    ) {
         Text("${label}s", style = MaterialTheme.typography.labelMedium)
 
         FlowRow(
@@ -186,7 +209,7 @@ fun GenrePicker(
                     onClick = {
                         onGenresChange(genres.filter { it != genre })
                     },
-                    label = { Text(genre.normalizeGenre().toTitleCase()) },
+                    label = {if (titleCase) Text(genre.normalizeGenre().toTitleCase()) else Text(genre)},
                     trailingIcon = {
                         Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
                     }
@@ -196,7 +219,13 @@ fun GenrePicker(
 
         ExposedDropdownMenuBox(
             expanded = expanded && suggestions.isNotEmpty(),
-            onExpandedChange = { expanded = it }
+            onExpandedChange = {
+                expanded = it
+                if (expanded == false){
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                }
+            }
         ) {
             OutlinedTextField(
                 value = textFieldValue,
@@ -211,24 +240,32 @@ fun GenrePicker(
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
-                    if (textFieldValue.isNotBlank()) {
+                    if (textFieldValue.isNotBlank() || titleCase == false) {
                         onGenresChange(genres + textFieldValue.trim())
                         textFieldValue = ""
+
+                        keyboardController?.hide()
+//                        focusManager.clearFocus(force = true)
                     }
                 })
             )
 
             ExposedDropdownMenu(
                 expanded = expanded && suggestions.isNotEmpty(),
-                onDismissRequest = { expanded = false }
+                onDismissRequest = {
+                    expanded = false
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                }
             ) {
                 suggestions.forEach { suggestion ->
                     DropdownMenuItem(
-                        text = { Text(suggestion.toTitleCase()) },
+                        text = { if (titleCase) Text(suggestion.toTitleCase()) else Text(suggestion) },
                         onClick = {
-                            if (textFieldValue.isNotBlank()) {
+                            if (textFieldValue.isNotBlank() || titleCase == false) {
                                 onGenresChange(genres + suggestion.trim())
                                 textFieldValue = ""
+
                             }
                         }
                     )

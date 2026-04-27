@@ -26,6 +26,7 @@ import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
+import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.MoodRepository
@@ -43,10 +44,13 @@ import com.example.musicapp.data.repository.impl.OfflineTrackRepository
 import com.example.musicapp.data.repository.impl.OfflineUserPreferencesRepository
 import com.example.musicapp.data.repository.impl.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.WorkerManagerRepository
+import com.example.musicapp.data.repository.impl.OfflineFilterRepository
+import com.example.musicapp.data.repository.impl.OfflineSearchRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
 import com.example.musicapp.data.service.LastfmApiService
@@ -365,6 +369,19 @@ object AppModule {
     @Singleton
     fun provideTrackMoodRepository(trackMoodDao: TrackMoodDao, moodDao: MoodDao): TrackMoodRepository {
         return OfflineTrackMoodRepository(trackMoodDao, moodDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideSearchRepository(artistDao: ArtistDao, albumDao: AlbumDao, trackDao: TrackDao) : SearchRepository {
+        return OfflineSearchRepository(artistDao, albumDao, trackDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFilterRepository(albumDao: AlbumDao) : FilterRepository {
+        return OfflineFilterRepository(albumDao)
     }
 
     @Provides

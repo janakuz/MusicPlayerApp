@@ -269,7 +269,8 @@ class LegacyLibraryScanner @Inject constructor(
                         artistId = artist.id,
                         image = newAlbum.image,
                         duration = newAlbum.duration,
-                        label = newAlbum.label
+                        label = newAlbum.label,
+                        numTracks = 0
                     )
 
                     val albumArtist = AlbumArtist(
@@ -327,7 +328,8 @@ class LegacyLibraryScanner @Inject constructor(
                         artistId = insertedArtist,
                         image = newAlbum.image,
                         duration = newAlbum.duration,
-                        label = newAlbum.label
+                        label = newAlbum.label,
+                        numTracks = 0
                     )
                     val albumArtist = AlbumArtist(
                         artistId = insertedArtist,

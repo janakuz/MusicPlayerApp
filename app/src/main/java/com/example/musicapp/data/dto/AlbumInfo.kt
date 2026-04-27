@@ -9,5 +9,6 @@ data class AlbumInfo(
     val image: String?,
     val label: String?,
     val mbId: String? = null,
-    val duration: Long
+    val duration: Long,
+    val numTracks: Int
 )
