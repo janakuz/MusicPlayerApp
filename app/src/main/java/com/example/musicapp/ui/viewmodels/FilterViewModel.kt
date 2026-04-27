@@ -6,11 +6,16 @@ import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.LibraryFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -41,6 +46,27 @@ class FilterViewModel@Inject constructor(
 
     private val _draftFilter = MutableStateFlow(LibraryFilter())
     val draftFilter = _draftFilter.asStateFlow()
+
+    private val _labelQuery = MutableStateFlow("")
+
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val labelSuggestions: StateFlow<List<String>> = _labelQuery
+        .debounce(250)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.length < 2) {
+                filterRepository.getAllLabels()
+            } else {
+                filterRepository.findLabel(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -81,6 +107,12 @@ class FilterViewModel@Inject constructor(
     fun updateDraft(newFilter: LibraryFilter) {
         _draftFilter.value = newFilter
     }
+
+    fun onLabelQueryChange(newQuery: String){
+        _labelQuery.value = newQuery
+    }
+
+
 
     fun reset(){
         _draftFilter.value = _activeFilter.value

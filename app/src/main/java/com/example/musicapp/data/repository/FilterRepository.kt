@@ -12,6 +12,8 @@ interface FilterRepository {
     fun getMaxYear(): Flow<Int>
 
     fun getAllLabels(): Flow<List<String>>
+
+    fun findLabel(query: String) : Flow<List<String>>
 }
 
 data class LibraryFilter(

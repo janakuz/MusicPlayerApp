@@ -2,6 +2,8 @@ package com.example.musicapp
 
 import android.util.Log
 import androidx.annotation.StringRes
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -115,7 +117,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val filterCount by filterViewModel.potentialMatches.collectAsState()
     val filterResults by filterViewModel.filteredAlbums.collectAsState()
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
-
+    val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
+    val sliderInteractionSource = remember { MutableInteractionSource() }
+    val isInteracting by sliderInteractionSource.collectIsDraggedAsState()
 
 
 
@@ -127,13 +131,17 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = !isInteracting,
         drawerContent = {
             ModalDrawerSheet {
                 FilterDrawerContent(
                     draft = draftFilter,
                     potentialCount = filterCount,
                     filterDefaults = filterDefaults,
+                    labelSuggestions = labelSuggestions,
                     onDraftChange = {filter -> filterViewModel.updateDraft(filter)},
+                    onLabelQueryChange = {query -> filterViewModel.onLabelQueryChange(query)},
+                    interaction = sliderInteractionSource,
                     onApply = {
                         filterViewModel.applyFilters()
                         scope.launch { drawerState.close() }

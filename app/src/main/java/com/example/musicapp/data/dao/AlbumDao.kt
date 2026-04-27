@@ -129,4 +129,7 @@ interface AlbumDao {
 
     @Query("SELECT DISTINCT label FROM albums WHERE label IS NOT NULL AND label != '' ORDER BY label ASC")
     fun getAllLabels(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT label FROM albums WHERE label LIKE '%' || :searchString || '%'")
+    fun findLabel(searchString: String): Flow<List<String>>
 }

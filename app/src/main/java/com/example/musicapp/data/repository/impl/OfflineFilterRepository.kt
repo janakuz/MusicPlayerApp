@@ -65,4 +65,8 @@ class OfflineFilterRepository(
     override fun getAllLabels(): Flow<List<String>> {
         return albumDao.getAllLabels()
     }
+
+    override fun findLabel(query: String): Flow<List<String>> {
+        return albumDao.findLabel(query)
+    }
 }
