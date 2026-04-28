@@ -147,6 +147,12 @@ class AlbumDetailViewModel @Inject constructor(
         }
     }
 
+    fun splitToUnenriched(ids: List<Int>, artist: String, album: String){
+        viewModelScope.launch {
+            metadataRepository.moveToUnenriched(album, artist, ids, albumId)
+        }
+    }
+
     fun reset(){
         _moveState.value = RefetchAlbumTracksState.Idle
     }

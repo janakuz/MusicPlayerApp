@@ -582,7 +582,8 @@ class OfflineMetadataRepository(
         album: String,
         artist: String,
         tracksToMove: List<Int>,
-        oldAlbumId: Int
+        oldAlbumId: Int,
+        markEnriched: Boolean,
     ) {
         val newArtist = artistRepository.getArtistByName(artist.normalizeForMatching())
         if (newArtist.isNotEmpty() && newArtist.size == 1){
@@ -598,11 +599,14 @@ class OfflineMetadataRepository(
                 label = null,
                 discogsId = null,
                 releaseDate = null,
-                mbId = null
+                mbId = null,
+                enrichmentAttempted = true,
+                isEnriched = markEnriched,
                 )
 
             val newId = albumRepository.insertWithReturn(newAlbum).toInt()
-            albumArtistRepository.removeArtistFromAlbum(oldAlbumId, newArtist[0].id)
+            if (trackInfos[0].artistId != newArtist[0].id)
+                albumArtistRepository.removeArtistFromAlbum(oldAlbumId, newArtist[0].id)
             albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = newArtist[0].id))
             albumRepository.moveTracks(
                 oldAlbumId,

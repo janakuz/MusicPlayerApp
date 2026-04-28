@@ -300,7 +300,8 @@ fun AlbumView(
                         },
                         onDismiss = {
                             albumDetailViewModel.reset()
-                        }
+                        },
+                        onNotMatchedSelected = { albumDetailViewModel.splitToUnenriched(pendingMoveIds, moveToAlbum.artist ?: "", moveToAlbum.title ?: "") }
                     )
                 }
 
