@@ -233,7 +233,8 @@ fun AllAlbumsScreen(
 fun AlbumDisambiguationDialog(
     matches: List<Release>,
     onAlbumSelected: (Release) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onNotMatchedSelected: (() -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -270,6 +271,16 @@ fun AlbumDisambiguationDialog(
                         }
                     }
                     HorizontalDivider()
+                }
+                if (onNotMatchedSelected != null) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {onNotMatchedSelected()}
+                                .padding(vertical = 12.dp, horizontal = 8.dp)
+                        ) { Text("Add as unmatched") }
+                    }
                 }
             }
         },

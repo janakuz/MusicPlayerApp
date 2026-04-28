@@ -55,7 +55,8 @@ interface MetadataRepository {
         album: String,
         artist: String,
         tracksToMove: List<Int>,
-        oldAlbumId: Int
+        oldAlbumId: Int,
+        markEnriched: Boolean = false,
     )
 }
 
