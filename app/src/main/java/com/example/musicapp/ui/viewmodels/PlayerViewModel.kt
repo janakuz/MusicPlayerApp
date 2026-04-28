@@ -1,17 +1,20 @@
 package com.example.musicapp.ui.viewmodels
 
-import android.app.Application
 import android.content.ComponentName
-import android.net.Uri
+import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.lifecycle.AndroidViewModel
+import androidx.core.os.bundleOf
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,168 +23,717 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.common.Player
 import com.example.musicapp.PlaybackService
+import com.example.musicapp.data.dto.PlayQueueItemUUID
+import com.example.musicapp.data.dto.QueueItemFull
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.entity.QueueItem
+import com.example.musicapp.data.repository.DynamicThemeRepository
+import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.PlayerColors
+import com.example.musicapp.data.repository.TrackRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+
+@HiltViewModel
+class PlayerViewModel @Inject constructor (
+    @ApplicationContext private val context: Context,
+    private val playQueueRepository: PlayQueueRepository,
+    private val trackRepository: TrackRepository,
+    private val dynamicThemeRepository: DynamicThemeRepository,
+) : ViewModel() {
+//    private val mediaController = MutableStateFlow<MediaController?>(null)
+//    val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
+
+    private var controller: MediaController? = null
+
+    val isShuffleEnabled: StateFlow<Boolean> = playQueueRepository.shuffleOn
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
+
+    val repeatMode: StateFlow<Int> = playQueueRepository.repeatMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val queue: StateFlow<List<PlayQueueItemUUID>> = playQueueRepository.shuffleOn.flatMapLatest { shuffle ->
+        playQueueRepository.getCurrentQueue(shuffle)
+            .map { q -> q.map {  toQueueItem(it) } }
+
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList<PlayQueueItemUUID>()
+        )
+
+    private val _currentTrack = MutableStateFlow<PlayQueueItemUUID?>(null)
+    val currentTrack: StateFlow<PlayQueueItemUUID?> = _currentTrack.asStateFlow()
+
+    private val _draftQueue = MutableStateFlow<List<PlayQueueItemUUID>>(emptyList())
+    val draftQueue = _draftQueue.asStateFlow()
+
+    private val _eventChannel = Channel<String>(Channel.BUFFERED)
+    val events = _eventChannel.receiveAsFlow()
+
+    var albumColors by mutableStateOf(PlayerColors(
+        mainColor = Color(0xFF121212),
+        secondaryColor = Color.Cyan,
+        onColor = Color.White
+    ))
+
+    //    val currentTrack: StateFlow<TrackInfo?> = combine(queue, playQueueRepository.currentSession) { currentQueue, session ->
+//        if (currentQueue.isEmpty() || session.playQueueIndex !in currentQueue.indices) {
+//            null
+//        } else {
+//            currentQueue[session.playQueueIndex].track
+//        }
+//    }.stateIn(
+//        scope = viewModelScope,
+//        started = SharingStarted.WhileSubscribed(5_000),
+//        initialValue = null
+//    )
+
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val position: StateFlow<Long> = controller.flatMapLatest { controller ->
+//        if (controller == null || controller.currentMediaItem==null) {
+//            playQueueRepository.currentSession.map { it.position }
+//        } else {
+//            tickerFlow(500).map { controller.currentPosition }
+//        }
+//    }.stateIn(
+//        scope = viewModelScope,
+//        started = SharingStarted.WhileSubscribed(5_000),
+//        initialValue = 0L
+//    )
+
+    val hasActivePlayback: StateFlow<Boolean> =
+        currentTrack.map {
+            it != null
+        }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                false
+            )
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+    val position: StateFlow<Long> =  hasActivePlayback.flatMapLatest { hasPlayback ->
+        if (!hasPlayback) {
+            playQueueRepository.currentSession.map { it.position }
+        } else {
+            tickerFlow(500).map { controller?.currentPosition ?: 0L }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = 0L
+    )
 
 
-class PlayerViewModel(application: Application) : AndroidViewModel(application) {
-    private val mediaController = MutableStateFlow<MediaController?>(null)
-    val controller: StateFlow<MediaController?> = mediaController.asStateFlow()
-
-    private val _queue = MutableStateFlow<List<TrackInfo>>(emptyList())
-    val queue: StateFlow<List<TrackInfo>> = _queue.asStateFlow()
-
-    private val _currentTrack = MutableStateFlow<TrackInfo?>(null)
-    val currentTrack: StateFlow<TrackInfo?> = _currentTrack.asStateFlow()
+    val duration: StateFlow<Long> = currentTrack.map { track ->
+        track?.track?.duration ?: 0L
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = 0L
+    )
 
 
-    private val _position = MutableStateFlow(0L)
-    val position: StateFlow<Long> = _position
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying = _isPlaying.asStateFlow()
 
-    private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration
 
-    val isPlaying: MutableState<Boolean> = mutableStateOf(false)
+    private val _selectedTrackIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedTrackIds = _selectedTrackIds.asStateFlow()
 
     init {
         viewModelScope.launch {
-            val context = getApplication<Application>()
             val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
             val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
 
+
             controllerFuture.addListener({
-                val controller = controllerFuture.get()
-                mediaController.value = controller
+                controller = controllerFuture.get()
+ //               val controller = controllerFuture.get()
+ //               mediaController.value = controller
 
+                val c = controller!!
 
-                controller.addListener(object : Player.Listener {
+                c.addListener(object : Player.Listener {
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                        val mediaId = mediaItem?.mediaId?.toIntOrNull()
-                        val matchingTrack = _queue.value.find { it.trackId == mediaId }
-                        _currentTrack.value = matchingTrack
+                        mediaItem.let {
+//                            _currentTrack.value = mediaItem?.localConfiguration?.tag as? TrackInfo
+                            val track = TrackInfo(
+                                title = mediaItem?.mediaMetadata?.title.toString(),
+                                trackId = mediaItem?.mediaMetadata?.extras?.getInt("ID") ?: 0,//.mediaId?.toInt() ?: 0,
+                                artistName = mediaItem?.mediaMetadata?.artist.toString(),
+                                albumTitle = mediaItem?.mediaMetadata?.albumTitle.toString(),
+                                albumArt = mediaItem?.mediaMetadata?.artworkUri.toString(),
+                                trackNum = mediaItem?.mediaMetadata?.trackNumber,
+                                duration = mediaItem?.mediaMetadata?.durationMs ?: 0L,
+                                fileUri = mediaItem?.requestMetadata?.mediaUri.toString(),
+                                albumId = mediaItem?.mediaMetadata?.extras?.getInt("albumId") ?: 0,
+                                artistId = mediaItem?.mediaMetadata?.extras?.getInt("artistId") ?: 0,
+                                filePath = ""
+                            )
+                            _currentTrack.value = PlayQueueItemUUID(
+                                queueId = mediaItem?.mediaId ?: "",
+                                track = track,
+                                originalOrder = 0,
+                                shuffledOrder = 0
+                            )
+                        }
+        //                _currentTrack.value = queue.value[c.currentMediaItemIndex].track
+                        if (c.repeatMode != Player.REPEAT_MODE_ONE) updatePlaybackSession()
                     }
-                })
 
-                controller.addListener(object: Player.Listener{
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        this@PlayerViewModel.isPlaying.value = isPlaying
+                        this@PlayerViewModel._isPlaying.value = isPlaying
+
+                        if (!isPlaying) updatePlaybackSession()
+                    }
+
+                    override fun onPlayerError(error: PlaybackException) {
+                        Log.e("PlayerError",error.errorCode.toString()+ " " + error.message)
+                    }
+
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        Log.d("player", playbackState.toString())
                     }
 
                 }
                 )
 
+                viewModelScope.launch {
+                    queue.collect { newQueue ->
+          //              val controller = mediaController.value ?: return@collect
 
+                        if (controller!!.mediaItemCount == 0 && newQueue.isNotEmpty()) {
+                            val mediaItems = newQueue.map { toMediaItem(it) }
+                            controller!!.setMediaItems(mediaItems)
 
+                            val session = playQueueRepository.currentSession.first()
+                            controller!!.prepare()
+                            controller!!.seekTo(session.playQueueIndex, session.position)
+                            _currentTrack.value = queue.value[session.playQueueIndex]
+                        }
+                    }
+                }
 
 
             }, ContextCompat.getMainExecutor(context))
 
-            while (true) {
-                mediaController.value?.let { controller ->
-                    if (controller.isPlaying) {
-                        _position.value = controller.currentPosition
-                        _duration.value = controller.duration
-                    }
-                }
-                delay(500)
+        }
+    }
+
+    private fun tickerFlow(period: Long) = flow {
+        while (true) {
+            emit(Unit)
+            delay(period)
+        }
+    }
+
+    private fun toQueueItem(item: QueueItemFull): PlayQueueItemUUID {
+        return PlayQueueItemUUID(
+            originalOrder = item.orderIndex,
+            shuffledOrder = item.shuffledIndex ?: -1,
+            queueId = item.uuid,
+            track = item.trackInfo
+        )
+    }
+
+
+    fun syncDraft() {
+        _draftQueue.value = queue.value
+    }
+
+    fun getAlbumColors(imagePath: String) {
+        viewModelScope.launch {
+            dynamicThemeRepository.extractColorsFromUrl(imagePath, context = context)?.let {
+                albumColors = it
+            }
+        }
+    }
+
+
+    fun togglePlayback(){
+//        val controller = mediaController.value ?: return
+        if (controller!!.isPlaying) {
+            controller!!.pause()
+        } else {
+            controller!!.play()
+        }
+
+    }
+
+
+    private fun updatePlaybackSession() {
+//        val controller = mediaController.value ?: return
+        val currentIndex = controller!!.currentMediaItemIndex
+        val currentPosition = controller!!.currentPosition
+
+        viewModelScope.launch (Dispatchers.IO) {
+            playQueueRepository.saveSession(
+                index = currentIndex,
+                position = currentPosition
+            )
+        }
+    }
+
+    fun updateQueue(newQueue: List<PlayQueueItemUUID>){
+        viewModelScope.launch {
+            playQueueRepository.replaceQueue(newQueue.mapIndexed { index, track ->
+                QueueItem(
+                    uuid = track.queueId,
+                    trackId = track.track.trackId,
+                    orderIndex = track.originalOrder,
+                    shuffledIndex = track.shuffledOrder
+                )
+            })
+        }
+    }
+
+    fun moveVisible(fromIndex: Int, toIndex: Int){
+        val currentList = _draftQueue.value.toMutableList()
+        val trackToMove = currentList.removeAt(fromIndex)
+        val newTrack =
+            if (isShuffleEnabled.value) trackToMove.copy(shuffledOrder = toIndex)
+            else trackToMove.copy(originalOrder = toIndex)
+        currentList.add(toIndex, newTrack)
+
+
+    }
+
+    private var playingIdAtDragStart: String? = null
+    private var indexAtDragStart: Int = -1
+
+    fun startDragging() {
+//        val controller = mediaController.value ?: return
+        indexAtDragStart = controller!!.currentMediaItemIndex
+        playingIdAtDragStart = queue.value[controller!!.currentMediaItemIndex].queueId
+    }
+
+    fun finalizeMove(currentList: List<PlayQueueItemUUID>){
+
+        val newList =
+            if (isShuffleEnabled.value){
+                currentList.mapIndexed { id, track ->
+                    track.copy(
+                        shuffledOrder = id,
+                    )}
+            }
+            else {
+                currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
             }
 
+        updateQueue(newList)
+        updatePlaybackSession()
+
+    }
+
+    fun moveTrack(fromIndex: Int, toIndex: Int) {
+        controller!!.moveMediaItem(fromIndex, toIndex)
+    }
+
+    fun toggleSelection(trackId: String) {
+        _selectedTrackIds.update { current ->
+            if (current.contains(trackId)) current - trackId else current + trackId
         }
     }
 
-    fun playTrack(uri: Uri) {
-        val mediaItem = MediaItem.Builder()
-            .setUri("asset:///03_guest_list.mp3".toUri())
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle("Test Track")
-                    .setArtist("Demo Artist")
-                    .build()
+    fun clearSelection() {
+        _selectedTrackIds.value = emptySet()
+    }
+
+     fun playNext(track: TrackInfo) {
+//        val controller = mediaController.value ?: return
+        val nextIndex = controller!!.currentMediaItemIndex + 1
+
+        val newTrack = PlayQueueItemUUID(track = track, originalOrder = nextIndex, shuffledOrder = nextIndex)
+
+        controller!!.addMediaItem(nextIndex, toMediaItem(newTrack))
+        val dbList = queue.value.map { track ->
+            val newOriginal = if (track.originalOrder >= nextIndex) track.originalOrder+1 else track.originalOrder
+            val newShuffled = if (track.shuffledOrder >= nextIndex) track.shuffledOrder+1 else track.shuffledOrder
+            track.copy(originalOrder = newOriginal, shuffledOrder = newShuffled)
+        }
+
+        val newList = dbList.toMutableList().apply {
+            add(
+                nextIndex,
+                newTrack
+            ) }
+        updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${track.title} to queue")
+         }
+    }
+
+     fun addToQueue(track: TrackInfo) {
+//        val controller = mediaController.value ?: return
+
+        val queueItem = PlayQueueItemUUID(
+            track = track,
+            originalOrder = controller!!.mediaItemCount-1,
+            shuffledOrder = controller!!.mediaItemCount-1
+        )
+
+        val newList = queue.value.toMutableList().apply {
+            add(
+                queueItem
             )
-            .build()
-        mediaController.value?.apply {
-            setMediaItem(mediaItem)
-            prepare()
-            play()
+        }
+
+        controller!!.addMediaItem(toMediaItem(queueItem))
+
+        updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${track.title} to queue")
+         }
+    }
+
+     fun playNextList(tracks: List<TrackInfo>) {
+//        val controller = mediaController.value ?: return
+        val nextIndex = controller!!.currentMediaItemIndex + 1
+
+        val dbList = queue.value.map { track ->
+            val newOriginal = if (track.originalOrder >= nextIndex) track.originalOrder+tracks.size else track.originalOrder
+            val newShuffled = if (track.shuffledOrder >= nextIndex) track.shuffledOrder+tracks.size else track.shuffledOrder
+            track.copy(originalOrder = newOriginal, shuffledOrder = newShuffled)
+        }
+
+        val toAdd = tracks.mapIndexed { id, track ->
+            PlayQueueItemUUID(
+                track = track,
+                originalOrder = nextIndex+id,
+                shuffledOrder = nextIndex+id
+            )
+        }
+
+        val newList = dbList.toMutableList().apply {
+            addAll(
+                nextIndex,
+                toAdd
+            )
+        }
+
+
+        controller!!.addMediaItems(nextIndex, toAdd.map { track -> toMediaItem(track) })
+
+        updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${tracks.size} tracks to queue")
+         }
+    }
+
+     fun addToQueueList(tracks: List<TrackInfo>){
+//        val controller = mediaController.value ?: return
+        val originalCount = controller!!.mediaItemCount
+
+        val toAdd = tracks.mapIndexed { id, track ->
+            PlayQueueItemUUID(
+                track = track,
+                originalOrder = originalCount+id,
+                shuffledOrder = originalCount+id
+            )
+        }
+
+
+        val newList = queue.value.toMutableList().apply {
+            addAll(
+                toAdd
+            )
+        }
+
+
+        controller!!.addMediaItems(toAdd.map { track -> toMediaItem(track) })
+
+        updateQueue(newList)
+
+         viewModelScope.launch {
+             _eventChannel.send("Added ${tracks.size} tracks to queue")
+         }
+
+    }
+
+    fun playNextListIds(trackIds: Set<Int>){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByIds(trackIds)
+            playNextList(tracks)
         }
     }
+
+    fun addToQueueListIds(trackIds: Set<Int>){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByIds(trackIds)
+            addToQueueList(tracks)
+        }
+    }
+
+
+    fun playNextAlbum(albumId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksInAlbum(albumId).first()
+
+            playNextList(tracks)
+        }
+    }
+
+    fun addToQueueAlbum(albumId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksInAlbum(albumId).first()
+
+            addToQueueList(tracks)
+        }
+    }
+
+
+    fun playNextArtist(artistId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByArtist(artistId).first()
+
+            playNextList(tracks)
+        }
+    }
+
+    fun addToQueueArtist(artistId: Int){
+        viewModelScope.launch {
+            val tracks = trackRepository.getTracksByArtist(artistId).first()
+
+            addToQueueList(tracks)
+        }
+    }
+
+
+    fun playTrack(queueId: String){
+//        val controller = mediaController.value ?: return
+        val trackIndex = queue.value.indexOfFirst { it.queueId==queueId }
+        _currentTrack.value = queue.value[trackIndex]
+        controller!!.seekTo(trackIndex, 0L)
+        controller!!.play()
+    }
+
 
     fun playTracks(tracks: List<TrackInfo>, selectedTrack: TrackInfo){
-        _queue.value = tracks
-        _currentTrack.value = selectedTrack
-        isPlaying.value = true
+        val queueTracks = tracks.mapIndexed { id, track ->
+            PlayQueueItemUUID(
+                track = track,
+                originalOrder = id)
+        }
 
-        val mediaItems = tracks.map { track ->
-            MediaItem.Builder()
-                .setUri(track.fileUri.toUri())
-                .setMediaId(track.trackId.toString())
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(track.title.toString())
-                        .setArtist(track.artistName.toString())
-                        .build()
-                )
-                .build()
+        val mediaItems = queueTracks.map { track ->
+            toMediaItem(track)
         }
 
         val startIndex = tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
 
-        mediaController.value?.apply {
-            setMediaItems(mediaItems, startIndex, 0L)
-            prepare()
-            play()
+        controller!!.setMediaItems(mediaItems)
+        controller!!.prepare()
+        controller!!.seekTo(startIndex, 0L)
+        controller!!.play()
+
+        _isPlaying.value = true
+        _currentTrack.value = queueTracks[startIndex]
+        updateQueue(
+            queueTracks
+        )
+
+        viewModelScope.launch {
+            playQueueRepository.updateShuffle(false)
         }
+    }
+
+    fun toMediaItem(queueItem: PlayQueueItemUUID): MediaItem {
+        val mediaItem = MediaItem.Builder()
+            .setUri(queueItem.track.fileUri.toUri())
+            .setMediaId(queueItem.queueId)
+            .setTag(queueItem.track.trackId)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setExtras(
+                        bundleOf(
+                            "ID" to queueItem.track.trackId,
+                            "artistId" to queueItem.track.artistId,
+                            "albumId" to queueItem.track.albumId
+                        )
+                    )
+                    .setTitle(queueItem.track.title.toString())
+                    .setArtist(queueItem.track.artistName.toString())
+                    .setArtworkUri(queueItem.track.albumArt?.toUri())
+                    .setDurationMs(queueItem.track.duration)
+                    .setAlbumTitle(queueItem.track.albumTitle)
+                    .build()
+            )
+            .setRequestMetadata(
+                MediaItem.RequestMetadata.Builder()
+                    .setMediaUri(queueItem.track.fileUri.toUri())
+                    .build()
+            )
+            .build()
+
+        return mediaItem
     }
 
     fun seekTo(positionMs: Long) {
-        mediaController.value?.seekTo(positionMs)
+//        mediaController.value?.seekTo(positionMs)
+        controller!!.seekTo(positionMs)
     }
 
     fun skipToNext() {
-        mediaController.value?.seekToNext()
+//        mediaController.value?.seekToNext()
+        controller!!.seekToNext()
     }
 
     fun skipToPrevious() {
-        mediaController.value?.seekToPrevious()
+//        mediaController.value?.seekToPrevious()
+        controller!!.seekToPrevious()
     }
 
-    fun hasNextMediaItem(){
-        mediaController.value?.hasNextMediaItem()
+    fun hasNextMediaItem() : Boolean? {
+//        return mediaController.value?.hasNextMediaItem()
+        return controller!!.hasNextMediaItem()
     }
 
-
-    fun removeTrackAt(index: Int) {
-        _queue.value = _queue.value.toMutableList().apply { removeAt(index) }
+    fun hasPrevMediaItem() : Boolean? {
+//        return mediaController.value?.hasPreviousMediaItem()
+        return controller!!.hasPreviousMediaItem()
     }
 
-    fun updateQueue(newQueue: List<TrackInfo>) {
-        Log.d("tag", newQueue.toString())
-        val currentMediaId = mediaController.value?.currentMediaItem?.mediaId?.toIntOrNull()
-        val currentTrack = newQueue.find { it.trackId == currentMediaId }
-        val newIndex = newQueue.indexOfFirst { it.trackId == currentMediaId }
+    fun removeFromQueue(uuids: Set<String>){
+        val currentList = queue.value.filterNot { it.queueId in uuids }
 
-        val safeIndex = if (newIndex >= 0) newIndex else 0
-
-        _queue.value = newQueue
-        _currentTrack.value = currentTrack
-
-        val mediaItems = newQueue.map { track ->
-            MediaItem.Builder()
-                .setUri(track.fileUri.toUri())
-                .setMediaId(track.trackId.toString())
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(track.title.toString())
-                        .setArtist(track.artistName.toString())
-                        .build()
-                )
-                .build()
+        viewModelScope.launch {
+            val controller = controller ?: return@launch
+            for (uuid in uuids) {
+                val index = findCurrentIndexInController(controller, uuid)
+                controller.removeMediaItem(index)
+            }
         }
 
-        mediaController.value?.setMediaItems(
-            mediaItems,
-            /* startIndex = */ safeIndex,
-            /* startPositionMs = */ mediaController.value?.currentPosition ?: 0L
-        )
+        val originalOrderLookup = currentList
+            .sortedBy { it.originalOrder }
+            .mapIndexed { index, track -> track.queueId to index }
+            .toMap()
+
+        val newList =
+            if (isShuffleEnabled.value){
+                currentList.mapIndexed { id, track ->
+                    track.copy(
+                        shuffledOrder = id,
+                        originalOrder = originalOrderLookup[track.queueId] ?: id
+                    )}
+            }
+            else {
+                currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
+            }
+        updateQueue(newList)
     }
+
+    fun removeTrackAt(index: Int) {
+//        val controller = mediaController.value ?: return
+        val currentList = queue.value.toMutableList()
+        if (index in currentList.indices) {
+            controller!!.removeMediaItem(index)
+            currentList.removeAt(index)
+            _currentTrack.value = currentList[controller!!.currentMediaItemIndex]
+
+            val originalOrderLookup = currentList
+                .sortedBy { it.originalOrder }
+                .mapIndexed { index, track -> track.queueId to index }
+                .toMap()
+
+            val newList =
+                if (isShuffleEnabled.value){
+                    currentList.mapIndexed { id, track ->
+                        track.copy(
+                            shuffledOrder = id,
+                            originalOrder = originalOrderLookup[track.queueId] ?: id
+                        )}
+                }
+                else {
+                    currentList.mapIndexed { id, track -> track.copy(originalOrder = id) }
+                }
+            updateQueue(newList)
+        }
+    }
+
+    fun toggleShuffle(){
+
+        viewModelScope.launch {
+            val currentPlayingId = queue.value[controller!!.currentMediaItemIndex].queueId
+            val newShuffleState = !isShuffleEnabled.value
+            val freshQueue = withContext(Dispatchers.IO) {
+                playQueueRepository.updateShuffle(newShuffleState)
+                if (newShuffleState) {
+                    playQueueRepository.shuffleQueue(currentPlayingId)
+                }
+                playQueueRepository.getCurrentQueue(newShuffleState).first()
+            }
+
+            val controller = controller ?: return@launch
+            freshQueue.forEachIndexed { newIndex, item ->
+                val oldIndex = findCurrentIndexInController(controller, item.uuid)
+                if (oldIndex != newIndex){
+                    controller.moveMediaItem(oldIndex, newIndex)
+                }
+            }
+            val startIndex = freshQueue.indexOfFirst { it.uuid==currentPlayingId }
+            _currentTrack.value = PlayQueueItemUUID(
+                queueId = freshQueue[startIndex].uuid,
+                originalOrder = freshQueue[startIndex].orderIndex,
+                shuffledOrder = freshQueue[startIndex].shuffledIndex ?: 0,
+                track = freshQueue[startIndex].trackInfo
+            )
+
+            updatePlaybackSession()
+
+        }
+    }
+
+    private fun findCurrentIndexInController(controller: MediaController, uuid: String): Int {
+        for (i in 0 until controller.mediaItemCount) {
+            if (controller.getMediaItemAt(i).mediaId == uuid) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    fun toggleRepeat(){
+        viewModelScope.launch {
+            val newMode = when (controller!!.repeatMode) {
+                Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_OFF
+                else -> Player.REPEAT_MODE_OFF
+            }
+            controller!!.repeatMode = newMode
+            playQueueRepository.updateRepeat(newMode)
+        }
+
+    }
+
 }

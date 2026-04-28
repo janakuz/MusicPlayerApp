@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.entity.Track
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface TrackRepository {
@@ -14,7 +15,7 @@ interface TrackRepository {
 
     fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>>
 
-    fun getAllTracks(orderBy: SortField, descending: Boolean): Flow<List<TrackInfo>>
+    fun getAllTracks(orderBy: SortOption): Flow<List<TrackInfo>>
 
     fun getAllTracksFull(): Flow<List<Track>>
 
@@ -26,6 +27,12 @@ interface TrackRepository {
 
     fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
 
+    suspend fun getAlbumTracks(albumId: Int): List<TrackInfo>
+
+    suspend fun getTrackByUri(uri: String): Track?
+
+    suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo>
+
     suspend fun insertAll(tracks: List<Track>)
 
     suspend fun insert(track: Track)
@@ -33,6 +40,10 @@ interface TrackRepository {
     suspend fun update(track: Track)
 
     suspend fun delete(track: Track)
+
+    suspend fun getAllUris(): List<String>
+
+    suspend fun deleteByUri(uris: List<String>)
 }
 
 

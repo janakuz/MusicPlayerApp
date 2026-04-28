@@ -28,18 +28,22 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
+import com.example.musicapp.R
 
 @Composable
 fun NowPlayingBar(
     playerViewModel: PlayerViewModel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    currentRoute: String?,
+    modifier: Modifier?
 ) {
-    val track by playerViewModel.currentTrack.collectAsState()
-    var isPlaying by playerViewModel.isPlaying
+    val trackState by playerViewModel.currentTrack.collectAsState()
+    val isPlaying by playerViewModel.isPlaying.collectAsState()
 
+//    val nowPlayingState by playerViewModel.nowPlayingUiState.collectAsState()
 
-    if (track == null) return
+    if (currentRoute == "nowPlaying") return
 
     Row(
         modifier = Modifier
@@ -49,51 +53,66 @@ fun NowPlayingBar(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(track!!.albumArt)
-                .crossfade(true)
-                .diskCachePolicy(CachePolicy.ENABLED)
-                .build(),
-            contentDescription = null,
-            modifier = Modifier.size(56.dp)
-        )
+        val track = trackState?.track
+        if (track != null) {
 
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp)
-        ) {
-            Text(text = track!!.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                text = track!!.artistName,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(track.albumArt)
+                    .size(128)
+                    .crossfade(false)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(track.albumArt)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .placeholderMemoryCacheKey(track.albumArt)
+                    .memoryCacheKey(track.albumArt)
+                    .build(),
+                contentDescription = null,
+                placeholder = painterResource(R.drawable.baseline_album_24),
+                error = painterResource(R.drawable.baseline_album_24),
+                fallback = painterResource(R.drawable.baseline_album_24),
+                modifier = Modifier.size(56.dp)
             )
-        }
 
-        IconButton(onClick = { playerViewModel.skipToPrevious() }) {
-            Icon(Icons.Default.SkipPrevious, contentDescription = "Previous")
-        }
-
-        IconButton(onClick = {
-            if (isPlaying == true) {
-                playerViewModel.controller.value?.pause()
-                isPlaying = false
-            } else {
-                playerViewModel.controller.value?.play()
-                isPlaying = true
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(text = track.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = track.artistName,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-        }) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (isPlaying) "Pause" else "Play"
-            )
-        }
 
-        IconButton(onClick = { playerViewModel.skipToNext() }) {
-            Icon(Icons.Default.SkipNext, contentDescription = "Next")
+            IconButton(onClick = {
+                if (playerViewModel.hasPrevMediaItem() == true) {
+                    playerViewModel.skipToPrevious()
+                }
+            }) {
+                Icon(Icons.Default.SkipPrevious, contentDescription = "Previous")
+            }
+
+            IconButton(onClick = {
+                playerViewModel.togglePlayback()
+            }) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play"
+                )
+            }
+
+            IconButton(onClick = {
+                if (playerViewModel.hasNextMediaItem() == true) {
+                    playerViewModel.skipToNext()
+                }
+            }) {
+                Icon(Icons.Default.SkipNext, contentDescription = "Next")
+            }
         }
     }
+
 }

@@ -3,38 +3,123 @@ package com.example.musicapp.ui.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.LibraryScanner
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.workDataOf
+import com.example.musicapp.LocalLibraryScanner
+import com.example.musicapp.MetadataWorker
+import com.example.musicapp.data.repository.WorkerManagerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 data class ScanUiState(
     val isScanning: Boolean = false,
-    val progress: Int = 0, // optional
+    val isEnriching: Boolean = false,
+    val scanProgress: Float = 0f,
+    val enrichmentProgress: Float = 0f,
+    val statusMessage: String? = null,
     val error: String? = null
 )
 
+sealed class Phase {
+    object Idle : Phase()
+    object Scanning : Phase()
+    object Enriching : Phase()
+    data class Error(val error: String): Phase()
+}
+
 @HiltViewModel
 class LibraryScanViewModel @Inject constructor(
-    private val scanner: LibraryScanner,
+    private val scanner: LocalLibraryScanner,
+    private val workerManagerRepository: WorkerManagerRepository
+//    private val workManager: WorkManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
+    private val _workflowState = MutableStateFlow<Phase>(Phase.Idle)
+    val workflowState = _workflowState.asStateFlow()
+
+    init {
+        observeEnrichment()
+    }
 
     fun startScan(context: Context) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isScanning = true, error = null) }
+            _workflowState.value = Phase.Scanning
             try {
-                scanner.scanAll(context)
-                _uiState.update { it.copy(isScanning = false) }
+                scanner.scanAll(context) { progress ->
+                    _uiState.update { it.copy(scanProgress = progress) }
+                }
+
+                _uiState.update { it.copy(isScanning = false, isEnriching = true) }
+                _workflowState.value = Phase.Enriching
+
+                workerManagerRepository.startWorker(true)
+
+//                val request = OneTimeWorkRequestBuilder<MetadataWorker>()
+//                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+//                    .setConstraints(Constraints.Builder()
+//                        .setRequiredNetworkType(NetworkType.CONNECTED)
+//                        .build())
+//                    .setBackoffCriteria(
+//                        BackoffPolicy.EXPONENTIAL,
+//                        WorkRequest.MIN_BACKOFF_MILLIS,
+//                        TimeUnit.MILLISECONDS
+//                    )
+//                    .setInputData(workDataOf("IS_MANUAL_SCAN" to true))
+//                    .build()
+//                workManager.enqueueUniqueWork(
+//                    "MetadataSync",
+//                    ExistingWorkPolicy.KEEP,
+//                    request
+//                )
             } catch (e: Exception) {
                 _uiState.update { it.copy(isScanning = false, error = e.message) }
+                _workflowState.value = Phase.Error(e.message.toString())
             }
         }
     }
+
+    fun observeEnrichment() {
+        workerManagerRepository.getEnrichmentProgress()
+            .onEach { info ->
+                if (info == null) return@onEach
+
+                val current = info.progress.getInt("current", 0)
+                val total = info.progress.getInt("total", 0)
+                val albumTitle = info.progress.getString("albumTitle") ?: ""
+
+                if (info.state == WorkInfo.State.RUNNING) {
+                    _workflowState.value = Phase.Enriching
+                    _uiState.update { it.copy(
+                        isEnriching = true,
+                        enrichmentProgress = if (total > 0) current.toFloat() / total else 0f,
+                        statusMessage = "Enriching $albumTitle..."
+                    ) }
+                } else if (info.state.isFinished) {
+                    _uiState.update { it.copy(isEnriching = false, isScanning = false) }
+                    _workflowState.value = Phase.Idle
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
 }

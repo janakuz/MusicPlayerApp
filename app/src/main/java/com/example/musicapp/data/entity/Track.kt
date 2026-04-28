@@ -25,9 +25,9 @@ data class Track(
     val trackNumber: Int?,
     val lastPlayed: Long?,
     val fileUri: String,
+    val filePath: String,
     val valence: Int?,
     val energy: Int?,
     val key: String?,
     val bpm: Int?
-
 )

@@ -1,7 +1,11 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.dto.AlbumInfo
+import com.example.musicapp.data.dto.DiscogsSearchResponse
 import com.example.musicapp.data.dto.ReleaseSearchResponse
 import com.example.musicapp.data.entity.Album
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface AlbumRepository {
@@ -18,13 +22,27 @@ interface AlbumRepository {
 
     fun getAllAlbumsByDurationDesc(): Flow<List<Album>>
 
-    fun getAllAlbums(orderBy: SortFieldAlbum, descending: Boolean): Flow<List<Album>>
+    fun getAllAlbums(orderBy: SortOption): Flow<List<Album>>
 
     fun getAlbum(id: Int): Flow<Album>
 
-    suspend fun findAlbumMB(query: String): ReleaseSearchResponse
+    suspend fun getAll(): List<Album>
 
-    suspend fun getAlbumArt(mbid: String): String
+    suspend fun getById(id: Int): Album
+
+    suspend fun getByIdFull(id: Int): List<AlbumInfo>
+
+    suspend fun getByTitle(title: String, year: String?): Album?
+
+    suspend fun findAlbumMB(query: String): ReleaseSearchResponse?
+
+    suspend fun findAlbumDiscogs(artist: String, album: String, year: String?): DiscogsSearchResponse?
+
+    suspend fun getAlbumDiscogs(releaseId: String): AlbumDiscogsResponse?
+
+    suspend fun getAlbumArt(mbid: String): String?
+
+    suspend fun getAllCAAOptions(mbid: String): List<String>
 
     suspend fun insertAll(albums: List<Album>)
 
@@ -35,10 +53,12 @@ interface AlbumRepository {
     suspend fun update(album: Album)
 
     suspend fun delete(album: Album)
-}
 
-enum class SortFieldAlbum{
-    TITLE,
-    DURATION,
-    RELEASE_DATE
+    suspend fun deleteById(albumId: Int)
+
+    suspend fun deleteOrphaned()
+
+    suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>? = emptyList())
+
+    suspend fun getAlbumByMbid(mbid: String) : Album?
 }

@@ -17,12 +17,12 @@ apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
 
 android {
     namespace = "com.example.musicapp"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.musicapp"
-        minSdk = 24
-        targetSdk = 35
+        minSdk = 33
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -81,6 +81,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation("androidx.media3:media3-session:1.7.1")
     implementation("androidx.media3:media3-exoplayer:1.7.1")
@@ -93,6 +94,9 @@ dependencies {
     //   implementation(libs.androidx.navigation.compose.jvmstubs)
     implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")
     implementation("androidx.room:room-common-jvm:2.7.2")
+    implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
 // Hilt
@@ -102,6 +106,7 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     kapt("androidx.hilt:hilt-compiler:1.2.0")
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("androidx.palette:palette-ktx:1.0.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

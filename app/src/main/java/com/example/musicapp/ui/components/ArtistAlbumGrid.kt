@@ -1,10 +1,13 @@
 package com.example.musicapp.ui.components
 
+import android.util.Log
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,17 +27,33 @@ fun Grid(
     listItems: List<GridItem>,
     shape: Shape,
     isAlbum: Boolean,
+    onPlayNext: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     showReleaseDate: Boolean = false,
-    onClick: ((GridItem) -> Unit)? = null) {
+    onClick: ((GridItem) -> Unit)? = null,
+    header: (@Composable () -> Unit)? = null,
+    onDelete: (Int, String) -> Unit,
+    onRefetch: (Int) -> Unit,
+) {
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
     ) {
-        items(listItems) { item ->
+
+        if (header != null){
+            item(span = {
+                GridItemSpan(maxLineSpan)
+            }) { header() }
+        }
+
+
+        items(listItems, key = {it.id}) { item ->
             var artist = ""
             if (isAlbum) {
     //            if (!showReleaseDate)
@@ -42,7 +61,7 @@ fun Grid(
     //            else
                     artist = (item as GridItem.AlbumItem).releaseYear
             }
-            Box(    modifier = Modifier.fillMaxWidth(),
+            Box( modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center) {
                 ImageWithTextColumn(
                     image = item.imageRes,
@@ -53,7 +72,12 @@ fun Grid(
                     albumArtist = artist,
                     textStyle = textStyle,
                     onClick = onClick,
-                    item = item
+                    onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
+                    onEdit = onEdit,
+                    item = item,
+                    onDelete = onDelete,
+                    onRefetch = onRefetch
                 )
             }
         }
