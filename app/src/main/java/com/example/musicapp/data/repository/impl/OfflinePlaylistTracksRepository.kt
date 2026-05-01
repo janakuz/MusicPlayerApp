@@ -1,0 +1,62 @@
+package com.example.musicapp.data.repository.impl
+
+import com.example.musicapp.data.dao.PlaylistDao
+import com.example.musicapp.data.dao.PlaylistTracksDao
+import com.example.musicapp.data.dto.PlaylistTrack
+import com.example.musicapp.data.entity.PlaylistTracks
+import com.example.musicapp.data.repository.PlaylistRepository
+import com.example.musicapp.data.repository.PlaylistTracksRepository
+import kotlinx.coroutines.flow.Flow
+
+class OfflinePlaylistTracksRepository (
+    private val playlistTracksDao: PlaylistTracksDao,
+    private val playlistRepository: PlaylistRepository
+) : PlaylistTracksRepository {
+    override suspend fun removeTrackFromPlaylist(entryId: Int, playlistId: Int) {
+        val position = playlistTracksDao.getTrackPosition(entryId)
+        position?.let { pos ->
+            playlistTracksDao.removeTrackFromPlaylistByIds(entryId)
+            playlistTracksDao.shiftPositionsDown(playlistId, pos)
+            val playlist = playlistRepository.getPlaylistById(playlistId)
+            playlistRepository.update(playlist)
+        }
+    }
+
+    override suspend fun insertTrackToPlaylist(playlistId: Int, trackId: Int) {
+        val position = playlistTracksDao.getMaxPosition(playlistId)
+        val newEntryPosition = if (position != null) position + 1 else 0
+        val entry = PlaylistTracks(
+            playlistId = playlistId,
+            trackId = trackId,
+            position = newEntryPosition,
+            addedAt = System.currentTimeMillis()
+        )
+        playlistTracksDao.insertTrackToPlaylist(entry)
+    }
+
+    override fun getAllTracksInPlaylist(
+        playlistId: Int,
+        sortBy: String,
+        ascending: Boolean
+    ) : Flow<List<PlaylistTrack>> {
+        return playlistTracksDao.getTracksForPlaylistByPosition(playlistId)
+    }
+
+    override suspend fun addTracksToPlaylist(playlistId: Int, trackIds: List<Int>) {
+        val startPos = (playlistTracksDao.getMaxPosition(playlistId) ?: -1) + 1
+        val timestamp = System.currentTimeMillis()
+
+        val entries = trackIds.mapIndexed { index, trackId ->
+            PlaylistTracks(
+                playlistId = playlistId,
+                trackId = trackId,
+                position = startPos + index,
+                addedAt = timestamp
+            )
+        }
+
+        playlistTracksDao.insertAll(entries)
+        val playlist = playlistRepository.getPlaylistById(playlistId)
+        playlistRepository.update(playlist)
+    }
+}

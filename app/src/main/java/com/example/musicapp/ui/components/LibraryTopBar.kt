@@ -84,6 +84,7 @@ fun SelectionTopBar(
     onDelete: () -> Unit,
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
+    onAddToPlaylist: () -> Unit,
     ){
     TopAppBar(
         title = {
@@ -143,6 +144,15 @@ fun SelectionTopBar(
                         text = { Text("Delete") },
                         onClick = {
                             onDelete()
+                            onClear()
+                            expanded = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Add to Playlist") },
+                        onClick = {
+                            onAddToPlaylist()
                             onClear()
                             expanded = false
                         }

@@ -13,6 +13,8 @@ import com.example.musicapp.data.dao.AlbumGenreDao
 import com.example.musicapp.data.dao.ArtistDao
 import com.example.musicapp.data.dao.GenreDao
 import com.example.musicapp.data.dao.MoodDao
+import com.example.musicapp.data.dao.PlaylistDao
+import com.example.musicapp.data.dao.PlaylistTracksDao
 import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.dao.TrackMoodDao
@@ -25,6 +27,8 @@ import com.example.musicapp.data.entity.QueueItem
 import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.entity.TrackMood
 import com.example.musicapp.data.entity.Mood
+import com.example.musicapp.data.entity.Playlist
+import com.example.musicapp.data.entity.PlaylistTracks
 import java.util.concurrent.Executors
 
 @Database(
@@ -38,8 +42,10 @@ import java.util.concurrent.Executors
         AlbumGenre::class,
         Mood::class,
         TrackMood::class,
+        Playlist::class,
+        PlaylistTracks::class,
         ],
-    version = 13,
+    version = 14,
     exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao
@@ -51,6 +57,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun albumGenreDao(): AlbumGenreDao
     abstract fun moodDao(): MoodDao
     abstract fun trackMoodDao(): TrackMoodDao
+    abstract fun playlistDao(): PlaylistDao
+    abstract fun playlistTracksDao(): PlaylistTracksDao
 
 
 

@@ -193,8 +193,9 @@ fun TrackRow(
     modifier: Modifier = Modifier,
     reorderModifier: Modifier = Modifier,
     onDelete: (List<Int>) -> Unit,
-    onMove: ((List<Int>) -> Unit)? = null
-) {
+    onMove: ((List<Int>) -> Unit)? = null,
+    onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
+    ) {
     var expanded by remember { mutableStateOf(false) }
 
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
@@ -319,6 +320,15 @@ fun TrackRow(
                             text = { (Text("Remove from Queue")) },
                             onClick = {
                                 onRemoveFromQueue(trackIndex)
+                                expanded = false
+                            }
+                        )
+                    }
+                    if (onRemoveFromPlaylist != null) {
+                        DropdownMenuItem(
+                            text = { (Text("Remove from Playlist")) },
+                            onClick = {
+                                onRemoveFromPlaylist(track)
                                 expanded = false
                             }
                         )
@@ -482,6 +492,7 @@ fun TrackList(
     onRemoveFromQueue: ((Int) -> Unit)? = null,
     onEdit: (TrackInfo) -> Unit,
     onMove: ((List<Int>) -> Unit)? = null,
+    onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
     showReorderIconStart: Boolean = false,
     showReorderIconEnd: Boolean = false,
     showTrackNum: Boolean = false,
@@ -578,7 +589,8 @@ fun TrackList(
                     ),
                     onEdit = onEdit,
                     onDelete = {ids -> pendingDeletion = DeleteEvent(ids)},
-                    onMove = onMove
+                    onMove = onMove,
+                    onRemoveFromPlaylist = onRemoveFromPlaylist,
                 )
 
             }

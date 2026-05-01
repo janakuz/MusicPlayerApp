@@ -60,8 +60,11 @@ import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 import kotlinx.coroutines.launch
 import com.example.musicapp.data.repository.SearchResult
-
-
+import com.example.musicapp.ui.components.AddToPlaylistDialog
+import com.example.musicapp.ui.components.CreatePlaylistDialog
+import com.example.musicapp.ui.screens.PlaylistDetailScreen
+import com.example.musicapp.ui.screens.PlaylistsScreen
+import com.example.musicapp.ui.viewmodels.PlaylistViewModel
 
 
 enum class HomeScreen(@StringRes val title: Int) {
@@ -94,7 +97,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
-    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan)
+    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan,
+        HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     var artistSort by remember { mutableStateOf<SortOption?>(null) }
     var albumSort by remember { mutableStateOf<SortOption?>(null) }
@@ -107,6 +111,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel()
 
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
+
+    val playlistViewModel: PlaylistViewModel = hiltViewModel()
+    val createInfo by playlistViewModel.createInfo.collectAsState()
+    val allPlaylists by playlistViewModel.playlists.collectAsState()
+    val addState by playlistViewModel.addToPlaylistState.collectAsState()
 
     val filterViewModel: FilterViewModel = hiltViewModel()
 
@@ -221,6 +230,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             isQueueScreen = (currentRoute == "nowPlaying"),
                             onDelete = { selectionViewModel.requestDeletionOfSelected() },
                             onMove = { selectionViewModel.requestMove() },
+                            onAddToPlaylist = { playlistViewModel.onAdd(selection.selectedTrackIds.toList()) },
                             moveEnabled = moveEnabled
                         )
                     }
@@ -437,7 +447,34 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     )
                 }
 
+                composable(HomeScreen.Playlists.name) {
+                    PlaylistsScreen(
+                        createInfo = createInfo,
+                        onClick = { id -> navController.navigate("playlists/$id") },
+                        onCreateNewPlaylist = { playlistViewModel.showCreate() },
+                        onDismiss = { playlistViewModel.hideCreateDialog() },
+                        playlists = allPlaylists,
+                        onNameChange = { newName -> playlistViewModel.onNameChange(newName) },
+                        onConfirm = { playlistViewModel.createPlaylist() },
+                        onDelete = { id -> playlistViewModel.deletePlaylist(id) }
+                    )
+                }
 
+                composable("playlists/{playlistId}") {
+                    PlaylistDetailScreen (
+                        onTrackClick = { track, tracks ->
+                            playerViewModel.playTracks(tracks, track)
+                            navController.navigate("nowPlaying")
+                            {
+                                launchSingleTop = true
+                            }
+                        },
+                        onPlayNext = { track -> playerViewModel.playNext(track) },
+                        onAddToQueue = { track -> playerViewModel.addToQueue(track) },
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
+                        onRemove = { entry, playlist -> playlistViewModel.removeTrackFromPlaylist(entry, playlist) }
+                    )
+                }
 
                 composable("nowPlaying") { backStackEntry ->
                     NowPlayingWithQueue(
@@ -463,8 +500,32 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             }
 
 
+
+            if (addState.isShowing) {
+                AddToPlaylistDialog(
+                    playlists = allPlaylists,
+                    onDismiss = { playlistViewModel.hideAddDialog() },
+                    onPlaylistSelected = { playlistId ->
+                        playlistViewModel.addToPlaylist(addState.trackIds, playlistId)
+                    },
+                    onCreateNewPlaylist = {
+                        playlistViewModel.showCreate() }
+                )
+            }
+
+            if (createInfo.isShowing) {
+                CreatePlaylistDialog(
+                    createInfo = createInfo,
+                    onNameChange = { newName -> playlistViewModel.onNameChange(newName)},
+                    onDismiss = { playlistViewModel.hideCreateDialog() } ,
+                    onConfirm = {
+                        playlistViewModel.createPlaylistAndAdd(addState.trackIds)
+                    }
+                )
+            }
+
+
         }
     }
 }
-
 

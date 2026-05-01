@@ -27,5 +27,6 @@ data class PlaylistTracks(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val playlistId: Int,
     val trackId: Int,
-    val position: Int
+    val position: Int,
+    val addedAt: Long = System.currentTimeMillis()
 )
