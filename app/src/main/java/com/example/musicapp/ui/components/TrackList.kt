@@ -2,6 +2,7 @@ package com.example.musicapp.ui.components
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -498,6 +499,7 @@ fun TrackList(
     showTrackNum: Boolean = false,
     showArtwork: Boolean = false,
     strictHighlight: Boolean = false,
+    playlistHighlight: Boolean = false,
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to -> {} },
@@ -511,7 +513,7 @@ fun TrackList(
     val playerViewModel: PlayerViewModel = hiltViewModel(activity as ViewModelStoreOwner)
     val currentTrack by playerViewModel.currentTrack.collectAsState()
 
-    val currentTrackId = if (strictHighlight) currentTrack?.queueId else currentTrack?.track?.trackId
+    val currentTrackId = if (strictHighlight) currentTrack?.queueId else if (playlistHighlight) currentTrack?.playlistEntryId else currentTrack?.track?.trackId
 
     val trackDeletionViewModel: TrackDeletionViewModel = hiltViewModel()
 
@@ -560,6 +562,7 @@ fun TrackList(
         }
         itemsIndexed(tracks, key = { index, track -> track.key }) { id, queueTrack ->
             val track = queueTrack.data
+            Log.d("highlight", "$playlistHighlight ${queueTrack.key} $currentTrackId")
             ReorderableItem(reorderable, key = queueTrack.key) { isDragging ->
                 TrackRow(
                     artwork = track.albumArt.toString(),

@@ -12,4 +12,6 @@ interface PlaylistTracksRepository {
     fun getAllTracksInPlaylist(playlistId: Int, sortBy: String, ascending: Boolean) : Flow<List<PlaylistTrack>>
 
     suspend fun addTracksToPlaylist(playlistId: Int, trackIds: List<Int>)
+
+    fun getAll() : Flow<List<PlaylistTrack>>
 }

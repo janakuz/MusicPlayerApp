@@ -59,4 +59,8 @@ class OfflinePlaylistTracksRepository (
         val playlist = playlistRepository.getPlaylistById(playlistId)
         playlistRepository.update(playlist)
     }
+
+    override fun getAll(): Flow<List<PlaylistTrack>> {
+        return playlistTracksDao.getALl()
+    }
 }

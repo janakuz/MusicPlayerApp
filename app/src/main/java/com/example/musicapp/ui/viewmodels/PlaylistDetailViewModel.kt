@@ -28,5 +28,8 @@ class PlaylistDetailViewModel @Inject constructor(
     val playlistInfo = playlistRepository.getPlaylist(playlistId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val playlistStats = playlistRepository.getPlaylistStats(playlistId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
 }
 

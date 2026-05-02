@@ -198,6 +198,7 @@ class PlayerViewModel @Inject constructor (
                             )
                             _currentTrack.value = PlayQueueItemUUID(
                                 queueId = mediaItem?.mediaId ?: "",
+                                playlistEntryId = mediaItem?.mediaMetadata?.extras?.getInt("entryId"),
                                 track = track,
                                 originalOrder = 0,
                                 shuffledOrder = 0
@@ -537,18 +538,24 @@ class PlayerViewModel @Inject constructor (
     }
 
 
-    fun playTracks(tracks: List<TrackInfo>, selectedTrack: TrackInfo){
+    fun playTracks(tracks: List<TrackInfo>, selectedTrack: TrackInfo, currentEntryId: Int? = null, entryIds: List<Int>? = null){
         val queueTracks = tracks.mapIndexed { id, track ->
             PlayQueueItemUUID(
                 track = track,
-                originalOrder = id)
+                originalOrder = id,
+                playlistEntryId = entryIds?.get(id)
+                )
         }
+
+        Log.d("highlight", queueTracks.joinToString())
 
         val mediaItems = queueTracks.map { track ->
             toMediaItem(track)
         }
 
-        val startIndex = tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
+        val startIndex =
+            if (currentEntryId != null) queueTracks.indexOfFirst { it.playlistEntryId == currentEntryId}
+            else tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
 
         controller!!.setMediaItems(mediaItems)
         controller!!.prepare()
@@ -577,7 +584,8 @@ class PlayerViewModel @Inject constructor (
                         bundleOf(
                             "ID" to queueItem.track.trackId,
                             "artistId" to queueItem.track.artistId,
-                            "albumId" to queueItem.track.albumId
+                            "albumId" to queueItem.track.albumId,
+                            "entryId" to queueItem.playlistEntryId
                         )
                     )
                     .setTitle(queueItem.track.title.toString())

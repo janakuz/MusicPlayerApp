@@ -116,6 +116,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val createInfo by playlistViewModel.createInfo.collectAsState()
     val allPlaylists by playlistViewModel.playlists.collectAsState()
     val addState by playlistViewModel.addToPlaylistState.collectAsState()
+    val playlistUiStates by playlistViewModel.playlistUiStates.collectAsState()
 
     val filterViewModel: FilterViewModel = hiltViewModel()
 
@@ -453,17 +454,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onClick = { id -> navController.navigate("playlists/$id") },
                         onCreateNewPlaylist = { playlistViewModel.showCreate() },
                         onDismiss = { playlistViewModel.hideCreateDialog() },
-                        playlists = allPlaylists,
+//                        playlists = allPlaylists,
                         onNameChange = { newName -> playlistViewModel.onNameChange(newName) },
                         onConfirm = { playlistViewModel.createPlaylist() },
-                        onDelete = { id -> playlistViewModel.deletePlaylist(id) }
+                        onDelete = { id -> playlistViewModel.deletePlaylist(id) },
+                        playlistStates = playlistUiStates
                     )
                 }
 
                 composable("playlists/{playlistId}") {
                     PlaylistDetailScreen (
-                        onTrackClick = { track, tracks ->
-                            playerViewModel.playTracks(tracks, track)
+                        onTrackClick = { track, tracks, entryId, entryIds ->
+                            playerViewModel.playTracks(tracks, track, entryId, entryIds)
                             navController.navigate("nowPlaying")
                             {
                                 launchSingleTop = true

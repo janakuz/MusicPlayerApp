@@ -7,10 +7,16 @@ import com.example.musicapp.data.entity.Playlist
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,6 +42,22 @@ class PlaylistViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val playlistUiStates = playlistRepository.getAllPlaylists("title", true).flatMapLatest { playlists ->
+        combine(playlists.map { playlist ->
+            playlistRepository.getPlaylistStats(playlist.id).map { stats ->
+                PlaylistUiModel(
+                    playlist = playlist,
+                    top4Images = stats.images,
+                    trackCount = stats.trackCount,
+                    totalDuration = stats.duration
+                )
+            }
+        }) { it.toList() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 
     fun createPlaylistAndAdd(tracks: List<Int>) {
         viewModelScope.launch {
@@ -100,11 +122,19 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
+
 }
 
 data class CreatePlaylistState(
     val name: String = "",
     val isShowing: Boolean = false
+)
+
+data class PlaylistUiModel(
+    val playlist: Playlist,
+    val top4Images: List<String>,
+    val trackCount: Int,
+    val totalDuration: Long
 )
 
 data class AddToPlaylistState(val trackIds: List<Int>, val isShowing: Boolean)

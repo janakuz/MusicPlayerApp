@@ -442,8 +442,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providePlaylistRepository(playlistDao: PlaylistDao): PlaylistRepository {
-        return OfflinePlaylistRepository(playlistDao)
+    fun providePlaylistRepository(
+        playlistDao: PlaylistDao,
+        playlistTracksDao: PlaylistTracksDao): PlaylistRepository {
+        return OfflinePlaylistRepository(playlistDao, playlistTracksDao)
     }
 
     @Provides

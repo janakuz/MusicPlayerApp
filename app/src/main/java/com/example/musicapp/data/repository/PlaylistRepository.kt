@@ -1,7 +1,9 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.dto.PlaylistTrack
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.entity.Playlist
+import com.example.musicapp.data.entity.PlaylistTracks
 import kotlinx.coroutines.flow.Flow
 
 interface PlaylistRepository {
@@ -19,5 +21,14 @@ interface PlaylistRepository {
 
     suspend fun deleteById(playlistId: Int)
 
+    fun getArtForCollage(playlistId: Int) : Flow<List<String>>
+
+    fun getPlaylistStats(playlistId: Int) : Flow<PlaylistStats>
 
 }
+
+data class PlaylistStats(
+    val images: List<String> = emptyList<String>(),
+    val trackCount: Int,
+    val duration: Long,
+)
