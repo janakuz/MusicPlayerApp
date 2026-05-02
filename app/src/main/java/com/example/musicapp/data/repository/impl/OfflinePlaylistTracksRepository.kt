@@ -63,4 +63,18 @@ class OfflinePlaylistTracksRepository (
     override fun getAll(): Flow<List<PlaylistTrack>> {
         return playlistTracksDao.getALl()
     }
+
+    override suspend fun reorder(reordered: List<PlaylistTrack>) {
+        val entries = reordered.mapIndexed { ind, it ->
+            PlaylistTracks(
+                id = it.entryId,
+                playlistId = it.playlistId,
+                trackId = it.trackInfo.trackId,
+                position = ind,
+                addedAt = it.addedAt
+            )
+        }
+
+        playlistTracksDao.reorder(entries)
+    }
 }

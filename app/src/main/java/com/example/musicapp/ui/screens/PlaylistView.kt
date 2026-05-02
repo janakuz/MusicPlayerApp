@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
@@ -20,22 +21,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.viewmodels.PlaylistDetailViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.room.Delete
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.data.entity.Playlist
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.components.formatDuration
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun PlaylistDetailScreen(
@@ -56,6 +61,36 @@ fun PlaylistDetailScreen(
     val trackInfos = tracks.map { it.trackInfo }
     val entryIds = tracks.map { it.entryId }
 
+
+    val lazyListState = rememberLazyListState()
+    var isDragging by remember { mutableStateOf(false) }
+    var visiblePlaylist by remember { mutableStateOf(tracks.toList()) }
+
+    LaunchedEffect(tracks) {
+        if (!isDragging) {
+            visiblePlaylist = tracks.toList()
+        }
+    }
+
+    val reorderableLazyListState = rememberReorderableLazyListState (
+        lazyListState = lazyListState,
+        onMove = { from, to ->
+            visiblePlaylist = visiblePlaylist.toMutableList().apply {
+                add(to.index-1, removeAt(from.index-1))
+            }
+        },
+    )
+
+
+    LaunchedEffect(reorderableLazyListState.isAnyItemDragging) {
+        if (reorderableLazyListState.isAnyItemDragging) {
+            isDragging = true
+        } else if (isDragging) {
+            playlistDetailViewModel.reorder(visiblePlaylist)
+            isDragging = false
+        }
+    }
+
     TrackList(
         visualTracks,
         onClick = { track -> onTrackClick(track.data, trackInfos, track.key as Int, entryIds) },
@@ -74,8 +109,11 @@ fun PlaylistDetailScreen(
             )
         },
         onEdit = onEdit,
-        onRemoveFromPlaylist = { track -> onRemove(track.key as Int, info?.id ?: -1) }
-    )
+        onRemoveFromPlaylist = { track -> onRemove(track.key as Int, info?.id ?: -1) },
+        state = lazyListState,
+        reorderable = reorderableLazyListState,
+        showReorderIconStart = true,
+        )
 
 }
 

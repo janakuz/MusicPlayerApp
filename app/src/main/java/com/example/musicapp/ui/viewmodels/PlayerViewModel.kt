@@ -547,8 +547,6 @@ class PlayerViewModel @Inject constructor (
                 )
         }
 
-        Log.d("highlight", queueTracks.joinToString())
-
         val mediaItems = queueTracks.map { track ->
             toMediaItem(track)
         }

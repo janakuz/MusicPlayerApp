@@ -14,4 +14,6 @@ interface PlaylistTracksRepository {
     suspend fun addTracksToPlaylist(playlistId: Int, trackIds: List<Int>)
 
     fun getAll() : Flow<List<PlaylistTrack>>
+
+    suspend fun reorder(reordered: List<PlaylistTrack>)
 }

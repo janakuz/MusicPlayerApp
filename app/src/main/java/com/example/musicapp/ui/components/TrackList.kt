@@ -562,7 +562,6 @@ fun TrackList(
         }
         itemsIndexed(tracks, key = { index, track -> track.key }) { id, queueTrack ->
             val track = queueTrack.data
-            Log.d("highlight", "$playlistHighlight ${queueTrack.key} $currentTrackId")
             ReorderableItem(reorderable, key = queueTrack.key) { isDragging ->
                 TrackRow(
                     artwork = track.albumArt.toString(),

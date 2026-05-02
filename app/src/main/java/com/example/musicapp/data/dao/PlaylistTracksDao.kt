@@ -36,6 +36,9 @@ interface PlaylistTracksDao {
 """)
     suspend fun shiftPositionsDown(playlistId: Int, deletedPosition: Int)
 
+    @Update
+    suspend fun reorder(reordered: List<PlaylistTracks>)
+
     @Query("SELECT position FROM playlist_tracks WHERE id = :entryId")
     suspend fun getTrackPosition(entryId: Int): Int?
 
@@ -43,7 +46,7 @@ interface PlaylistTracksDao {
     suspend fun getMaxPosition(playlistId: Int): Int?
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -81,7 +84,7 @@ interface PlaylistTracksDao {
     fun getDuration(playlistId: Int): Flow<Long>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -93,7 +96,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByPosition(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -105,7 +108,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByTimeAdded(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -118,7 +121,7 @@ interface PlaylistTracksDao {
 
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -137,7 +140,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByTrackTitle(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -156,7 +159,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByTrackTitleDesc(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -175,7 +178,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByAlbumTitle(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -194,7 +197,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByAlbumTitleDesc(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
@@ -213,7 +216,7 @@ interface PlaylistTracksDao {
     fun getTracksForPlaylistByArtist(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""
-        SELECT pt.id as entryId, pt.position, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
         FROM playlist_tracks pt
         JOIN tracks t on pt.trackId=t.id
