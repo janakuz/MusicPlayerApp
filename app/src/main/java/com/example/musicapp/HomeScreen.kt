@@ -78,6 +78,7 @@ import com.example.musicapp.data.repository.SearchResult
 import com.example.musicapp.ui.components.AddToPlaylistDialog
 import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.screens.PlaylistDetailScreen
+import com.example.musicapp.ui.screens.PlaylistEditScreen
 import com.example.musicapp.ui.screens.PlaylistsScreen
 import com.example.musicapp.ui.viewmodels.PlaylistViewModel
 
@@ -123,7 +124,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    val editRoutes = listOf<String>("artist/edit", "album/edit", "track/edit")
+    val editRoutes = listOf<String>("artist/edit", "album/edit", "track/edit", "playlist/edit", "playlist/create")
 
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel()
 
@@ -498,13 +499,14 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     PlaylistsScreen(
                         createInfo = createInfo,
                         onClick = { id -> navController.navigate("playlists/$id") },
-                        onCreateNewPlaylist = { playlistViewModel.showCreate() },
+                        onCreateNewPlaylist = { navController.navigate("playlist/create") },
                         onDismiss = { playlistViewModel.hideCreateDialog() },
 //                        playlists = allPlaylists,
                         onNameChange = { newName -> playlistViewModel.onNameChange(newName) },
                         onConfirm = { playlistViewModel.createPlaylist() },
                         onDelete = { id -> playlistViewModel.deletePlaylist(id) },
-                        playlistStates = playlistUiStates
+                        playlistStates = playlistUiStates,
+                        onEdit = { id -> navController.navigate("playlist/edit/$id") }
                     )
                 }
 
@@ -523,6 +525,19 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onRemove = { entry, playlist -> playlistViewModel.removeTrackFromPlaylist(entry, playlist) }
                     )
                 }
+
+                composable("playlist/edit/{playlistId}") {
+                    PlaylistEditScreen (
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("playlist/create") {
+                    PlaylistEditScreen (
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
 
                 composable("nowPlaying") { backStackEntry ->
                     NowPlayingWithQueue(

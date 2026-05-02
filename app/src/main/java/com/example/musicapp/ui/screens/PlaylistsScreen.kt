@@ -67,6 +67,7 @@ fun PlaylistsScreen(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onDelete: (Int) -> Unit,
+    onEdit: (Int) -> Unit,
 ) {
     if (createInfo.isShowing) {
         CreatePlaylistDialog(
@@ -94,6 +95,7 @@ fun PlaylistsScreen(
                 PlaylistRow(
                     playlist = playlistModel.playlist,
                     onClick = { onClick(playlistModel.playlist.id) },
+                    onEdit = onEdit,
                     onDelete = onDelete,
                     trackCount = playlistModel.trackCount,
                     duration = playlistModel.totalDuration,
@@ -111,6 +113,7 @@ fun PlaylistRow(
     duration: Long,
     images: List<String> = emptyList<String>(),
     onClick: () -> Unit,
+    onEdit: (Int) -> Unit,
     onDelete: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
         Row(Modifier
@@ -128,7 +131,17 @@ fun PlaylistRow(
                     .size(48.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (images.isNotEmpty()) PlaylistCollage(images, modifier = Modifier)
+                if (playlist.image != null && playlist.image != "")
+                    AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(playlist.image)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                )
+                else if (images.isNotEmpty()) PlaylistCollage(images, modifier = Modifier)
                 else Icon(Icons.Default.MusicNote, contentDescription = "")
             }
 
@@ -158,6 +171,15 @@ fun PlaylistRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
+
+                DropdownMenuItem(
+                    text = { Text("Edit") },
+                    onClick = {
+                        onEdit(playlist.id)
+                        expanded = false
+                    }
+                )
+
                 DropdownMenuItem(
                     text = { Text("Delete") },
                     onClick = {

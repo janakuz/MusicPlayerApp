@@ -1,5 +1,7 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.example.musicapp.data.dto.PlaylistTrack
 import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.entity.Playlist
@@ -24,6 +26,8 @@ interface PlaylistRepository {
     fun getArtForCollage(playlistId: Int) : Flow<List<String>>
 
     fun getPlaylistStats(playlistId: Int) : Flow<PlaylistStats>
+
+    fun savePlaylistImage(context: Context, uri: Uri): String?
 
 }
 

@@ -146,7 +146,7 @@ fun PlaylistHeader(
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (playlistInfo?.image != null) {
+        if (playlistInfo?.image != null && playlistInfo.image != "") {
             ImageHeader(image = playlistInfo.image)
         }
         else if (top4Images.isNotEmpty()) {
@@ -225,7 +225,7 @@ fun PlaylistHeader(
         )
 
         Text(
-            text = playlistInfo?.description ?: "Placeholder",
+            text = playlistInfo?.description ?: "",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             maxLines = 2,

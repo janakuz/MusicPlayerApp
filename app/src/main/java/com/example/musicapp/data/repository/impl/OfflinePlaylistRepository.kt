@@ -1,5 +1,7 @@
 package com.example.musicapp.data.repository.impl
 
+import android.content.Context
+import android.net.Uri
 import com.example.musicapp.data.dao.PlaylistDao
 import com.example.musicapp.data.dao.PlaylistTracksDao
 import com.example.musicapp.data.dto.PlaylistTrack
@@ -9,6 +11,8 @@ import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistStats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import java.io.File
+import java.util.UUID
 
 class OfflinePlaylistRepository(
     private val playlistDao: PlaylistDao,
@@ -64,15 +68,26 @@ class OfflinePlaylistRepository(
             )
         }
     }
-//        val top4 = mutableListOf<String>()
-//        var i = 0
-//        while (top4.size < 4 && i < tracks.size){
-//            val current = tracks[i].trackInfo.albumArt
-//            if (current != null && current != "" && !top4.contains(current)){
-//                top4.add(current)
-//            }
-//        }
-//
-//        return top4
-//    }
+
+    override fun savePlaylistImage(
+        context: Context,
+        uri: Uri
+    ): String? {
+        return try {
+            val directory = File(context.filesDir, "playlist_covers")
+            if (!directory.exists()) directory.mkdirs()
+
+            val file = File(directory, "playlist_${UUID.randomUUID()}.jpg")
+
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                file.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 }
