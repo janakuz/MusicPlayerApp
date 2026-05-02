@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -183,8 +184,8 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     error = painterResource(R.drawable.baseline_album_24),
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
-                    modifier = Modifier
-                        .aspectRatio(1f),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
 
                 AsyncImage(
@@ -195,8 +196,8 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     error = painterResource(R.drawable.baseline_album_24),
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
-                    modifier = Modifier
-                        .aspectRatio(1f),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
             Row(Modifier.weight(1f)) {
@@ -208,8 +209,8 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     error = painterResource(R.drawable.baseline_album_24),
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
-                    modifier = Modifier
-                        .aspectRatio(1f),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -219,22 +220,23 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     error = painterResource(R.drawable.baseline_album_24),
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
-                    modifier = Modifier
-                        .aspectRatio(1f),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
         }
     } else {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(images[0])
-                .build(),
-            placeholder = painterResource(R.drawable.baseline_album_24),
-            error = painterResource(R.drawable.baseline_album_24),
-            fallback = painterResource(R.drawable.baseline_album_24),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize(),
-        )
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(images[0])
+                    .build(),
+                placeholder = painterResource(R.drawable.baseline_album_24),
+                error = painterResource(R.drawable.baseline_album_24),
+                fallback = painterResource(R.drawable.baseline_album_24),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth(),
+            )
     }
 }

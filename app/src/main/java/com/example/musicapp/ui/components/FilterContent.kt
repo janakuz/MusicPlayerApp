@@ -22,6 +22,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -60,6 +61,7 @@ fun FilterDrawerContent(
 
     LazyColumn(
         modifier = Modifier
+            .fillMaxHeight(0.7f)
             .focusRequester(dummyFocusRequester)
             .focusable()
             .clickable(

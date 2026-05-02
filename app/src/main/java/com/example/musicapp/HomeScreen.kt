@@ -6,13 +6,27 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -20,6 +34,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -97,14 +112,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
-    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Scan,
-        HomeScreen.Playlists)
+    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, )
+    val noBack = tabs + listOf(HomeScreen.Scan,HomeScreen.Playlists)
+//    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     var artistSort by remember { mutableStateOf<SortOption?>(null) }
     var albumSort by remember { mutableStateOf<SortOption?>(null) }
     var trackSort by remember { mutableStateOf<SortOption?>(null) }
     var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    var showFilterSheet by remember { mutableStateOf(false) }
 
     val editRoutes = listOf<String>("artist/edit", "album/edit", "track/edit")
 
@@ -129,7 +146,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
-    val isInteracting by sliderInteractionSource.collectIsDraggedAsState()
 
 
 
@@ -141,26 +157,55 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = !isInteracting,
         drawerContent = {
-            ModalDrawerSheet {
-                FilterDrawerContent(
-                    draft = draftFilter,
-                    potentialCount = filterCount,
-                    filterDefaults = filterDefaults,
-                    labelSuggestions = labelSuggestions,
-                    onDraftChange = {filter -> filterViewModel.updateDraft(filter)},
-                    onLabelQueryChange = {query -> filterViewModel.onLabelQueryChange(query)},
-                    interaction = sliderInteractionSource,
-                    onApply = {
-                        filterViewModel.applyFilters()
+            ModalDrawerSheet(
+                modifier = Modifier.requiredWidth(300.dp)
+            ) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "My Music Library",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Library") },
+                    selected = currentRoute in listOf(HomeScreen.Artists.name, HomeScreen.Albums.name,
+                        HomeScreen.Tracks.name),
+                    onClick = {
+                        navController.navigate(HomeScreen.Artists.name)
                         scope.launch { drawerState.close() }
-                        navController.navigate("filter_results")
-                    }
+                    },
+                    icon = { Icon(Icons.Default.LibraryMusic, null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Playlists") },
+                    selected = currentRoute == HomeScreen.Playlists.name,
+                    onClick = {
+                        navController.navigate(HomeScreen.Playlists.name)
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Scan Device") },
+                    selected = currentRoute == HomeScreen.Scan.name,
+                    onClick = {
+                        navController.navigate(HomeScreen.Scan.name)
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Sync, null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }
         }
     )
+
+
 
     {
         Scaffold(
@@ -178,6 +223,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 Column {
                     val selectedTabIndex =
                         tabs.indexOfFirst { it.name == currentRoute }
+                    val backIndex = noBack.indexOfFirst { it.name == currentRoute }
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     if (currentRoute != "nowPlaying" && !selectionMode && editRoutes.all {
                             currentRoute?.startsWith(
@@ -186,7 +232,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         } && currentRoute?.startsWith("search") == false) {
                         LibraryTopBar(
                             currentScreen = routeToLibraryScreen(currentRoute),
-                            onFilterClick = { scope.launch { drawerState.open() } },
+                            onFilterClick = { showFilterSheet = true },
                             onSearchClick = {
                                 val artistId =
                                     navBackStackEntry?.arguments?.getString("artistId") ?: ""
@@ -213,10 +259,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     "artist/{artistId}" -> artistDetailSort = sort
                                 }
                             },
-                            onMenuClick = { },
-                            showBack = (selectedTabIndex < 0),
-                            onBack = if (selectedTabIndex < 0) ({ navController.popBackStack() }) else null,
-                            title = if (selectedTabIndex >= 0) currentRoute else null,
+                            onMenuClick = { scope.launch { drawerState.open() } },
+                            showBack = backIndex < 0,
+                            onBack = if (backIndex < 0) ({ navController.popBackStack() }) else null,
+                            title = if (backIndex >= 0) currentRoute else null,
                         )
                     }
                     if (selectionMode) {
@@ -527,6 +573,29 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             }
 
 
+
+            if (showFilterSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showFilterSheet = false },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                ) {
+                    FilterDrawerContent(
+                        draft = draftFilter,
+                        potentialCount = filterCount,
+                        filterDefaults = filterDefaults,
+                        labelSuggestions = labelSuggestions,
+                        onDraftChange = {filter -> filterViewModel.updateDraft(filter)},
+                        onLabelQueryChange = {query -> filterViewModel.onLabelQueryChange(query)},
+                        interaction = sliderInteractionSource,
+                        onApply = {
+                            filterViewModel.applyFilters()
+                            showFilterSheet = false
+                            navController.navigate("filter_results")
+                        }
+                    )
+                }
+
+            }
         }
     }
 }

@@ -47,7 +47,7 @@ fun LibraryTopBar(
         },
         navigationIcon = {
             if (!showBack) {
-                IconButton(onClick = { /* future */ }) {
+                IconButton(onClick = onMenuClick ) {
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                 }
             }
