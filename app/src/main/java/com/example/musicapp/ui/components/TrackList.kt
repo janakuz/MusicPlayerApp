@@ -183,6 +183,7 @@ fun TrackRow(
     onClick: (VisualTrack) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
     onEdit: (TrackInfo) -> Unit,
     showReorderIconStart: Boolean = false,
@@ -190,6 +191,7 @@ fun TrackRow(
     showTrackNum: Boolean = false,
     showArtwork: Boolean = false,
     useQueueId: Boolean = false,
+    usePlaylistId: Boolean = false,
     trackNum: Int = 0,
     modifier: Modifier = Modifier,
     reorderModifier: Modifier = Modifier,
@@ -229,10 +231,13 @@ fun TrackRow(
                 .fillMaxWidth()
                 .background(
                     if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                    else if (!useQueueId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                    else if (!useQueueId && ! usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
                     else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                        alpha = 0.7f
+                    )
+                    else if (usePlaylistId && track.key in selectionState.selectedPlaylistEntryIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
                     else Color.Transparent
@@ -240,13 +245,16 @@ fun TrackRow(
                 .combinedClickable(
                     onClick = {
                         if (!selectionMode) onClick(track)
-                        else if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId)
-                        else selectionViewModel.toggleSelection(track.key.toString())
+                        else if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(track.data.trackId)
+                        else if (useQueueId) selectionViewModel.toggleSelection(track.key.toString())
+                        else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
                     },
                     onLongClick = {
-                        if (!useQueueId) selectionViewModel.toggleSelection(track.data.trackId) else selectionViewModel.toggleSelection(
+                        if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(track.data.trackId)
+                        else if (useQueueId) selectionViewModel.toggleSelection(
                             track.key.toString()
                         )
+                        else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
                     }
                 )
                 .padding(horizontal = 8.dp),
@@ -316,6 +324,15 @@ fun TrackRow(
                             expanded = false
                         }
                     )
+
+                    DropdownMenuItem(
+                        text = { Text("Add to Playlist") },
+                        onClick = {
+                            onAddToPlaylist(track.data.trackId)
+                            expanded = false
+                        }
+                    )
+
                     if (onRemoveFromQueue != null) {
                         DropdownMenuItem(
                             text = { (Text("Remove from Queue")) },
@@ -492,6 +509,7 @@ fun TrackList(
     onAddToQueue: (TrackInfo) -> Unit,
     onRemoveFromQueue: ((Int) -> Unit)? = null,
     onEdit: (TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onMove: ((List<Int>) -> Unit)? = null,
     onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
     showReorderIconStart: Boolean = false,
@@ -579,6 +597,7 @@ fun TrackList(
                     duration = formatDuration(track.duration),
                     track = queueTrack,
                     useQueueId = strictHighlight,
+                    usePlaylistId = playlistHighlight,
                     trackIndex = id,
                     onRemoveFromQueue = onRemoveFromQueue,
                     reorderModifier = Modifier.draggableHandle(
@@ -593,6 +612,7 @@ fun TrackList(
                     onDelete = {ids -> pendingDeletion = DeleteEvent(ids)},
                     onMove = onMove,
                     onRemoveFromPlaylist = onRemoveFromPlaylist,
+                    onAddToPlaylist = onAddToPlaylist
                 )
 
             }

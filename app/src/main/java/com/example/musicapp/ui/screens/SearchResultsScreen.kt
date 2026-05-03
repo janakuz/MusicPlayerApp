@@ -52,6 +52,9 @@ fun SearchResultsScreen(
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
     onTrackClick: (List<TrackInfo>, TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
+    onAddToPlaylistArtist: (GridItem) -> Unit,
+    onAddToPlaylistAlbum: (GridItem) -> Unit,
     onBack: () -> Unit,
 ){
     val searchViewModel: SearchViewModel = hiltViewModel()
@@ -74,7 +77,15 @@ fun SearchResultsScreen(
     ) { padding ->
 
 
-        SearchContent(results, onArtistClick, onAlbumClick, onTrackClick, padding)
+        SearchContent(
+            results = results,
+            onArtistClick = onArtistClick,
+            onAlbumClick = onAlbumClick,
+            onTrackClick = onTrackClick,
+            onAddToPlaylist = onAddToPlaylist,
+            onAddToPlaylistArtist = onAddToPlaylistArtist,
+            onAddToPlaylistAlbum = onAddToPlaylistAlbum,
+            padding = padding,)
     }
 }
 
@@ -84,6 +95,9 @@ fun SearchContent(
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
     onTrackClick: (List<TrackInfo>, TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
+    onAddToPlaylistArtist: (GridItem) -> Unit,
+    onAddToPlaylistAlbum: (GridItem) -> Unit,
     padding: PaddingValues
 ){
     LazyColumn(modifier = Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -117,7 +131,8 @@ fun SearchContent(
                                 onEdit = {},
                                 onDelete = { a, b -> {} },
                                 onRefetch = {},
-                                onClick = { gridItem -> onArtistClick( gridItem.id) }
+                                onClick = { gridItem -> onArtistClick( gridItem.id) },
+                                onAddToPlaylist = onAddToPlaylistArtist
                             )
                         }
 
@@ -164,7 +179,8 @@ fun SearchContent(
                                 onEdit = {},
                                 onDelete = { a, b -> {} },
                                 onRefetch = {},
-                                onClick = {gridItem -> onAlbumClick(gridItem.id)}
+                                onClick = {gridItem -> onAlbumClick(gridItem.id)},
+                                onAddToPlaylist = onAddToPlaylistAlbum
                             )
                         }
                     }
@@ -203,7 +219,8 @@ fun SearchContent(
                     onRemoveFromQueue = {},
                     onEdit = {},
                     onDelete = {ids ->{}},
-                    onMove = {}
+                    onMove = {},
+                    onAddToPlaylist = onAddToPlaylist,
                 )
             }
         }

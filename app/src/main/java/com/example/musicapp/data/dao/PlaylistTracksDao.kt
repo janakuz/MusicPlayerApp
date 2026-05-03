@@ -23,11 +23,17 @@ interface PlaylistTracksDao {
     @Delete
     suspend fun removeTrackFromPlaylist(entry: PlaylistTracks)
 
+
+
+
     @Update
     suspend fun updateTrackPosition(entry: PlaylistTracks)
 
     @Query("DELETE FROM playlist_tracks WHERE id = :entryId")
     suspend fun removeTrackFromPlaylistByIds(entryId: Int)
+
+    @Query("DELETE FROM playlist_tracks WHERE id in (:entryIds)")
+    suspend fun removeTracksFromPlaylist(entryIds: List<Int>)
 
     @Query("""
     UPDATE playlist_tracks 

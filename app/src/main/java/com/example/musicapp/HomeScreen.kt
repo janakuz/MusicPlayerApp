@@ -3,20 +3,17 @@ package com.example.musicapp
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -154,6 +151,14 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
         playerViewModel.events.collect { message ->
             snackbarHostState.showSnackbar(message)
         }
+
+    }
+
+    LaunchedEffect(Unit) {
+        playlistViewModel.events.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+
     }
 
     ModalNavigationDrawer(
@@ -276,6 +281,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             onAddToQueue = { playerViewModel.addToQueueListIds(selection.selectedTrackIds) },
                             onRemoveFromQueue = { playerViewModel.removeFromQueue(selection.selectedQueueIds) },
                             isQueueScreen = (currentRoute == "nowPlaying"),
+                            onRemoveFromPlaylist = { playlistViewModel.removeTracksFromPlaylist(selection.selectedPlaylistEntryIds) },
+                            isPlaylistScreen = (currentRoute != null && currentRoute.startsWith("playlist/")),
                             onDelete = { selectionViewModel.requestDeletionOfSelected() },
                             onMove = { selectionViewModel.requestMove() },
                             onAddToPlaylist = { playlistViewModel.onAdd(selection.selectedTrackIds.toList()) },
@@ -345,6 +352,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
                         onAddToQueue = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onAddToPlaylist = { artist -> playlistViewModel.onAddToPlaylistArtist(artist.id) },
                         onEdit = { artist -> navController.navigate("artist/edit/${artist.id}") }
                     )
                 }
@@ -360,7 +368,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
-                        onEdit = { album -> navController.navigate("album/edit/${album.id}/all_albums",) }
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/all_albums",) },
+                        onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
                     )
                 }
 
@@ -377,7 +386,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { track ->
                             playerViewModel.addToQueue(track)
                         },
-                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
                     )
                 }
 
@@ -389,10 +399,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 //                                restoreState = true
                             }
                         },
-                        sortRequest = artistDetailSort,
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
-                        onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") }
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") },
+                        sortRequest = artistDetailSort,
+                        onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
                     )
                 }
 
@@ -407,7 +418,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
-                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
+
                     )
                 }
 
@@ -467,7 +480,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                 track
                             )
                         },
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onAddToPlaylistArtist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
+                        onAddToPlaylistAlbum = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
                     )
                 }
 
@@ -482,7 +498,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                 track
                             )
                         },
-                        padding = PaddingValues(0.dp)
+                        padding = PaddingValues(0.dp),
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onAddToPlaylistArtist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
+                        onAddToPlaylistAlbum = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
+
                     )
                 }
 
@@ -498,7 +518,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 composable(HomeScreen.Playlists.name) {
                     PlaylistsScreen(
                         createInfo = createInfo,
-                        onClick = { id -> navController.navigate("playlists/$id") },
+                        onClick = { id -> navController.navigate("playlist/$id") },
                         onCreateNewPlaylist = { navController.navigate("playlist/create") },
                         onDismiss = { playlistViewModel.hideCreateDialog() },
 //                        playlists = allPlaylists,
@@ -510,7 +530,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     )
                 }
 
-                composable("playlists/{playlistId}") {
+                composable("playlist/{playlistId}") {
                     PlaylistDetailScreen (
                         onTrackClick = { track, tracks, entryId, entryIds ->
                             playerViewModel.playTracks(tracks, track, entryId, entryIds)
@@ -522,7 +542,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        onRemove = { entry, playlist -> playlistViewModel.removeTrackFromPlaylist(entry, playlist) }
+                        onRemove = { entry, playlist -> playlistViewModel.removeTrackFromPlaylist(entry, playlist) },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
+
                     )
                 }
 
@@ -556,7 +578,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAlbumClick = { albumId ->
                             navController.navigate("album/${albumId}")
                         },
-                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") }
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
+
                     )
                 }
 
@@ -568,8 +592,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 AddToPlaylistDialog(
                     playlists = allPlaylists,
                     onDismiss = { playlistViewModel.hideAddDialog() },
-                    onPlaylistSelected = { playlistId ->
-                        playlistViewModel.addToPlaylist(addState.trackIds, playlistId)
+                    onPlaylistSelected = { playlist ->
+                        playlistViewModel.addToPlaylist(addState.trackIds, playlist)
                     },
                     onCreateNewPlaylist = {
                         playlistViewModel.showCreate() }

@@ -7,6 +7,8 @@ interface PlaylistTracksRepository {
 
     suspend fun removeTrackFromPlaylist(entryId: Int, playlistId: Int)
 
+    suspend fun removeTracksFromPlaylist(entryIds: List<Int>)
+
     suspend fun insertTrackToPlaylist(playlistId: Int, trackId: Int)
 
     fun getAllTracksInPlaylist(playlistId: Int, sortBy: String, ascending: Boolean) : Flow<List<PlaylistTrack>>

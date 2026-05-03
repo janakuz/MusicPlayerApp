@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,6 +55,7 @@ fun PlaylistDetailScreen(
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
     onEdit: (TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onRemove: (Int, Int) -> Unit,
     ) {
 
@@ -63,7 +65,6 @@ fun PlaylistDetailScreen(
     val info by playlistDetailViewModel.playlistInfo.collectAsState()
     val stats by playlistDetailViewModel.playlistStats.collectAsState()
 
-    val visualTracks = tracks.map { track -> VisualTrack(key = track.entryId, data = track.trackInfo) }
     val trackInfos = tracks.map { it.trackInfo }
     val entryIds = tracks.map { it.entryId }
 
@@ -71,6 +72,9 @@ fun PlaylistDetailScreen(
     val lazyListState = rememberLazyListState()
     var isDragging by remember { mutableStateOf(false) }
     var visiblePlaylist by remember { mutableStateOf(tracks.toList()) }
+
+    val visualTracks = visiblePlaylist.map { track -> VisualTrack(key = track.entryId, data = track.trackInfo) }
+
 
     LaunchedEffect(tracks) {
         if (!isDragging) {
@@ -127,6 +131,7 @@ fun PlaylistDetailScreen(
             state = lazyListState,
             reorderable = reorderableLazyListState,
             showReorderIconStart = true,
+            onAddToPlaylist = onAddToPlaylist
         )
     }
 
@@ -226,8 +231,8 @@ fun PlaylistHeader(
 
         Text(
             text = playlistInfo?.description ?: "",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyLarge,
+            fontStyle = FontStyle.Italic,
             maxLines = 2,
             textAlign = TextAlign.Center,
             overflow = TextOverflow.Ellipsis

@@ -49,6 +49,7 @@ fun AllArtistsScreen(
     onClick: ((GridItem) -> Unit)? = null,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
 ){
@@ -112,7 +113,8 @@ fun AllArtistsScreen(
             onDelete = { id, name ->
                 pendingDeletion = DeleteEvent(id, name)
             },
-            onRefetch = { id -> artistViewModel.refetchMetadata(id) }
+            onRefetch = { id -> artistViewModel.refetchMetadata(id) },
+            onAddToPlaylist = onAddToPlaylist
         )
 
         pendingDeletion?.let { item ->

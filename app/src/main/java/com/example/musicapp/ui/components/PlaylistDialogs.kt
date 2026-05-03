@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
@@ -34,7 +35,7 @@ import com.example.musicapp.ui.viewmodels.CreatePlaylistState
 fun AddToPlaylistDialog(
     playlists: List<Playlist>,
     onDismiss: () -> Unit,
-    onPlaylistSelected: (Int) -> Unit,
+    onPlaylistSelected: (Playlist) -> Unit,
     onCreateNewPlaylist: () -> Unit
     ) {
     AlertDialog(
@@ -61,10 +62,10 @@ fun AddToPlaylistDialog(
                         ListItem(
                             headlineContent = { Text(playlist.name) },
                             leadingContent = {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                Icon(Icons.AutoMirrored.Default.PlaylistAdd, contentDescription = null)
                             },
                             modifier = Modifier.clickable {
-                                onPlaylistSelected(playlist.id)
+                                onPlaylistSelected(playlist)
                                 onDismiss()
                             }
                         )

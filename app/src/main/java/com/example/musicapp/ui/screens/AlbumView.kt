@@ -225,6 +225,7 @@ fun AlbumView(
     onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -283,7 +284,8 @@ fun AlbumView(
                     if (album.label != null && album.label != "") Footer(album.label) else null
                 },
                 onEdit = onEdit,
-                onMove = { ids -> albumDetailViewModel.prepareMove(ids) }
+                onMove = { ids -> albumDetailViewModel.prepareMove(ids) },
+                onAddToPlaylist = onAddToPlaylist
             )
 
             when (moveState) {

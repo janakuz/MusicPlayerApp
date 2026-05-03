@@ -80,7 +80,9 @@ fun SelectionTopBar(
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit,
     onRemoveFromQueue: (() -> Unit)? = null,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
     isQueueScreen: Boolean = false,
+    isPlaylistScreen: Boolean = false,
     onDelete: () -> Unit,
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
@@ -157,6 +159,17 @@ fun SelectionTopBar(
                             expanded = false
                         }
                     )
+
+                    if (onRemoveFromPlaylist != null && isPlaylistScreen) {
+                        DropdownMenuItem(
+                            text = { (Text("Remove from Playlist")) },
+                            onClick = {
+                                onRemoveFromPlaylist()
+                                onClear()
+                                expanded = false
+                            }
+                        )
+                    }
 
                     if (moveEnabled) {
                         DropdownMenuItem(

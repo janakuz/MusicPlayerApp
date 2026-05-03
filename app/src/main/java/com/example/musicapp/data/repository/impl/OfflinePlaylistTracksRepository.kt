@@ -22,6 +22,12 @@ class OfflinePlaylistTracksRepository (
         }
     }
 
+    override suspend fun removeTracksFromPlaylist(
+        entryIds: List<Int>,
+    ) {
+        playlistTracksDao.removeTracksFromPlaylist(entryIds)
+    }
+
     override suspend fun insertTrackToPlaylist(playlistId: Int, trackId: Int) {
         val position = playlistTracksDao.getMaxPosition(playlistId)
         val newEntryPosition = if (position != null) position + 1 else 0
