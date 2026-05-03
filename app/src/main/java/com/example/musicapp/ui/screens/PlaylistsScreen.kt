@@ -1,5 +1,8 @@
 package com.example.musicapp.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -68,7 +71,12 @@ fun PlaylistsScreen(
     onDismiss: () -> Unit,
     onDelete: (Int) -> Unit,
     onEdit: (Int) -> Unit,
-) {
+    onExport: (Uri, Int) -> Unit,
+
+    ) {
+
+
+
     if (createInfo.isShowing) {
         CreatePlaylistDialog(
             createInfo = createInfo,
@@ -99,7 +107,8 @@ fun PlaylistsScreen(
                     onDelete = onDelete,
                     trackCount = playlistModel.trackCount,
                     duration = playlistModel.totalDuration,
-                    images = playlistModel.top4Images
+                    images = playlistModel.top4Images,
+                    onExport = onExport
                 )
             }
         }
@@ -114,7 +123,16 @@ fun PlaylistRow(
     images: List<String> = emptyList<String>(),
     onClick: () -> Unit,
     onEdit: (Int) -> Unit,
-    onDelete: (Int) -> Unit) {
+    onDelete: (Int) -> Unit,
+    onExport: (Uri, Int) -> Unit,
+    ) {
+
+    val exportM3uLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("audio/x-mpegurl")
+    ) { uri ->
+        uri?.let { onExport(it, playlist.id) }
+    }
+
     var expanded by remember { mutableStateOf(false) }
         Row(Modifier
             .fillMaxWidth()
@@ -184,6 +202,14 @@ fun PlaylistRow(
                     text = { Text("Delete") },
                     onClick = {
                         onDelete(playlist.id)
+                        expanded = false
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = { Text("Export .m3u") },
+                    onClick = {
+                        exportM3uLauncher.launch("${playlist.name}.m3u")
                         expanded = false
                     }
                 )

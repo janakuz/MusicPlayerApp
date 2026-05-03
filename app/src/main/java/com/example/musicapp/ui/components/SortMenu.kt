@@ -40,17 +40,26 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
 
 @Composable
 fun SortMenu(screen: LibraryScreen,
-             onSortSelected: (SortOption) -> Unit) {
+             onSortSelected: (SortOption) -> Unit,
+             onImport: (() -> Unit)? = null) {
     var expanded by remember { mutableStateOf(false) }
 
     IconButton(onClick = { expanded = true }) {
         Icon(Icons.Default.MoreVert, contentDescription = "Sort")
     }
 
+
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = { expanded = false }
     ) {
+        if (onImport != null && availableSortFields(screen).isEmpty()) {
+            DropdownMenuItem(
+                text = { Text("Import...") },
+                onClick = onImport
+            )
+        }
+
         Column {
             availableSortFields(screen).forEach { field ->
                 DropdownMenuItem(

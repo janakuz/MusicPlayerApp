@@ -1,5 +1,7 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -165,6 +167,19 @@ class PlaylistViewModel @Inject constructor(
     fun removeTracksFromPlaylist(entryIds: Set<Int>){
         viewModelScope.launch {
             playlistTracksRepository.removeTracksFromPlaylist(entryIds.toList())
+        }
+    }
+
+    fun importM3u(uri: Uri){
+        viewModelScope.launch {
+            playlistRepository.importPlaylist(uri)
+        }
+    }
+
+    fun exportM3u(uri: Uri, playlistId: Int){
+        viewModelScope.launch {
+            val tracks = playlistTracksRepository.getAllTracksInPlaylist(playlistId, "position", true).first()
+            playlistRepository.exportPlaylist(uri, tracks)
         }
     }
 

@@ -5,9 +5,11 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.musicapp.data.dto.PlaylistTrack
 import com.example.musicapp.data.dto.TrackInfo
+import com.example.musicapp.data.entity.Playlist
 import com.example.musicapp.data.entity.PlaylistTracks
 import kotlinx.coroutines.flow.Flow
 
@@ -22,9 +24,6 @@ interface PlaylistTracksDao {
 
     @Delete
     suspend fun removeTrackFromPlaylist(entry: PlaylistTracks)
-
-
-
 
     @Update
     suspend fun updateTrackPosition(entry: PlaylistTracks)

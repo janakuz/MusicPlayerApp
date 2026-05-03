@@ -34,6 +34,7 @@ fun LibraryTopBar(
     onSearchClick: () -> Unit,
     onSortClick: (SortOption) -> Unit,
     onMenuClick: () -> Unit,
+    onImport: (() -> Unit)? = null,
     title: String? = "",
     showBack: Boolean,
     onBack: (() -> Unit)? = null,
@@ -66,7 +67,7 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            SortMenu(screen = currentScreen, onSortSelected = onSortClick)
+            SortMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport)
         }
     )
 }

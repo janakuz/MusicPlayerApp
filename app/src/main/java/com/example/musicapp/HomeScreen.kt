@@ -1,6 +1,8 @@
 package com.example.musicapp
 
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -214,6 +216,13 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
 
     {
+
+        val importM3uLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            uri?.let { playlistViewModel.importM3u(it) }
+        }
+
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
@@ -265,6 +274,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     "artist/{artistId}" -> artistDetailSort = sort
                                 }
                             },
+                            onImport = { importM3uLauncher.launch(arrayOf("audio/x-mpegurl", "text/plain")) },
                             onMenuClick = { scope.launch { drawerState.open() } },
                             showBack = backIndex < 0,
                             onBack = if (backIndex < 0) ({ navController.popBackStack() }) else null,
@@ -526,7 +536,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onConfirm = { playlistViewModel.createPlaylist() },
                         onDelete = { id -> playlistViewModel.deletePlaylist(id) },
                         playlistStates = playlistUiStates,
-                        onEdit = { id -> navController.navigate("playlist/edit/$id") }
+                        onEdit = { id -> navController.navigate("playlist/edit/$id") },
+                        onExport = {uri, id -> playlistViewModel.exportM3u(uri, id)}
                     )
                 }
 

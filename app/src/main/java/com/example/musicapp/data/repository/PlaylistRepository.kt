@@ -7,6 +7,7 @@ import com.example.musicapp.data.entity.Artist
 import com.example.musicapp.data.entity.Playlist
 import com.example.musicapp.data.entity.PlaylistTracks
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 interface PlaylistRepository {
     fun getAllPlaylists(sortBy: String, ascending: Boolean): Flow<List<Playlist>>
@@ -29,6 +30,9 @@ interface PlaylistRepository {
 
     fun savePlaylistImage(context: Context, uri: Uri): String?
 
+    suspend fun importPlaylist(file: Uri)
+
+    fun exportPlaylist(uri: Uri, tracks: List<PlaylistTrack>)
 }
 
 data class PlaylistStats(
