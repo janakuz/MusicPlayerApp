@@ -48,6 +48,10 @@ class OfflinePlaylistTracksRepository (
         return playlistTracksDao.getTracksForPlaylistByPosition(playlistId)
     }
 
+    override suspend fun getTracksInPlaylist(playlistId: Int): List<PlaylistTrack> {
+        return playlistTracksDao.getTracksForPlaylist(playlistId)
+    }
+
     override suspend fun addTracksToPlaylist(playlistId: Int, trackIds: List<Int>) {
         val startPos = (playlistTracksDao.getMaxPosition(playlistId) ?: -1) + 1
         val timestamp = System.currentTimeMillis()

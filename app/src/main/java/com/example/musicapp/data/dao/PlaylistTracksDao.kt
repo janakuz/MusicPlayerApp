@@ -98,6 +98,19 @@ interface PlaylistTracksDao {
         WHERE pt.playlistId = :playlistId 
         ORDER BY pt.position ASC
     """)
+    suspend fun getTracksForPlaylist(playlistId: Int): List<PlaylistTrack>
+
+
+    @Query("""
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
+        FROM playlist_tracks pt
+        JOIN tracks t on pt.trackId=t.id
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE pt.playlistId = :playlistId 
+        ORDER BY pt.position ASC
+    """)
     fun getTracksForPlaylistByPosition(playlistId: Int): Flow<List<PlaylistTrack>>
 
     @Query("""

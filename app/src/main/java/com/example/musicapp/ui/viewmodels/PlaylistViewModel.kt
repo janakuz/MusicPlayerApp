@@ -131,6 +131,10 @@ class PlaylistViewModel @Inject constructor(
 
     }
 
+    fun getPlaylistTracks(playlistId: Int) {
+
+    }
+
     fun onAdd(trackIds: List<Int>){
         _addToPlaylistState.update { it.copy(isShowing = true, trackIds = trackIds) }
     }

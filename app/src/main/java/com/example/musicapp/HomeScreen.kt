@@ -537,7 +537,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onDelete = { id -> playlistViewModel.deletePlaylist(id) },
                         playlistStates = playlistUiStates,
                         onEdit = { id -> navController.navigate("playlist/edit/$id") },
-                        onExport = {uri, id -> playlistViewModel.exportM3u(uri, id)}
+                        onExport = { uri, id -> playlistViewModel.exportM3u(uri, id) },
+                        onPlayNext = { id -> playerViewModel.playNextPlaylist(id) },
+                        onAddToQueue = { id -> playerViewModel.addToQueuePlaylist(id) },
+                        onPlay = { id -> playerViewModel.playPlaylist(id) }
                     )
                 }
 
@@ -554,7 +557,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
                         onRemove = { entry, playlist -> playlistViewModel.removeTrackFromPlaylist(entry, playlist) },
-                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) }
 
                     )
                 }

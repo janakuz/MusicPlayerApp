@@ -53,6 +53,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
+import com.example.musicapp.data.dto.PlaylistTrack
 import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
@@ -69,8 +70,11 @@ fun PlaylistsScreen(
     onCreateNewPlaylist: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    onPlay: (Int) -> Unit,
     onDelete: (Int) -> Unit,
     onEdit: (Int) -> Unit,
+    onPlayNext: (Int) -> Unit,
+    onAddToQueue: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
 
     ) {
@@ -108,7 +112,10 @@ fun PlaylistsScreen(
                     trackCount = playlistModel.trackCount,
                     duration = playlistModel.totalDuration,
                     images = playlistModel.top4Images,
-                    onExport = onExport
+                    onExport = onExport,
+                    onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
+                    onPlay = onPlay
                 )
             }
         }
@@ -122,6 +129,9 @@ fun PlaylistRow(
     duration: Long,
     images: List<String> = emptyList<String>(),
     onClick: () -> Unit,
+    onPlay: (Int) -> Unit,
+    onPlayNext: (Int) -> Unit,
+    onAddToQueue: (Int) -> Unit,
     onEdit: (Int) -> Unit,
     onDelete: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
@@ -189,6 +199,33 @@ fun PlaylistRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
+
+                DropdownMenuItem(
+                    text = { Text("Play") },
+                    onClick = {
+                        onPlay(playlist.id)
+                        expanded = false
+                    }
+                )
+
+
+                DropdownMenuItem(
+                    text = { Text("Play Next") },
+                    onClick = {
+                        onPlayNext(playlist.id)
+                        expanded = false
+                    }
+                )
+
+
+                DropdownMenuItem(
+                    text = { Text("Add to Queue") },
+                    onClick = {
+                        onAddToQueue(playlist.id)
+                        expanded = false
+                    }
+                )
+
 
                 DropdownMenuItem(
                     text = { Text("Edit") },

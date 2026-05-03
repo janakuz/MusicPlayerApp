@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.musicapp.data.dto.PlaylistTrack
 import com.example.musicapp.data.dto.TrackInfo
 import com.example.musicapp.data.dto.VisualTrack
 import com.example.musicapp.data.entity.Album
@@ -52,6 +53,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun PlaylistDetailScreen(
     onTrackClick: (TrackInfo, List<TrackInfo>, Int, List<Int>) -> Unit,
+    onShuffle: (List<PlaylistTrack>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
     onEdit: (TrackInfo) -> Unit,
@@ -123,7 +125,8 @@ fun PlaylistDetailScreen(
                             entryIds
                         )
                     },
-                    onShuffle = { },
+                    onShuffle = onShuffle,
+                    tracks = tracks
                 )
             },
             onEdit = onEdit,
@@ -144,7 +147,8 @@ fun PlaylistHeader(
     trackCount: Int,
     duration: Long,
     onPlayAll: () -> Unit,
-    onShuffle: () -> Unit
+    onShuffle: (List<PlaylistTrack>) -> Unit,
+    tracks: List<PlaylistTrack>
 ) {
     Column(
         modifier = Modifier
@@ -262,7 +266,7 @@ fun PlaylistHeader(
             }
             Spacer(Modifier.width(12.dp))
             OutlinedButton(
-                onClick = onShuffle,
+                onClick = { onShuffle(tracks) },
                 modifier = Modifier.weight(1f)
             ) {
                 Icon(Icons.Default.Shuffle, contentDescription = null)
