@@ -63,12 +63,9 @@ import java.nio.file.WatchEvent
 
 
 @Composable
-fun AlbumDetailHeader(
-    image: String,
-    title: String,
-    gradientColors: PlayerColors,
+fun ImageHeader(
+    image: String
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxWidth(),
@@ -76,61 +73,74 @@ fun AlbumDetailHeader(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(350.dp)
+        ) {
+            val defaultImage = painterResource(R.drawable.baseline_album_24)
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(image)
+                    .size(400)
+                    .crossfade(false)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .placeholderMemoryCacheKey(image)
+                    .build(),
+                placeholder = defaultImage,
+                error = defaultImage,
+                fallback = defaultImage,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth()
+            )
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(350.dp)
-            ) {
-                val defaultImage = painterResource(R.drawable.baseline_album_24)
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(image)
-                        .size(400)
-                        .crossfade(false)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .placeholderMemoryCacheKey(image)
-                        .build(),
-                    placeholder = defaultImage,
-                    error = defaultImage,
-                    fallback = defaultImage,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
-                                        MaterialTheme.colorScheme.background
+                    .fillMaxSize()
+                    .background(
+                        brush =
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                                    MaterialTheme.colorScheme.background
 //                                        gradientColors.mainColor.copy(alpha = 0.6f),
 //                                        gradientColors.mainColor.copy(alpha = 0.5f)
-                                    )
                                 )
-                        )
-                )
-            }
+                            )
+                    )
+            )
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun AlbumDetailHeader(
+    image: String,
+    title: String,
+    gradientColors: PlayerColors? = null,
+) {
 
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+    ImageHeader(image)
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+        text = title,
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        color = MaterialTheme.colorScheme.onBackground
+    )
 }
 
 
 @Composable
-fun AlbumInfoRow(album: Album) {
+fun AlbumInfoRow(
+    duration: Long,
+    numTracks: Int,
+    releaseDate: String? = null, ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -138,15 +148,17 @@ fun AlbumInfoRow(album: Album) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        InfoChip(text = album.releaseDate.toString())
+        if (releaseDate != null) {
+            InfoChip(text = releaseDate)
+
+            DotSeparator()
+        }
+
+        InfoChip(text = "$numTracks Tracks")
 
         DotSeparator()
 
-        InfoChip(text = "${album.numTracks} Tracks")
-
-        DotSeparator()
-
-        InfoChip(text = formatDuration(album.duration))
+        InfoChip(text = formatDuration(duration))
     }
 }
 
@@ -185,7 +197,7 @@ fun FullHeader(album: Album, gradientColors: PlayerColors) {
             gradientColors = gradientColors
         )
         Spacer(modifier = Modifier.height(8.dp))
-        AlbumInfoRow(album)
+        AlbumInfoRow(duration = album.duration, numTracks = album.numTracks, releaseDate = album.releaseDate)
         Spacer(modifier = Modifier.height(8.dp))
 
     }
@@ -213,6 +225,7 @@ fun AlbumView(
     onTrackClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -271,7 +284,8 @@ fun AlbumView(
                     if (album.label != null && album.label != "") Footer(album.label) else null
                 },
                 onEdit = onEdit,
-                onMove = { ids -> albumDetailViewModel.prepareMove(ids) }
+                onMove = { ids -> albumDetailViewModel.prepareMove(ids) },
+                onAddToPlaylist = onAddToPlaylist
             )
 
             when (moveState) {

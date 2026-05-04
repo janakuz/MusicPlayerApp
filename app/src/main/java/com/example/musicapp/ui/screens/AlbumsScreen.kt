@@ -66,6 +66,7 @@ fun AlbumsGrid(
     albums: List<AlbumInfo>,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit,
     showReleaseDate: Boolean = false,
     onClick: ((GridItem) -> Unit)? = null,
     onEdit: (GridItem) -> Unit,
@@ -93,6 +94,7 @@ fun AlbumsGrid(
         showReleaseDate = showReleaseDate,
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
+        onAddToPlaylist = onAddToPlaylist,
         shape = RoundedCornerShape(
             topStart = 4.dp,
             topEnd = 4.dp,
@@ -114,6 +116,7 @@ fun AllAlbumsScreen(
     onClick: (GridItem) -> Unit,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
 ) {
@@ -165,6 +168,7 @@ fun AllAlbumsScreen(
             albums,
             onPlayNext = onPlayNext,
             onAddToQueue = onAddToQueue,
+            onAddToPlaylist = onAddToPlaylist,
             onClick = onClick,
             onEdit = onEdit,
             onDelete = { id, title -> pendingDeletion = DeleteEvent(id, title) },

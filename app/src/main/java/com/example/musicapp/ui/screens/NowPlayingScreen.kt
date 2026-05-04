@@ -257,6 +257,7 @@ fun NowPlayingView(
 fun NowPlayingWithQueue(
     playerViewModel: PlayerViewModel,
     onTrackClick: (String) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onBack: () -> Unit,
     onEdit: (TrackInfo) -> Unit,
     onArtistClick: (Int) -> Unit,
@@ -297,7 +298,8 @@ fun NowPlayingWithQueue(
                     onPlayNext = { track -> playerViewModel.playNext(track) },
                     onAddToQueue = { track -> playerViewModel.addToQueue(track)},
                     onEdit = onEdit,
-                    playerViewModel
+                    onAddToPlaylist = onAddToPlaylist,
+                    playerViewModel = playerViewModel
                 )
             }
         },

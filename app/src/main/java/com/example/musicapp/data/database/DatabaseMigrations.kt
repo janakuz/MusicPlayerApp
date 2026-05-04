@@ -183,6 +183,40 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
 }
 
 
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `playlists` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `name` TEXT NOT NULL, 
+                `image` TEXT, 
+                `description` TEXT, 
+                `isSmart` INTEGER NOT NULL DEFAULT 0,
+                `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+                `lastUpdated` INTEGER NOT NULL
+            )
+        """)
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `playlist_tracks` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `playlistId` INTEGER NOT NULL, 
+                `trackId` INTEGER NOT NULL, 
+                `position` INTEGER NOT NULL,
+                `addedAt` INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+                FOREIGN KEY(`playlistId`) REFERENCES `playlists`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY(`trackId`) REFERENCES `tracks`(`id`) ON DELETE CASCADE
+            )
+        """)
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlist_tracks_trackId` ON `playlist_tracks` (`trackId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlist_tracks_playlistId` ON `playlist_tracks` (`playlistId`)")
+
+    }
+}
+
+
+
 
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
@@ -193,5 +227,6 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_9_10,
     MIGRATION_10_11,
     MIGRATION_11_12,
-    MIGRATION_12_13
+    MIGRATION_12_13,
+    MIGRATION_13_14
 )

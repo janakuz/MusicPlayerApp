@@ -28,6 +28,10 @@ class TrackSelectionViewModel @Inject constructor (
     private val _selectedTrackIds = MutableStateFlow<Set<Int>>(emptySet())
     val selectedTrackIds = _selectedTrackIds.asStateFlow()
 
+    private val _selectedPlaylistEntryIds = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedPlaylistEntryIds = _selectedPlaylistEntryIds.asStateFlow()
+
+
     private val _selectedTrackUUIDs = MutableStateFlow<Set<String>>(emptySet())
     val selectedTrackUUIDs = _selectedTrackUUIDs.asStateFlow()
 
@@ -48,17 +52,20 @@ class TrackSelectionViewModel @Inject constructor (
     val selectionState: StateFlow<SelectionState> =
         combine (
             _selectedTrackIds,
-            _selectedTrackUUIDs
-        ) { trackIds, UUIDs ->
+            _selectedTrackUUIDs,
+            _selectedPlaylistEntryIds
+        ) { trackIds, UUIDs, entryIds ->
             SelectionState (
                 selectedTrackIds = trackIds,
                 selectedQueueIds = UUIDs,
-                count = if (UUIDs.isNotEmpty()) UUIDs.size else trackIds.size
+                selectedPlaylistEntryIds = entryIds,
+                count = if (UUIDs.isNotEmpty()) UUIDs.size else if (entryIds.isNotEmpty()) entryIds.size else trackIds.size
             )
         }.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000L),
             SelectionState(
+                emptySet(),
                 emptySet(),
                 emptySet(),
                 0
@@ -74,9 +81,20 @@ class TrackSelectionViewModel @Inject constructor (
         _selectionMode.value = _selectedTrackIds.value.isNotEmpty()
     }
 
+    fun toggleSelectionPlaylist(entryId: Int){
+        _selectedPlaylistEntryIds.update { set ->
+            if (entryId in set) set - entryId
+            else set + entryId
+        }
+
+        _selectionMode.value = _selectedPlaylistEntryIds.value.isNotEmpty()
+    }
+
+
     fun clearSelection() {
         _selectedTrackIds.value = emptySet()
         _selectedTrackUUIDs.value = emptySet()
+        _selectedPlaylistEntryIds.value = emptySet()
         _selectionMode.value = false
     }
 
@@ -106,5 +124,6 @@ class TrackSelectionViewModel @Inject constructor (
 data class SelectionState(
     val selectedTrackIds: Set<Int> = emptySet<Int>(),
     val selectedQueueIds: Set<String> = emptySet<String>(),
+    val selectedPlaylistEntryIds: Set<Int> = emptySet<Int>(),
     val count: Int = 0
 )

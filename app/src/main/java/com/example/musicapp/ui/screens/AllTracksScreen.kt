@@ -29,6 +29,7 @@ fun AllTracksScreen(
     onClick: (TrackInfo, List<TrackInfo>) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
     sortRequest: SortOption?,
 ){
@@ -57,7 +58,8 @@ fun AllTracksScreen(
             onAddToQueue = onAddToQueue,
             showArtwork = true,
             state = sharedListState,
-            onEdit = onEdit
+            onEdit = onEdit,
+            onAddToPlaylist = onAddToPlaylist
         )
 
         FastScrollbar(

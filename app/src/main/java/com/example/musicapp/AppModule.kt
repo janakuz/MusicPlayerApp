@@ -16,6 +16,8 @@ import com.example.musicapp.data.dao.AlbumGenreDao
 import com.example.musicapp.data.dao.ArtistDao
 import com.example.musicapp.data.dao.GenreDao
 import com.example.musicapp.data.dao.MoodDao
+import com.example.musicapp.data.dao.PlaylistDao
+import com.example.musicapp.data.dao.PlaylistTracksDao
 import com.example.musicapp.data.dao.QueueDao
 import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.dao.TrackMoodDao
@@ -44,12 +46,16 @@ import com.example.musicapp.data.repository.impl.OfflineTrackRepository
 import com.example.musicapp.data.repository.impl.OfflineUserPreferencesRepository
 import com.example.musicapp.data.repository.impl.OfflineWorkerManagerRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
+import com.example.musicapp.data.repository.PlaylistRepository
+import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.repository.impl.OfflineFilterRepository
+import com.example.musicapp.data.repository.impl.OfflinePlaylistRepository
+import com.example.musicapp.data.repository.impl.OfflinePlaylistTracksRepository
 import com.example.musicapp.data.repository.impl.OfflineSearchRepository
 import com.example.musicapp.data.service.CoverArtArchiveApiService
 import com.example.musicapp.data.service.DiscogsApiService
@@ -424,5 +430,35 @@ object AppModule {
     fun provideDynamicThemeRepository(imageLoader: ImageLoader): DynamicThemeRepository {
         return OfflineDynamicThemeRepository(imageLoader)
     }
+
+    @Provides
+    @Singleton
+    fun providePlaylistDao(db: AppDatabase): PlaylistDao = db.playlistDao()
+
+    @Provides
+    @Singleton
+    fun providePlaylistTracksDao(db: AppDatabase): PlaylistTracksDao = db.playlistTracksDao()
+
+
+    @Provides
+    @Singleton
+    fun providePlaylistRepository(
+        playlistDao: PlaylistDao,
+        playlistTracksDao: PlaylistTracksDao,
+        db: AppDatabase,
+        @ApplicationContext context: Context): PlaylistRepository {
+        return OfflinePlaylistRepository(playlistDao, playlistTracksDao, db, context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePlaylistTracksRepository(
+        playlistTracksDao: PlaylistTracksDao,
+        playlistRepository: PlaylistRepository): PlaylistTracksRepository {
+        return OfflinePlaylistTracksRepository(
+            playlistTracksDao,
+            playlistRepository)
+    }
+
 
 }

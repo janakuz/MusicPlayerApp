@@ -55,6 +55,7 @@ fun ImageWithTextColumn(
     isAlbum: Boolean,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     imageModifier: Modifier = Modifier.size(100.dp),
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
@@ -145,6 +146,14 @@ fun ImageWithTextColumn(
                 expanded = false
             }
         )
+
+        DropdownMenuItem(
+            text = { Text("Add to Playlist") },
+            onClick = { if (item != null) onAddToPlaylist(item)
+                expanded = false
+            }
+        )
+
         DropdownMenuItem(
             text = { Text("Edit") },
             onClick = { if (item != null) onEdit(item)

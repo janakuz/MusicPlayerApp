@@ -34,6 +34,7 @@ fun LibraryTopBar(
     onSearchClick: () -> Unit,
     onSortClick: (SortOption) -> Unit,
     onMenuClick: () -> Unit,
+    onImport: (() -> Unit)? = null,
     title: String? = "",
     showBack: Boolean,
     onBack: (() -> Unit)? = null,
@@ -47,7 +48,7 @@ fun LibraryTopBar(
         },
         navigationIcon = {
             if (!showBack) {
-                IconButton(onClick = { /* future */ }) {
+                IconButton(onClick = onMenuClick ) {
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                 }
             }
@@ -66,7 +67,7 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            SortMenu(screen = currentScreen, onSortSelected = onSortClick)
+            RightMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport)
         }
     )
 }
@@ -80,10 +81,13 @@ fun SelectionTopBar(
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit,
     onRemoveFromQueue: (() -> Unit)? = null,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
     isQueueScreen: Boolean = false,
+    isPlaylistScreen: Boolean = false,
     onDelete: () -> Unit,
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
+    onAddToPlaylist: () -> Unit,
     ){
     TopAppBar(
         title = {
@@ -147,6 +151,26 @@ fun SelectionTopBar(
                             expanded = false
                         }
                     )
+
+                    DropdownMenuItem(
+                        text = { Text("Add to Playlist") },
+                        onClick = {
+                            onAddToPlaylist()
+                            onClear()
+                            expanded = false
+                        }
+                    )
+
+                    if (onRemoveFromPlaylist != null && isPlaylistScreen) {
+                        DropdownMenuItem(
+                            text = { (Text("Remove from Playlist")) },
+                            onClick = {
+                                onRemoveFromPlaylist()
+                                onClear()
+                                expanded = false
+                            }
+                        )
+                    }
 
                     if (moveEnabled) {
                         DropdownMenuItem(

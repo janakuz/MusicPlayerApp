@@ -145,6 +145,10 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE fileUri=:uri")
     suspend fun getTrackByUri(uri: String): Track?
 
+    @Query("SELECT * FROM tracks WHERE LOWER(filePath) LIKE :path")
+    suspend fun findTrackByPath(path: String): Track?
+
+
     @Query("SELECT fileUri FROM tracks")
     suspend fun getAllUris(): List<String>
 
