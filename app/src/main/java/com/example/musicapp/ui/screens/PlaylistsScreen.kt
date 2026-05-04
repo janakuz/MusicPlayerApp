@@ -272,6 +272,13 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(images[0])
+                        .size(200)
+                        .crossfade(false)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(images[0])
+                        .memoryCacheKey(images[0])
+                        .placeholderMemoryCacheKey(images[0])
                         .build(),
                     placeholder = painterResource(R.drawable.baseline_album_24),
                     error = painterResource(R.drawable.baseline_album_24),
@@ -284,6 +291,13 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(images[1])
+                        .size(200)
+                        .crossfade(false)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(images[1])
+                        .memoryCacheKey(images[1])
+                        .placeholderMemoryCacheKey(images[1])
                         .build(),
                     placeholder = painterResource(R.drawable.baseline_album_24),
                     error = painterResource(R.drawable.baseline_album_24),
@@ -297,6 +311,13 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(images[2])
+                        .size(200)
+                        .crossfade(false)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(images[2])
+                        .memoryCacheKey(images[2])
+                        .placeholderMemoryCacheKey(images[2])
                         .build(),
                     placeholder = painterResource(R.drawable.baseline_album_24),
                     error = painterResource(R.drawable.baseline_album_24),
@@ -308,6 +329,13 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(images[3])
+                        .size(200)
+                        .crossfade(false)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(images[3])
+                        .memoryCacheKey(images[3])
+                        .placeholderMemoryCacheKey(images[3])
                         .build(),
                     placeholder = painterResource(R.drawable.baseline_album_24),
                     error = painterResource(R.drawable.baseline_album_24),
@@ -322,6 +350,13 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(images[0])
+                    .size(400)
+                    .crossfade(false)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(images[0])
+                    .memoryCacheKey(images[0])
+                    .placeholderMemoryCacheKey(images[0])
                     .build(),
                 placeholder = painterResource(R.drawable.baseline_album_24),
                 error = painterResource(R.drawable.baseline_album_24),
