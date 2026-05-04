@@ -24,6 +24,7 @@ class OfflineAlbumArtistRepository(
             SortField.NAME -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistTitle(artistId) else albumArtistDao.getAlbumsByArtistTitleDesc(artistId)
             SortField.DURATION -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistDuration(artistId) else albumArtistDao.getAlbumsByArtistDurationDesc(artistId)
             SortField.RELEASE_DATE -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtist(artistId) else albumArtistDao.getAlbumsByArtistDesc(artistId)
+            else -> albumArtistDao.getAlbumsByArtistTitle(artistId) //shouldn't happen
         }
     }
 

@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.musicapp.data.dto.PlaylistWithStats
 import com.example.musicapp.data.entity.Playlist
 import kotlinx.coroutines.flow.Flow
 
@@ -24,15 +25,45 @@ interface PlaylistDao {
     @Query("DELETE FROM playlists WHERE id=:playlistId")
     suspend fun deleteById(playlistId: Int)
 
-    @Query("SELECT * FROM playlists ORDER BY " +
-            "CASE WHEN :sortBy = 'name' AND :ascending=true THEN name END ASC, " +
-            "CASE WHEN :sortBy = 'name' AND :ascending=false THEN name END DESC, " +
-            "CASE WHEN :sortBy = 'createdAt' AND :ascending=false THEN createdAt END DESC, " +
-            "CASE WHEN :sortBy = 'createdAt' AND :ascending=true THEN createdAt END ASC, " +
-            "CASE WHEN :sortBy = 'lastUpdated' AND :ascending=false THEN lastUpdated END DESC, " +
-            "CASE WHEN :sortBy = 'lastUpdated' AND :ascending=true THEN lastUpdated END ASC "
+    @Query("SELECT p.*, SUM(t.duration) AS playlistDuration, COUNT(pt.id) as trackCount " +
+            "FROM playlists p " +
+            "LEFT JOIN playlist_tracks pt on p.id=pt.playlistId " +
+            "LEFT JOIN tracks t on pt.trackId=t.id " +
+            "GROUP BY p.id " +
+            "ORDER BY " +
+            "CASE WHEN :sortBy = 'name' AND :ascending=true THEN LOWER(p.name) END ASC, " +
+            "CASE WHEN :sortBy = 'name' AND :ascending=false THEN LOWER(p.name) END DESC, " +
+            "CASE WHEN :sortBy = 'createdAt' AND :ascending=false THEN p.createdAt END DESC, " +
+            "CASE WHEN :sortBy = 'createdAt' AND :ascending=true THEN p.createdAt END ASC, " +
+            "CASE WHEN :sortBy = 'lastUpdated' AND :ascending=false THEN p.lastUpdated END DESC, " +
+            "CASE WHEN :sortBy = 'lastUpdated' AND :ascending=true THEN p.lastUpdated END ASC "
     )
-    fun getAllPlaylists(sortBy: String, ascending: Boolean): Flow<List<Playlist>>
+    fun getAllPlaylists(sortBy: String, ascending: Boolean): Flow<List<PlaylistWithStats>>
+
+    @Query("""
+        SELECT p.*, SUM(t.duration) AS playlistDuration, COUNT(pt.id) as trackCount
+        FROM playlists p
+        LEFT JOIN playlist_tracks pt on p.id=pt.playlistId
+        LEFT JOIN tracks t on pt.trackId=t.id
+        GROUP BY p.id
+        ORDER BY 
+        CASE WHEN :ascending = true THEN playlistDuration END ASC, 
+        CASE WHEN :ascending = false THEN playlistDuration END DESC
+        """)
+    fun getAllPlaylistsByDuration(ascending: Boolean): Flow<List<PlaylistWithStats>>
+
+
+    @Query("""
+        SELECT p.*, SUM(t.duration) AS playlistDuration, COUNT(pt.id) as trackCount
+        FROM playlists p
+        LEFT JOIN playlist_tracks pt on p.id=pt.playlistId
+        LEFT JOIN tracks t on pt.trackId=t.id
+        GROUP BY p.id
+        ORDER BY 
+        CASE WHEN :ascending = true THEN trackCount END ASC, 
+        CASE WHEN :ascending = false THEN trackCount END DESC
+        """)
+    fun getAllPlaylistsByNumTracks(ascending: Boolean): Flow<List<PlaylistWithStats>>
 
     @Query("SELECT * from playlists WHERE id = :playlistId")
     fun getPlaylist(playlistId: Int): Flow<Playlist>

@@ -10,13 +10,20 @@ import com.example.musicapp.data.dao.PlaylistDao
 import com.example.musicapp.data.dao.PlaylistTracksDao
 import com.example.musicapp.data.database.AppDatabase
 import com.example.musicapp.data.dto.PlaylistTrack
+import com.example.musicapp.data.dto.PlaylistWithArt
+import com.example.musicapp.data.dto.PlaylistWithStats
 import com.example.musicapp.data.entity.Playlist
 import com.example.musicapp.data.entity.PlaylistTracks
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistStats
+import com.example.musicapp.ui.components.SortField
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import java.io.File
 import java.util.UUID
 
@@ -27,11 +34,34 @@ class OfflinePlaylistRepository(
     @ApplicationContext private val context: Context
 ) : PlaylistRepository {
 
-    override fun getAllPlaylists(
-        sortBy: String,
-        ascending: Boolean
-    ): Flow<List<Playlist>> {
-        return playlistDao.getAllPlaylists(sortBy, ascending)
+    private fun getPlaylists(
+        sortBy: SortOption
+    ): Flow<List<PlaylistWithStats>> {
+        return when (sortBy.field) {
+            SortField.NAME -> playlistDao.getAllPlaylists("name", sortBy.ascending)
+            SortField.DATE_CREATED -> playlistDao.getAllPlaylists("createdAt", sortBy.ascending)
+            SortField.DATE_UPDATED -> playlistDao.getAllPlaylists("lastUpdated", sortBy.ascending)
+            SortField.DURATION -> playlistDao.getAllPlaylistsByDuration(sortBy.ascending)
+            SortField.TRACK_NUM -> playlistDao.getAllPlaylistsByNumTracks(sortBy.ascending)
+            else -> playlistDao.getAllPlaylists("name", sortBy.ascending)
+        }
+    }
+
+
+    private fun addImages(flow: Flow<List<PlaylistWithStats>>): Flow<List<PlaylistWithArt>>{
+        return flow.map { playlists ->
+            playlists.map { playlistStats ->
+                val images = getPlaylistImages(playlistStats.playlist.id)
+                PlaylistWithArt(
+                    stats = playlistStats,
+                    top4Images = images
+                )
+            }
+        }
+    }
+
+    override fun getAllPlaylists(sortBy: SortOption): Flow<List<PlaylistWithArt>> {
+        return addImages(getPlaylists(sortBy))
     }
 
     override fun getPlaylist(id: Int): Flow<Playlist> {
@@ -76,6 +106,11 @@ class OfflinePlaylistRepository(
             )
         }
     }
+
+    override suspend fun getPlaylistImages(playlistId: Int): List<String> {
+        return playlistTracksDao.getTop4Images(playlistId)
+    }
+
 
     override fun savePlaylistImage(
         context: Context,

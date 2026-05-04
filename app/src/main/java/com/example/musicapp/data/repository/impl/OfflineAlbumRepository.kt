@@ -49,6 +49,7 @@ class OfflineAlbumRepository(
             SortField.NAME -> if (orderBy.ascending) albumDao.getAllAlbumsByName() else albumDao.getAllAlbumsByNameDesc()
             SortField.DURATION -> if (orderBy.ascending) albumDao.getAllAlbumsByDuration() else albumDao.getAllAlbumsByDurationDesc()
             SortField.RELEASE_DATE -> if (orderBy.ascending) albumDao.getAllAlbumsByReleaseDate() else albumDao.getAllAlbumsByReleaseDateDesc()
+            else -> albumDao.getAllAlbumsByName() //shouldn't happen
         }
     }
 

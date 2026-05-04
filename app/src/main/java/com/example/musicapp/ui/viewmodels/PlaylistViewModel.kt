@@ -5,12 +5,17 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.dto.PlaylistWithStats
 import com.example.musicapp.data.entity.Playlist
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.PlaylistRepository
+import com.example.musicapp.data.repository.PlaylistStats
 import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
+import com.example.musicapp.ui.components.SortField
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,11 +24,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -34,7 +41,8 @@ import javax.inject.Inject
 class PlaylistViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val playlistTracksRepository: PlaylistTracksRepository,
-    private val trackRepository: TrackRepository
+    private val trackRepository: TrackRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _createInfo = MutableStateFlow<CreatePlaylistState>(CreatePlaylistState())
@@ -47,28 +55,76 @@ class PlaylistViewModel @Inject constructor(
     val events = _eventChannel.receiveAsFlow()
 
 
-    val playlists: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists("title", true)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val playlists: StateFlow<List<PlaylistUiModel>> = userPreferencesRepository.playlistsSortOption
+        .flatMapLatest { option ->
+            playlistRepository.getAllPlaylists(option)
+                .map { list ->
+                    list.map { stats ->
+                        PlaylistUiModel(
+                            playlist = stats.stats.playlist,
+                            top4Images = stats.top4Images,
+                            trackCount = stats.stats.trackCount,
+                            totalDuration = stats.stats.playlistDuration
+                        )
+                    }
+                }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+
+        val playlistsForAdd: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists(
+        SortOption(SortField.NAME, true)
+    ).map { playlists -> playlists.map { it.stats.playlist } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val playlists: StateFlow<List<PlaylistUiModel>> = userPreferencesRepository.playlistsSortOption
+//        .flatMapLatest {
+//            option ->
+//            playlistRepository.getAllPlaylists(option)
+//                .flatMapLatest { playlists ->
+//                    combine( playlists.map { playlistStats ->
+//                        playlistRepository.getPlaylistStats(playlistStats.playlist.id).map { stats ->
+//                            PlaylistUiModel(
+//                                playlist =  playlistStats.playlist,
+//                                top4Images = stats.images,
+//                                trackCount = playlistStats.trackCount,
+//                                totalDuration = playlistStats.duration)
+//                        }
+//                    }) {it.toList()}
+//                }
+//        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+//
+//    val playlistsForAdd: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists(
+//        SortOption(SortField.NAME, true)
+//    ).map { playlists -> playlists.map { it.playlist } }
+//        .stateIn(
+//            scope = viewModelScope,
+//            started = SharingStarted.WhileSubscribed(5000),
+//            initialValue = emptyList()
+//        )
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val playlistUiStates = playlistRepository.getAllPlaylists("title", true).flatMapLatest { playlists ->
-        combine(playlists.map { playlist ->
-            playlistRepository.getPlaylistStats(playlist.id).map { stats ->
-                PlaylistUiModel(
-                    playlist = playlist,
-                    top4Images = stats.images,
-                    trackCount = stats.trackCount,
-                    totalDuration = stats.duration
-                )
-            }
-        }) { it.toList() }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+//
+//
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val playlistUiStates = playlistRepository.getAllPlaylists("title", true).flatMapLatest { playlists ->
+//        combine(playlists.map { playlist ->
+//            playlistRepository.getPlaylistStats(playlist.id).map { stats ->
+//                PlaylistUiModel(
+//                    playlist = playlist.playlist,
+//                    top4Images = stats.images,
+//                    trackCount = playlist.trackCount,
+//                    totalDuration = playlist.duration
+//                )
+//            }
+//        }) { it.toList() }
+//    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+//
 
     fun createPlaylistAndAdd(tracks: List<Int>) {
         viewModelScope.launch {
@@ -81,6 +137,12 @@ class PlaylistViewModel @Inject constructor(
             playlistTracksRepository.addTracksToPlaylist(newId, tracks)
 
             _eventChannel.send("Added ${tracks.size} tracks to ${newPlaylist.name}")
+        }
+    }
+
+    fun setSort(option: SortOption) {
+        viewModelScope.launch {
+            userPreferencesRepository.updatePlaylistsSort(option)
         }
     }
 
@@ -128,10 +190,6 @@ class PlaylistViewModel @Inject constructor(
             _createInfo.update { it.copy(name = tracks[0].albumTitle) }
             onAdd(trackIds)
         }
-
-    }
-
-    fun getPlaylistTracks(playlistId: Int) {
 
     }
 

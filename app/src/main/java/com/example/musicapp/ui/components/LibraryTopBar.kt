@@ -67,7 +67,7 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            SortMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport)
+            RightMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport)
         }
     )
 }

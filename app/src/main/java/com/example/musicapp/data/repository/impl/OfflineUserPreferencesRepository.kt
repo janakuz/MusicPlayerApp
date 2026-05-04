@@ -27,6 +27,9 @@ class OfflineUserPreferencesRepository(private val dataStore: DataStore<Preferen
 
         val ARTIST_ALBUMS_SORT_FIELD = stringPreferencesKey("artist_albums_sort_field")
         val ARTIST_ALBUMS_SORT_ASC = booleanPreferencesKey("artist_album_sort_ascending")
+
+        val PLAYLISTS_SORT_FIELD = stringPreferencesKey("playlists_sort_field")
+        val PLAYLISTS_SORT_ASC = booleanPreferencesKey("playlists_sort_ascending")
     }
 
     override val artistSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
@@ -58,6 +61,16 @@ class OfflineUserPreferencesRepository(private val dataStore: DataStore<Preferen
     }.distinctUntilChanged()
 
 
+
+    override val playlistsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+        SortOption(
+            field = SortField.valueOf(prefs[PLAYLISTS_SORT_FIELD] ?: SortField.NAME.name),
+            ascending = prefs[PLAYLISTS_SORT_ASC] ?: true
+        )
+    }.distinctUntilChanged()
+
+
+
     override suspend fun updateArtistSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[ARTIST_SORT_FIELD] = option.field.name
@@ -85,4 +98,12 @@ class OfflineUserPreferencesRepository(private val dataStore: DataStore<Preferen
             prefs[ARTIST_ALBUMS_SORT_ASC] = option.ascending
         }
     }
+
+    override suspend fun updatePlaylistsSort(option: SortOption) {
+        dataStore.edit { prefs ->
+            prefs[PLAYLISTS_SORT_FIELD] = option.field.name
+            prefs[PLAYLISTS_SORT_ASC] = option.ascending
+        }
+    }
+
 }

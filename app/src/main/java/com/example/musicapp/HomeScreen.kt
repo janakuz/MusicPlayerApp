@@ -93,7 +93,7 @@ enum class HomeScreen(@StringRes val title: Int) {
 }
 
 enum class LibraryScreen {
-    ARTISTS, ALBUMS, TRACKS, ALBUM_DETAIL, OTHER
+    ARTISTS, ALBUMS, TRACKS, ALBUM_DETAIL, PLAYLISTS, OTHER
 }
 
 fun routeToLibraryScreen(route: String?): LibraryScreen =
@@ -102,6 +102,7 @@ fun routeToLibraryScreen(route: String?): LibraryScreen =
         route?.startsWith(HomeScreen.Albums.name) == true -> LibraryScreen.ALBUMS
         route?.startsWith(HomeScreen.Tracks.name) == true -> LibraryScreen.TRACKS
         route?.startsWith("artist/{artistId}") == true -> LibraryScreen.ALBUM_DETAIL
+        route?.startsWith(HomeScreen.Playlists.name) == true -> LibraryScreen.PLAYLISTS
         else -> LibraryScreen.OTHER
     }
 
@@ -120,6 +121,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     var albumSort by remember { mutableStateOf<SortOption?>(null) }
     var trackSort by remember { mutableStateOf<SortOption?>(null) }
     var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
+    var playlistsSort by remember { mutableStateOf<SortOption?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
 
@@ -131,9 +133,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
     val createInfo by playlistViewModel.createInfo.collectAsState()
-    val allPlaylists by playlistViewModel.playlists.collectAsState()
+    val allPlaylists by playlistViewModel.playlistsForAdd.collectAsState()
     val addState by playlistViewModel.addToPlaylistState.collectAsState()
-    val playlistUiStates by playlistViewModel.playlistUiStates.collectAsState()
+    val playlistUiStates by playlistViewModel.playlists.collectAsState()
 
     val filterViewModel: FilterViewModel = hiltViewModel()
 
@@ -272,6 +274,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     HomeScreen.Albums.name -> albumSort = sort
                                     HomeScreen.Tracks.name -> trackSort = sort
                                     "artist/{artistId}" -> artistDetailSort = sort
+                                    HomeScreen.Playlists.name -> playlistsSort = sort
                                 }
                             },
                             onImport = { importM3uLauncher.launch(arrayOf("audio/x-mpegurl", "text/plain")) },
@@ -540,7 +543,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onExport = { uri, id -> playlistViewModel.exportM3u(uri, id) },
                         onPlayNext = { id -> playerViewModel.playNextPlaylist(id) },
                         onAddToQueue = { id -> playerViewModel.addToQueuePlaylist(id) },
-                        onPlay = { id -> playerViewModel.playPlaylist(id) }
+                        onPlay = { id -> playerViewModel.playPlaylist(id) },
+                        sortRequest = playlistsSort,
+                        onSort = { option -> playlistViewModel.setSort(option) }
                     )
                 }
 

@@ -434,7 +434,7 @@ fun FastScrollbar(
                 when (sortOption.field) {
                     SortField.NAME -> track?.title?.firstOrNull()?.uppercase() ?: ""
                     SortField.DURATION -> formatDuration(track?.duration!!.toLong())
-                    SortField.RELEASE_DATE -> ""
+                    else -> ""
                 }
 
             Surface(

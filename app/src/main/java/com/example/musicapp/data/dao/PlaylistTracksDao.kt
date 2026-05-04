@@ -74,6 +74,18 @@ interface PlaylistTracksDao {
     fun getTop4ImagesForPlaylist(playlistId: Int): Flow<List<String>>
 
     @Query("""
+    SELECT DISTINCT a.image
+    FROM tracks t
+    JOIN albums a ON t.albumId=a.id
+    JOIN playlist_tracks pt ON t.id = pt.trackId
+    WHERE pt.playlistId = :playlistId AND a.image IS NOT NULL AND a.image != ""
+    ORDER BY pt.position ASC
+    LIMIT 4
+    """)
+    suspend fun getTop4Images(playlistId: Int): List<String>
+
+
+    @Query("""
         SELECT COUNT(*)
         FROM playlist_tracks
         WHERE playlistId = :playlistId

@@ -40,6 +40,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ import coil.request.ImageRequest
 import com.example.musicapp.R
 import com.example.musicapp.data.dto.PlaylistTrack
 import com.example.musicapp.ui.components.CreatePlaylistDialog
+import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
 import com.example.musicapp.ui.viewmodels.PlaylistUiModel
@@ -76,9 +78,15 @@ fun PlaylistsScreen(
     onPlayNext: (Int) -> Unit,
     onAddToQueue: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
-
+    sortRequest: SortOption?,
+    onSort: (SortOption) -> Unit,
     ) {
 
+    LaunchedEffect(sortRequest) {
+        sortRequest?.let {
+            onSort(it)
+        }
+    }
 
 
     if (createInfo.isShowing) {

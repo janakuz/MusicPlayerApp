@@ -38,6 +38,8 @@ class OfflinePlaylistTracksRepository (
             addedAt = System.currentTimeMillis()
         )
         playlistTracksDao.insertTrackToPlaylist(entry)
+        val playlist = playlistRepository.getPlaylistById(playlistId)
+        playlistRepository.update(playlist)
     }
 
     override fun getAllTracksInPlaylist(

@@ -26,7 +26,7 @@ class OfflineTrackRepository(private val trackDao: TrackDao) : TrackRepository {
         return when (orderBy.field) {
             SortField.NAME -> if (orderBy.ascending) trackDao.getAllTracksByName() else trackDao.getAllTracksByNameDesc()
             SortField.DURATION -> if (orderBy.ascending) trackDao.getAllTracksByDuration() else trackDao.getAllTracksByDurationDesc()
-            SortField.RELEASE_DATE -> TODO() //shouldn't happen
+            else -> trackDao.getAllTracksByName()
         }
     }
 
