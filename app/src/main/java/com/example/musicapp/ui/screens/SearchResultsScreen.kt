@@ -41,6 +41,15 @@ fun SearchResultsScreen(
     onAddToPlaylist: (Int) -> Unit,
     onAddToPlaylistArtist: (GridItem) -> Unit,
     onAddToPlaylistAlbum: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onPlayNextAlbum: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onAddToQueueAlbum: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onEditAlbum: (GridItem) -> Unit,
+    onPlayNextTrack: (TrackInfo) -> Unit,
+    onAddToQueueTrack: (TrackInfo) -> Unit,
+    onEditTrack: (TrackInfo) -> Unit,
     onBack: () -> Unit,
 ) {
     val searchViewModel: SearchViewModel = hiltViewModel()
@@ -72,6 +81,15 @@ fun SearchResultsScreen(
             onAddToPlaylistArtist = onAddToPlaylistArtist,
             onAddToPlaylistAlbum = onAddToPlaylistAlbum,
             padding = padding,
+            onPlayNextArtist = onPlayNextArtist,
+            onPlayNextAlbum = onPlayNextAlbum,
+            onAddToQueueArtist = onAddToQueueArtist,
+            onAddToQueueAlbum = onAddToQueueAlbum,
+            onEditArtist = onEditArtist,
+            onEditAlbum = onEditAlbum,
+            onPlayNextTrack = onPlayNextTrack,
+            onAddToQueueTrack = onAddToQueueTrack,
+            onEditTrack = onEditTrack,
         )
     }
 }
@@ -85,6 +103,15 @@ fun SearchContent(
     onAddToPlaylist: (Int) -> Unit,
     onAddToPlaylistArtist: (GridItem) -> Unit,
     onAddToPlaylistAlbum: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onPlayNextAlbum: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onAddToQueueAlbum: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onEditAlbum: (GridItem) -> Unit,
+    onPlayNextTrack: (TrackInfo) -> Unit,
+    onAddToQueueTrack: (TrackInfo) -> Unit,
+    onEditTrack: (TrackInfo) -> Unit,
     padding: PaddingValues
 ) {
     LazyColumn(
@@ -113,15 +140,13 @@ fun SearchContent(
                                 image = artist.image ?: "",
                                 text = artist.name,
                                 isAlbum = false,
-                                onPlayNext = {},
+                                onPlayNext = onPlayNextArtist,
                                 imageShape = CircleShape,
                                 imageModifier = Modifier.size(80.dp),
                                 textStyle = MaterialTheme.typography.bodyMedium,
-                                onAddToQueue = {},
-                                onEdit = {},
-                                onDelete = { a, b -> {} },
-                                onRefetch = {},
-                                onClick = { gridItem -> onArtistClick(gridItem.id) },
+                                onAddToQueue = onAddToQueueArtist,
+                                onEdit = onEditArtist,
+                                onClick = { artistItem -> onArtistClick(artistItem.id) },
                                 onAddToPlaylist = onAddToPlaylistArtist
                             )
                         }
@@ -164,11 +189,9 @@ fun SearchContent(
                                 albumArtist = album.releaseDate ?: "",
                                 imageModifier = Modifier.size(80.dp),
                                 textStyle = MaterialTheme.typography.bodyMedium,
-                                onPlayNext = {},
-                                onAddToQueue = {},
-                                onEdit = {},
-                                onDelete = { a, b -> {} },
-                                onRefetch = {},
+                                onPlayNext = onPlayNextAlbum,
+                                onAddToQueue = onAddToQueueAlbum,
+                                onEdit = onEditAlbum,
                                 onClick = { gridItem -> onAlbumClick(gridItem.id) },
                                 onAddToPlaylist = onAddToPlaylistAlbum
                             )
@@ -195,8 +218,8 @@ fun SearchContent(
                     artist = track.artistName,
                     isPlaying = false,
                     onClick = { track -> onTrackClick(results.tracks, track.data) },
-                    onPlayNext = {},
-                    onAddToQueue = {},
+                    onPlayNext = onPlayNextTrack,
+                    onAddToQueue = onAddToQueueTrack,
                     showArtwork = true,
                     showTrackNum = false,
                     showReorderIconStart = false,
@@ -206,11 +229,9 @@ fun SearchContent(
                     track = VisualTrack(key = track.trackId, data = track),
                     useQueueId = false,
                     trackIndex = id,
-                    onRemoveFromQueue = {},
-                    onEdit = {},
-                    onDelete = { ids -> {} },
-                    onMove = {},
+                    onEdit = onEditTrack,
                     onAddToPlaylist = onAddToPlaylist,
+                    onDelete = {},
                 )
             }
         }

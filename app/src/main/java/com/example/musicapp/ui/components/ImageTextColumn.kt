@@ -53,8 +53,8 @@ fun ImageWithTextColumn(
     item: GridItem? = null,
     albumArtist: String = "",
     onClick: ((GridItem) -> Unit)? = null,
-    onDelete: (Int, String) -> Unit,
-    onRefetch: (Int) -> Unit,
+    onDelete: ((Int, String) -> Unit)? = null,
+    onRefetch: ((Int) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -123,57 +123,46 @@ fun ImageWithTextColumn(
         }
     }
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        DropdownMenuItem(
-            text = { Text("Play Next") },
-            onClick = {
-                if (item != null) onPlayNext(item)
-                expanded = false
-            }
-        )
-        DropdownMenuItem(
-            text = { Text("Add to Queue") },
-            onClick = {
-                if (item != null) onAddToQueue(item)
-                expanded = false
-            }
-        )
 
-        DropdownMenuItem(
-            text = { Text("Add to Playlist") },
-            onClick = {
-                if (item != null) onAddToPlaylist(item)
-                expanded = false
-            }
-        )
 
-        DropdownMenuItem(
-            text = { Text("Edit") },
-            onClick = {
-                if (item != null) onEdit(item)
-                expanded = false
-            }
-        )
-
-        DropdownMenuItem(
-            text = { Text("Delete") },
-            onClick = {
+    val actions = MenuActions(
+        onPlayNext = {
+            if (item != null) onPlayNext(item)
+            expanded = false
+        },
+        onAddToQueue = {
+            if (item != null) onAddToQueue(item)
+            expanded = false
+        },
+        onAddToPlaylist = {
+            if (item != null) onAddToPlaylist(item)
+            expanded = false
+        },
+        onEdit = {
+            if (item != null) onEdit(item)
+            expanded = false
+        },
+        onDelete = if (onDelete != null) {
+            {
                 if (item != null) onDelete(item.id, item.displayName)
                 expanded = false
             }
-        )
-
-        DropdownMenuItem(
-            text = { Text("Refetch Metadata") },
-            onClick = {
+        } else null,
+        onRefetchMetadata =  if (onRefetch != null) {
+            {
                 if (item != null) onRefetch(item.id)
                 expanded = false
             }
-        )
+        } else null
 
+    )
+
+    if (expanded) {
+        ActionMenu(
+            title = item?.displayName ?: "",
+            actions = actions,
+            onDismiss = { expanded = false }
+        )
     }
 }
 

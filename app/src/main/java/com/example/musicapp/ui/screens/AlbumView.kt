@@ -190,7 +190,7 @@ fun FullHeader(album: Album, gradientColors: PlayerColors) {
         AlbumInfoRow(
             duration = album.duration,
             numTracks = album.numTracks,
-            releaseDate = album.releaseDate
+            releaseDate = album.releaseDate?.take(4)
         )
         Spacer(modifier = Modifier.height(8.dp))
 

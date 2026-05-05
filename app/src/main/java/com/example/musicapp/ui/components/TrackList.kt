@@ -197,7 +197,7 @@ fun TrackRow(
     trackNum: Int = 0,
     modifier: Modifier = Modifier,
     reorderModifier: Modifier = Modifier,
-    onDelete: (List<Int>) -> Unit,
+    onDelete: ((List<Int>) -> Unit)? = null,
     onMove: ((List<Int>) -> Unit)? = null,
     onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
 ) {
@@ -209,10 +209,12 @@ fun TrackRow(
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
     val selection by selectionViewModel.selectionState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        selectionViewModel.deletionRequestTrigger.collect {
-            val idsToDelete = selection.selectedTrackIds
-            onDelete(idsToDelete.toList())
+    if (onDelete != null) {
+        LaunchedEffect(Unit) {
+            selectionViewModel.deletionRequestTrigger.collect {
+                val idsToDelete = selection.selectedTrackIds
+                onDelete(idsToDelete.toList())
+            }
         }
     }
 
@@ -227,12 +229,12 @@ fun TrackRow(
     }
 
 
-    Column {
-
         Row(
             modifier = modifier
                 .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp)
                 .background(
+                    color =
                     if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                     else if (!useQueueId && !usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
@@ -243,7 +245,8 @@ fun TrackRow(
                     else if (usePlaylistId && track.key in selectionState.selectedPlaylistEntryIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
-                    else Color.Transparent
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp)
                 )
                 .combinedClickable(
                     onClick = {
@@ -262,7 +265,7 @@ fun TrackRow(
                         else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
                     }
                 )
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
 
             ) {
@@ -275,10 +278,15 @@ fun TrackRow(
                 )
             }
             if (showTrackNum) {
-                if (isPlaying) LiveEqualizer() else Text(
-                    text = trackNum.toString(),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Box(
+                    modifier = Modifier.width(28.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (isPlaying) LiveEqualizer() else Text(
+                        text = trackNum.toString(),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
 
             TrackInfoRow(
@@ -311,77 +319,60 @@ fun TrackRow(
                 }
 
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Play Next") },
-                        onClick = {
-                            onPlayNext(track.data)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Add to Queue") },
-                        onClick = {
-                            onAddToQueue(track.data)
-                            expanded = false
-                        }
-                    )
 
-                    DropdownMenuItem(
-                        text = { Text("Add to Playlist") },
-                        onClick = {
-                            onAddToPlaylist(track.data.trackId)
+                val actions = MenuActions(
+                    onPlayNext = {
+                        onPlayNext(track.data)
+                        expanded = false
+                    },
+                    onAddToQueue = {
+                        onAddToQueue(track.data)
+                        expanded = false
+                    },
+                    onRemoveFromQueue = if (onRemoveFromQueue != null) {
+                        {
+                            onRemoveFromQueue(trackIndex)
                             expanded = false
                         }
-                    )
-
-                    if (onRemoveFromQueue != null) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Queue")) },
-                            onClick = {
-                                onRemoveFromQueue(trackIndex)
-                                expanded = false
-                            }
-                        )
-                    }
-                    if (onRemoveFromPlaylist != null) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Playlist")) },
-                            onClick = {
-                                onRemoveFromPlaylist(track)
-                                expanded = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Edit") },
-                        onClick = {
-                            onEdit(track.data)
+                    } else null,
+                    onAddToPlaylist = {
+                        onAddToPlaylist(track.data.trackId)
+                        expanded = false
+                    },
+                    onRemoveFromPlaylist = if (onRemoveFromPlaylist != null) {
+                        {
+                            onRemoveFromPlaylist(track)
                             expanded = false
                         }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
+                    } else null,
+                    onEdit = {
+                        onEdit(track.data)
+                        expanded = false
+                    },
+                    onDelete = if (onDelete != null) {
+                        {
                             onDelete(listOf(track.data.trackId))
                             expanded = false
                         }
-                    )
+                    } else null,
+                )
 
+                if (expanded) {
+                    ActionMenu(
+                        title = track.data.title,
+                        subtitle = "${track.data.artistName} - ${track.data.albumTitle}",
+                        actions = actions,
+                        onDismiss = { expanded = false }
+                    )
                 }
             }
         }
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth(),
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-        )
+//        HorizontalDivider(
+//            modifier = Modifier.fillMaxWidth(),
+//            thickness = 1.dp,
+//            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+//        )
 
-    }
 }
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -541,6 +532,18 @@ fun TrackList(
             trackDeletionViewModel.finalizeDeletion(pendingUris)
         } else {
             trackDeletionViewModel.clearPendingDeletion()
+        }
+    }
+
+    if (strictHighlight) {
+        LaunchedEffect(currentTrack) {
+            if (currentTrack != null){
+                val index = tracks.indexOfFirst { it.key == currentTrack?.queueId }
+                val scrollIndex = if (index > 4) index - 4 else if (index > 0) 0 else -1
+                if (scrollIndex != -1){
+                    state.scrollToItem(scrollIndex)
+                }
+            }
         }
     }
 

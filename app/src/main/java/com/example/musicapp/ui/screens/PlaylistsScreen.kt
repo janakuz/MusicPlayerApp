@@ -47,7 +47,9 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
 import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.ui.components.ActionMenu
 import com.example.musicapp.ui.components.CreatePlaylistDialog
+import com.example.musicapp.ui.components.MenuActions
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
 import com.example.musicapp.ui.viewmodels.PlaylistUiModel
@@ -196,64 +198,42 @@ fun PlaylistRow(
             Icon(Icons.Default.MoreVert, contentDescription = "Menu")
         }
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
 
-            DropdownMenuItem(
-                text = { Text("Play") },
-                onClick = {
-                    onPlay(playlist.id)
-                    expanded = false
-                }
-            )
+        val actions = MenuActions(
+            onPlay = {
+                onPlay(playlist.id)
+                expanded = false
+            },
+            onPlayNext = {
+                onPlayNext(playlist.id)
+                expanded = false
+            },
+            onAddToQueue = {
+                onAddToQueue(playlist.id)
+                expanded = false
+            },
+            onEdit = {
+                onEdit(playlist.id)
+                expanded = false
+            },
+            onDelete = {
+                onDelete(playlist.id)
+                expanded = false
+            },
+            onExportM3u = {
+                exportM3uLauncher.launch("${playlist.name}.m3u")
+                expanded = false
+            }
+        )
 
-
-            DropdownMenuItem(
-                text = { Text("Play Next") },
-                onClick = {
-                    onPlayNext(playlist.id)
-                    expanded = false
-                }
-            )
-
-
-            DropdownMenuItem(
-                text = { Text("Add to Queue") },
-                onClick = {
-                    onAddToQueue(playlist.id)
-                    expanded = false
-                }
-            )
-
-
-            DropdownMenuItem(
-                text = { Text("Edit") },
-                onClick = {
-                    onEdit(playlist.id)
-                    expanded = false
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text("Delete") },
-                onClick = {
-                    onDelete(playlist.id)
-                    expanded = false
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text("Export .m3u") },
-                onClick = {
-                    exportM3uLauncher.launch("${playlist.name}.m3u")
-                    expanded = false
-                }
+        if (expanded) {
+            ActionMenu(
+                title = "Edit Playlist",
+                subtitle = playlist.name,
+                actions = actions,
+                onDismiss = { expanded = false }
             )
         }
-
-
     }
 }
 

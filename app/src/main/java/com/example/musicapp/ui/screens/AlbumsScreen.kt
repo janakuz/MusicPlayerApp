@@ -71,7 +71,7 @@ fun AlbumsGrid(
             id = album.albumId,
             displayName = album.title,
             imageRes = album.image.toString(),
-            releaseYear = album.releaseDate.orEmpty(),
+            releaseYear = album.releaseDate?.take(4).orEmpty(),
             numTracks = 0,
             duration = album.duration.toInt(),
         )

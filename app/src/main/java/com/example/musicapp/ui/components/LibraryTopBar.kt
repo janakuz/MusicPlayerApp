@@ -112,77 +112,59 @@ fun SelectionTopBar(
                 }
 
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Play Next") },
-                        onClick = {
-                            onPlayNext()
+
+                val actions = MenuActions(
+                    onPlayNext = {
+                        onPlayNext()
+                        onClear()
+                        expanded = false
+                    },
+                    onAddToQueue = {
+                        onAddToQueue()
+                        onClear()
+                        expanded = false
+                    },
+                    onRemoveFromQueue = if (onRemoveFromQueue != null) {
+                        {
+                            onRemoveFromQueue()
                             onClear()
                             expanded = false
                         }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Add to Queue") },
-                        onClick = {
-                            onAddToQueue()
+                    } else null,
+                    onDelete = {
+                        onDelete()
+                        onClear()
+                        expanded = false
+                    },
+                    onAddToPlaylist = {
+                        onAddToPlaylist()
+                        onClear()
+                        expanded = false
+                    },
+                    onRemoveFromPlaylist = if (onRemoveFromPlaylist != null && isPlaylistScreen) {
+                        {
+                            onRemoveFromPlaylist()
                             onClear()
                             expanded = false
                         }
-                    )
-                    if (onRemoveFromQueue != null && isQueueScreen) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Queue")) },
-                            onClick = {
-                                onRemoveFromQueue()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
-                            onDelete()
+                    } else null,
+                    onMoveToAlbum = if (moveEnabled) {
+                        {
+                            onMove()
                             onClear()
                             expanded = false
                         }
+                    } else null
+                )
+
+                if (expanded) {
+                    ActionMenu(
+                        title = "$count tracks",
+                        actions = actions,
+                        onDismiss = { expanded = false }
                     )
-
-                    DropdownMenuItem(
-                        text = { Text("Add to Playlist") },
-                        onClick = {
-                            onAddToPlaylist()
-                            onClear()
-                            expanded = false
-                        }
-                    )
-
-                    if (onRemoveFromPlaylist != null && isPlaylistScreen) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Playlist")) },
-                            onClick = {
-                                onRemoveFromPlaylist()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-
-                    if (moveEnabled) {
-                        DropdownMenuItem(
-                            text = { (Text("Split to Album")) },
-                            onClick = {
-                                onMove()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-
                 }
+
             }
         }
     )

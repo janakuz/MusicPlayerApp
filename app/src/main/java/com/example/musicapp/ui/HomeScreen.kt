@@ -174,6 +174,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.requiredWidth(300.dp)
@@ -491,16 +492,25 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onBack = { navController.popBackStack() },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
-                        onAddToPlaylistArtist = { album ->
-                            playlistViewModel.onAddToPlaylistAlbum(
-                                album.id
+                        onAddToPlaylistArtist = { artist ->
+                            playlistViewModel.onAddToPlaylistArtist(
+                                artist.id
                             )
                         },
                         onAddToPlaylistAlbum = { album ->
                             playlistViewModel.onAddToPlaylistAlbum(
                                 album.id
                             )
-                        }
+                        },
+                        onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onPlayNextAlbum = { album -> playerViewModel.playNextAlbum(album.id) },
+                        onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onAddToQueueAlbum = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                        onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") },
+                        onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
+                        onPlayNextTrack = { track ->playerViewModel.playNext(track) },
+                        onAddToQueueTrack = { track -> playerViewModel.addToQueue(track) },
+                        onEditTrack = { track -> navController.navigate("track/edit/${track.trackId}") },
                     )
                 }
 
@@ -526,7 +536,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             playlistViewModel.onAddToPlaylistAlbum(
                                 album.id
                             )
-                        }
+                        },
+                        onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onPlayNextAlbum = { album -> playerViewModel.playNextAlbum(album.id) },
+                        onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onAddToQueueAlbum = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                        onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") },
+                        onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
+                        onPlayNextTrack = { track ->playerViewModel.playNext(track) },
+                        onAddToQueueTrack = { track -> playerViewModel.addToQueue(track) },
+                        onEditTrack = { track -> navController.navigate("track/edit/${track.trackId}") },
 
                     )
                 }
