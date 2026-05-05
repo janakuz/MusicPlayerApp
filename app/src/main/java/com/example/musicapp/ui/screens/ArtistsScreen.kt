@@ -30,12 +30,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.ui.viewmodels.AllArtistsViewModel
 import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
+import com.example.musicapp.ui.viewmodels.AllArtistsViewModel
 import com.example.musicapp.ui.viewmodels.RefetchState
 
 
@@ -47,7 +47,7 @@ fun AllArtistsScreen(
     onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
-){
+) {
     val artistViewModel: AllArtistsViewModel = hiltViewModel()
 
     data class DeleteEvent(val id: Int, val name: String)
@@ -165,12 +165,10 @@ fun AllArtistsScreen(
 }
 
 
-
 @Preview(showBackground = true)
 @Composable
 fun ArtistsPreview() {
     MusicAppTheme {
-//        ArtistsGrid(DataSource.artists)
     }
 
 }

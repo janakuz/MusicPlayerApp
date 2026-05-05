@@ -53,34 +53,34 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.musicapp.R
+import com.example.musicapp.data.repository.SearchResult
+import com.example.musicapp.ui.components.AddToPlaylistDialog
+import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.components.FilterDrawerContent
 import com.example.musicapp.ui.components.LibraryTopBar
-import com.example.musicapp.ui.screens.AllTracksScreen
-import com.example.musicapp.ui.screens.ArtistView
-import com.example.musicapp.ui.screens.AlbumView
-import com.example.musicapp.ui.screens.AllArtistsScreen
 import com.example.musicapp.ui.components.NowPlayingBar
 import com.example.musicapp.ui.components.SelectionTopBar
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.screens.AlbumEditScreen
+import com.example.musicapp.ui.screens.AlbumView
 import com.example.musicapp.ui.screens.AllAlbumsScreen
+import com.example.musicapp.ui.screens.AllArtistsScreen
+import com.example.musicapp.ui.screens.AllTracksScreen
 import com.example.musicapp.ui.screens.ArtistEditScreen
+import com.example.musicapp.ui.screens.ArtistView
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
+import com.example.musicapp.ui.screens.PlaylistDetailScreen
+import com.example.musicapp.ui.screens.PlaylistEditScreen
+import com.example.musicapp.ui.screens.PlaylistsScreen
 import com.example.musicapp.ui.screens.ScanLibraryScreen
 import com.example.musicapp.ui.screens.SearchContent
 import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.PlaylistViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 import kotlinx.coroutines.launch
-import com.example.musicapp.data.repository.SearchResult
-import com.example.musicapp.ui.components.AddToPlaylistDialog
-import com.example.musicapp.ui.components.CreatePlaylistDialog
-import com.example.musicapp.ui.screens.PlaylistDetailScreen
-import com.example.musicapp.ui.screens.PlaylistEditScreen
-import com.example.musicapp.ui.screens.PlaylistsScreen
-import com.example.musicapp.ui.viewmodels.PlaylistViewModel
 
 
 enum class HomeScreen(@StringRes val title: Int) {
@@ -90,7 +90,7 @@ enum class HomeScreen(@StringRes val title: Int) {
     Playlists(title = R.string.playlists),
     Tracks(title = R.string.tracks),
     NowPLaying(title = R.string.app_name),
-    Scan(title= R.string.scan)
+    Scan(title = R.string.scan)
 }
 
 enum class LibraryScreen {
@@ -114,8 +114,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
-    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, )
-    val noBack = tabs + listOf(HomeScreen.Scan,HomeScreen.Playlists)
+    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks)
+    val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists)
 //    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     var artistSort by remember { mutableStateOf<SortOption?>(null) }
@@ -126,7 +126,13 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    val editRoutes = listOf<String>("artist/edit", "album/edit", "track/edit", "playlist/edit", "playlist/create")
+    val editRoutes = listOf<String>(
+        "artist/edit",
+        "album/edit",
+        "track/edit",
+        "playlist/edit",
+        "playlist/create"
+    )
 
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel()
 
@@ -181,8 +187,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
                 NavigationDrawerItem(
                     label = { Text("Library") },
-                    selected = currentRoute in listOf(HomeScreen.Artists.name, HomeScreen.Albums.name,
-                        HomeScreen.Tracks.name),
+                    selected = currentRoute in listOf(
+                        HomeScreen.Artists.name, HomeScreen.Albums.name,
+                        HomeScreen.Tracks.name
+                    ),
                     onClick = {
                         navController.navigate(HomeScreen.Artists.name)
                         scope.launch { drawerState.close() }
@@ -217,7 +225,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     )
 
 
-
     {
 
         val importM3uLauncher = rememberLauncherForActivityResult(
@@ -233,8 +240,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             snackbarHost = {
                 SnackbarHost(
                     snackbarHostState,
-//                    modifier = Modifier
-//                        .padding(bottom = 600.dp)
                 )
             },
             topBar = {
@@ -278,7 +283,14 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     HomeScreen.Playlists.name -> playlistsSort = sort
                                 }
                             },
-                            onImport = { importM3uLauncher.launch(arrayOf("audio/x-mpegurl", "text/plain")) },
+                            onImport = {
+                                importM3uLauncher.launch(
+                                    arrayOf(
+                                        "audio/x-mpegurl",
+                                        "text/plain"
+                                    )
+                                )
+                            },
                             onMenuClick = { scope.launch { drawerState.open() } },
                             showBack = backIndex < 0,
                             onBack = if (backIndex < 0) ({ navController.popBackStack() }) else null,
@@ -295,7 +307,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             onAddToQueue = { playerViewModel.addToQueueListIds(selection.selectedTrackIds) },
                             onRemoveFromQueue = { playerViewModel.removeFromQueue(selection.selectedQueueIds) },
                             isQueueScreen = (currentRoute == "nowPlaying"),
-                            onRemoveFromPlaylist = { playlistViewModel.removeTracksFromPlaylist(selection.selectedPlaylistEntryIds) },
+                            onRemoveFromPlaylist = {
+                                playlistViewModel.removeTracksFromPlaylist(
+                                    selection.selectedPlaylistEntryIds
+                                )
+                            },
                             isPlaylistScreen = (currentRoute != null && currentRoute.startsWith("playlist/")),
                             onDelete = { selectionViewModel.requestDeletionOfSelected() },
                             onMove = { selectionViewModel.requestMove() },
@@ -323,12 +339,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
             },
             bottomBar = {
-//            AnimatedVisibility(
-//                visible = currentRoute != "nowPlaying",
-//                enter = slideInVertically(initialOffsetY = { it }),
-//                exit = slideOutVertically(targetOffsetY = { it })
-//            ) {// }
-//            if (currentRoute != "nowPlaying") {
                 NowPlayingBar(
                     playerViewModel = playerViewModel,
                     currentRoute = currentRoute,
@@ -336,7 +346,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     modifier = Modifier.navigationBarsPadding()
                 )
             }
-//        }
 
         ) {
 
@@ -349,11 +358,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
             ) {
 
 
-//            navigation(
-//                route = "library",
-//                startDestination = HomeScreen.Artists.name
-//            ) {
-
                 composable(route = HomeScreen.Artists.name) {
                     AllArtistsScreen(
                         sortRequest = artistSort,
@@ -361,7 +365,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             navController.navigate("artist/${artist.id}")
                             {
                                 launchSingleTop = true
-                                //                            restoreState = true
                             }
                         },
                         onPlayNext = { artist -> playerViewModel.playNextArtist(artist.id) },
@@ -382,7 +385,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
-                        onEdit = { album -> navController.navigate("album/edit/${album.id}/all_albums",) },
+                        onEdit = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
                         onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
                     )
                 }
@@ -410,7 +413,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAlbumClick = { album ->
                             navController.navigate("album/${album.id}") {
                                 launchSingleTop = true
-//                                restoreState = true
                             }
                         },
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
@@ -458,13 +460,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             when (source) {
                                 "all_albums" -> navController.popBackStack()
                                 "artist_view" -> navController.navigate(HomeScreen.Artists.name)
-//                                if (id != null) navController.navigate("artists/${id}"){
-//                                popUpTo("album/edit/{albumId}/{source}"){
-//                                    inclusive=true
-//                                }
-//                                launchSingleTop = true
-//                            }
-//                                             else navController.popBackStack()
                                 else -> navController.popBackStack()
                             }
                         }
@@ -496,8 +491,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onBack = { navController.popBackStack() },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
-                        onAddToPlaylistArtist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
-                        onAddToPlaylistAlbum = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
+                        onAddToPlaylistArtist = { album ->
+                            playlistViewModel.onAddToPlaylistAlbum(
+                                album.id
+                            )
+                        },
+                        onAddToPlaylistAlbum = { album ->
+                            playlistViewModel.onAddToPlaylistAlbum(
+                                album.id
+                            )
+                        }
                     )
                 }
 
@@ -514,14 +517,21 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         padding = PaddingValues(0.dp),
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
-                        onAddToPlaylistArtist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
-                        onAddToPlaylistAlbum = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
+                        onAddToPlaylistArtist = { album ->
+                            playlistViewModel.onAddToPlaylistAlbum(
+                                album.id
+                            )
+                        },
+                        onAddToPlaylistAlbum = { album ->
+                            playlistViewModel.onAddToPlaylistAlbum(
+                                album.id
+                            )
+                        }
 
                     )
                 }
 
 
-                //          }
 
                 composable(HomeScreen.Scan.name) {
                     ScanLibraryScreen(
@@ -535,7 +545,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onClick = { id -> navController.navigate("playlist/$id") },
                         onCreateNewPlaylist = { navController.navigate("playlist/create") },
                         onDismiss = { playlistViewModel.hideCreateDialog() },
-//                        playlists = allPlaylists,
                         onNameChange = { newName -> playlistViewModel.onNameChange(newName) },
                         onConfirm = { playlistViewModel.createPlaylist() },
                         onDelete = { id -> playlistViewModel.deletePlaylist(id) },
@@ -551,7 +560,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
 
                 composable("playlist/{playlistId}") {
-                    PlaylistDetailScreen (
+                    PlaylistDetailScreen(
                         onTrackClick = { track, tracks, entryId, entryIds ->
                             playerViewModel.playTracks(tracks, track, entryId, entryIds)
                             navController.navigate("nowPlaying")
@@ -562,7 +571,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        onRemove = { entry, playlist -> playlistViewModel.removeTrackFromPlaylist(entry, playlist) },
+                        onRemove = { entry, playlist ->
+                            playlistViewModel.removeTrackFromPlaylist(
+                                entry,
+                                playlist
+                            )
+                        },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
                         onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) }
 
@@ -570,13 +584,13 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
 
                 composable("playlist/edit/{playlistId}") {
-                    PlaylistEditScreen (
+                    PlaylistEditScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
 
                 composable("playlist/create") {
-                    PlaylistEditScreen (
+                    PlaylistEditScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
@@ -617,15 +631,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         playlistViewModel.addToPlaylist(addState.trackIds, playlist)
                     },
                     onCreateNewPlaylist = {
-                        playlistViewModel.showCreate() }
+                        playlistViewModel.showCreate()
+                    }
                 )
             }
 
             if (createInfo.isShowing) {
                 CreatePlaylistDialog(
                     createInfo = createInfo,
-                    onNameChange = { newName -> playlistViewModel.onNameChange(newName)},
-                    onDismiss = { playlistViewModel.hideCreateDialog() } ,
+                    onNameChange = { newName -> playlistViewModel.onNameChange(newName) },
+                    onDismiss = { playlistViewModel.hideCreateDialog() },
                     onConfirm = {
                         playlistViewModel.createPlaylistAndAdd(addState.trackIds)
                     }
@@ -644,8 +659,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         potentialCount = filterCount,
                         filterDefaults = filterDefaults,
                         labelSuggestions = labelSuggestions,
-                        onDraftChange = {filter -> filterViewModel.updateDraft(filter)},
-                        onLabelQueryChange = {query -> filterViewModel.onLabelQueryChange(query)},
+                        onDraftChange = { filter -> filterViewModel.updateDraft(filter) },
+                        onLabelQueryChange = { query -> filterViewModel.onLabelQueryChange(query) },
                         interaction = sliderInteractionSource,
                         onApply = {
                             filterViewModel.applyFilters()

@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -23,10 +22,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class FilterViewModel@Inject constructor(
+class FilterViewModel @Inject constructor(
     private val filterRepository: FilterRepository
-): ViewModel() {
-
+) : ViewModel() {
 
 
     val filterDefaults = combine(
@@ -68,7 +66,6 @@ class FilterViewModel@Inject constructor(
         )
 
 
-
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredAlbums = _activeFilter.flatMapLatest { filter ->
         val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
@@ -87,14 +84,16 @@ class FilterViewModel@Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
 
-    init{
+    init {
 
         viewModelScope.launch {
             filterDefaults.collect { defaults ->
                 if (_draftFilter.value.activeRange == 1950..2026) {
-                    _draftFilter.update { it.copy(
-                        activeRange = defaults.minYear..defaults.maxYear
-                    )}
+                    _draftFilter.update {
+                        it.copy(
+                            activeRange = defaults.minYear..defaults.maxYear
+                        )
+                    }
                 }
             }
         }
@@ -108,13 +107,12 @@ class FilterViewModel@Inject constructor(
         _draftFilter.value = newFilter
     }
 
-    fun onLabelQueryChange(newQuery: String){
+    fun onLabelQueryChange(newQuery: String) {
         _labelQuery.value = newQuery
     }
 
 
-
-    fun reset(){
+    fun reset() {
         _draftFilter.value = _activeFilter.value
     }
 }

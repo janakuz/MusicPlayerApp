@@ -13,7 +13,7 @@ interface FilterRepository {
 
     fun getAllLabels(): Flow<List<String>>
 
-    fun findLabel(query: String) : Flow<List<String>>
+    fun findLabel(query: String): Flow<List<String>>
 }
 
 data class LibraryFilter(

@@ -8,8 +8,18 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "tracks",
     foreignKeys = [
-        ForeignKey(entity = Album::class, parentColumns = ["id"], childColumns = ["albumId"], onDelete = ForeignKey.CASCADE),
-        ForeignKey(entity = Artist::class, parentColumns = ["id"], childColumns = ["artistId"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(
+            entity = Album::class,
+            parentColumns = ["id"],
+            childColumns = ["albumId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Artist::class,
+            parentColumns = ["id"],
+            childColumns = ["artistId"],
+            onDelete = ForeignKey.CASCADE
+        )
     ],
     indices = [Index("albumId"), Index("artistId")]
 )

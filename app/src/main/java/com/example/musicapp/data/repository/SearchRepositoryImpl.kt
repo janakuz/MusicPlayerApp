@@ -11,7 +11,7 @@ class SearchRepositoryImpl(
     private val artistDao: ArtistDao,
     private val albumDao: AlbumDao,
     private val trackDao: TrackDao
-) : SearchRepository  {
+) : SearchRepository {
 
     override fun globalSearch(userQuery: String): Flow<SearchResult> {
         val final = "%${userQuery.lowercase().replace('*', '%')}%"

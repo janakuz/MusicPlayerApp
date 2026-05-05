@@ -11,13 +11,17 @@ interface PlaylistTracksRepository {
 
     suspend fun insertTrackToPlaylist(playlistId: Int, trackId: Int)
 
-    fun getAllTracksInPlaylist(playlistId: Int, sortBy: String, ascending: Boolean) : Flow<List<PlaylistTrack>>
+    fun getAllTracksInPlaylist(
+        playlistId: Int,
+        sortBy: String,
+        ascending: Boolean
+    ): Flow<List<PlaylistTrack>>
 
-    suspend fun getTracksInPlaylist(playlistId: Int) : List<PlaylistTrack>
+    suspend fun getTracksInPlaylist(playlistId: Int): List<PlaylistTrack>
 
     suspend fun addTracksToPlaylist(playlistId: Int, trackIds: List<Int>)
 
-    fun getAll() : Flow<List<PlaylistTrack>>
+    fun getAll(): Flow<List<PlaylistTrack>>
 
     suspend fun reorder(reordered: List<PlaylistTrack>)
 }

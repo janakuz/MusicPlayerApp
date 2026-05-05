@@ -5,8 +5,10 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "artists",
-        indices = [Index(value = ["searchKey"])])
+@Entity(
+    tableName = "artists",
+    indices = [Index(value = ["searchKey"])]
+)
 data class Artist(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,

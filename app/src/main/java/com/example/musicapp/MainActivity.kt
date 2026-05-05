@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-//    private lateinit var mediaController: MediaController
+    //    private lateinit var mediaController: MediaController
     private val playerViewModel: PlayerViewModel by viewModels()
     private val backgroundScanViewModel: BackgroundScanViewModel by viewModels()
 
@@ -31,7 +31,8 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         if (permissions[Manifest.permission.READ_MEDIA_AUDIO] == true &&
-            permissions[Manifest.permission.READ_MEDIA_IMAGES] == true) {
+            permissions[Manifest.permission.READ_MEDIA_IMAGES] == true
+        ) {
         }
     }
 
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            MusicAppTheme (darkTheme = true) {
+            MusicAppTheme(darkTheme = true) {
 
                 val context = LocalContext.current
 
@@ -86,8 +87,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 MusicApp(playerViewModel, isLibraryInitialized.value)
-                }
             }
+        }
     }
 
 

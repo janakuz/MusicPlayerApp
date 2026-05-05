@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MoodDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(mood: Mood) : Long
+    suspend fun insert(mood: Mood): Long
 
     @Query("SELECT * FROM genres where name=:name")
     suspend fun getMoodByName(name: String): Mood?

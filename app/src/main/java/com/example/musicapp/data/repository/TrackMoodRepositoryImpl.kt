@@ -16,8 +16,7 @@ class TrackMoodRepositoryImpl(
     ) {
         val moodIds = moods.map { name ->
             val normalized = name.normalizeGenre()
-            moodDao.getMoodByName(normalized)?.id ?:
-            moodDao.insert(Mood(name = normalized)).toInt()
+            moodDao.getMoodByName(normalized)?.id ?: moodDao.insert(Mood(name = normalized)).toInt()
         }
 
         trackMoodDao.syncMoods(trackId, moodIds)

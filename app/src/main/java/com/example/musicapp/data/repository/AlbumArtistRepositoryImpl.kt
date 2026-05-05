@@ -2,28 +2,40 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
-import com.example.musicapp.data.local.model.AlbumIdWithArtist
-import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.AlbumIdWithArtist
+import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 class AlbumArtistRepositoryImpl(
-    private val albumArtistDao : AlbumArtistDao,
+    private val albumArtistDao: AlbumArtistDao,
     private val trackDao: TrackDao
 ) : AlbumArtistRepository {
     override fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>> {
         return albumArtistDao.getAlbumsByArtist(artistId)
     }
 
-    override fun getAllAlbumsByArtistSorted(artistId: Int, orderBy: SortOption): Flow<List<AlbumInfo>> {
+    override fun getAllAlbumsByArtistSorted(
+        artistId: Int,
+        orderBy: SortOption
+    ): Flow<List<AlbumInfo>> {
         return when (orderBy.field) {
-            SortField.NAME -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistTitle(artistId) else albumArtistDao.getAlbumsByArtistTitleDesc(artistId)
-            SortField.DURATION -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistDuration(artistId) else albumArtistDao.getAlbumsByArtistDurationDesc(artistId)
-            SortField.RELEASE_DATE -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtist(artistId) else albumArtistDao.getAlbumsByArtistDesc(artistId)
+            SortField.NAME -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistTitle(artistId) else albumArtistDao.getAlbumsByArtistTitleDesc(
+                artistId
+            )
+
+            SortField.DURATION -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistDuration(
+                artistId
+            ) else albumArtistDao.getAlbumsByArtistDurationDesc(artistId)
+
+            SortField.RELEASE_DATE -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtist(
+                artistId
+            ) else albumArtistDao.getAlbumsByArtistDesc(artistId)
+
             else -> albumArtistDao.getAlbumsByArtistTitle(artistId) //shouldn't happen
         }
     }

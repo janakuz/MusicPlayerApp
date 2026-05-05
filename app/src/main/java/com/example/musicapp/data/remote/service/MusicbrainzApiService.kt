@@ -13,19 +13,19 @@ interface MusicbrainzApiService {
     suspend fun findAlbum(
         @Query("query") query: String,
         @Query("fmt") format: String = "json"
-    ) : ReleaseSearchResponse
+    ): ReleaseSearchResponse
 
     @GET("artist/{mbid}")
     suspend fun getArtist(
         @Path("mbid") mbid: String,
         @Query("fmt") format: String = "json",
         @Query("inc") inc: String = "url-rels+tags"
-    ) : ArtistMBResponse
+    ): ArtistMBResponse
 
     @GET("artist/")
     suspend fun findArtist(
         @Query("query") query: String,
         @Query("fmt") format: String = "json"
-    ) : ArtistSearchResponse
+    ): ArtistSearchResponse
 
 }

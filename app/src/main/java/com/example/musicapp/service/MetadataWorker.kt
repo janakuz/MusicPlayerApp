@@ -23,9 +23,6 @@ class MetadataWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val metadataRepository: MetadataRepository
-//    private val albumRepository: AlbumRepository,
-//    private val artistRepository: ArtistRepository,
-//    private val albumArtistRepository: AlbumArtistRepository
 ) : CoroutineWorker(context, params) {
 
     val isManualScan = inputData.getBoolean("IS_MANUAL_SCAN", false)
@@ -45,8 +42,9 @@ class MetadataWorker @AssistedInject constructor(
         }
 
         try {
-            metadataRepository.enrichMetadata(isManualScan).collect{ progress ->
-                setProgress(progress.toWorkData())}
+            metadataRepository.enrichMetadata(isManualScan).collect { progress ->
+                setProgress(progress.toWorkData())
+            }
             return Result.success()
         } catch (e: HttpException) {
             if (e.code() == 429 || e.code() == 503) {

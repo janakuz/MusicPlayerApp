@@ -260,7 +260,10 @@ object AppModule {
         .addInterceptor(loggingInterceptor)
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
-                .addHeader("Authorization", "Discogs key=${BuildConfig.DISCOGS_KEY}, secret=${BuildConfig.DISCOGS_SECRET}")
+                .addHeader(
+                    "Authorization",
+                    "Discogs key=${BuildConfig.DISCOGS_KEY}, secret=${BuildConfig.DISCOGS_SECRET}"
+                )
                 .build()
             chain.proceed(request)
         }
@@ -303,11 +306,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAlbumRepository(albumDao: AlbumDao,
-                               trackDao: TrackDao,
-                               musicbrainzApiService: MusicbrainzApiService,
-                               coverArtArchiveApiService: CoverArtArchiveApiService,
-                               discogsApiService: DiscogsApiService
+    fun provideAlbumRepository(
+        albumDao: AlbumDao,
+        trackDao: TrackDao,
+        musicbrainzApiService: MusicbrainzApiService,
+        coverArtArchiveApiService: CoverArtArchiveApiService,
+        discogsApiService: DiscogsApiService
     ): AlbumRepository {
         return AlbumRepositoryImpl(
             albumDao,
@@ -369,7 +373,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAlbumGenreRepository(albumGenreDao: AlbumGenreDao, genreDao: GenreDao): AlbumGenreRepository {
+    fun provideAlbumGenreRepository(
+        albumGenreDao: AlbumGenreDao,
+        genreDao: GenreDao
+    ): AlbumGenreRepository {
         return AlbumGenreRepositoryImpl(albumGenreDao, genreDao)
     }
 
@@ -390,27 +397,34 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackMoodRepository(trackMoodDao: TrackMoodDao, moodDao: MoodDao): TrackMoodRepository {
+    fun provideTrackMoodRepository(
+        trackMoodDao: TrackMoodDao,
+        moodDao: MoodDao
+    ): TrackMoodRepository {
         return TrackMoodRepositoryImpl(trackMoodDao, moodDao)
     }
 
 
     @Provides
     @Singleton
-    fun provideSearchRepository(artistDao: ArtistDao, albumDao: AlbumDao, trackDao: TrackDao) : SearchRepository {
+    fun provideSearchRepository(
+        artistDao: ArtistDao,
+        albumDao: AlbumDao,
+        trackDao: TrackDao
+    ): SearchRepository {
         return SearchRepositoryImpl(artistDao, albumDao, trackDao)
     }
 
     @Provides
     @Singleton
-    fun provideFilterRepository(albumDao: AlbumDao) : FilterRepository {
+    fun provideFilterRepository(albumDao: AlbumDao): FilterRepository {
         return FilterRepositoryImpl(albumDao)
     }
 
     @Provides
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create (
+        PreferenceDataStoreFactory.create(
             produceFile = {
                 context.preferencesDataStoreFile("preference_file")
             }
@@ -424,10 +438,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideQueueRepository(queueDao: QueueDao, dataStore: DataStore<Preferences>): PlayQueueRepository {
+    fun provideQueueRepository(
+        queueDao: QueueDao,
+        dataStore: DataStore<Preferences>
+    ): PlayQueueRepository {
         return OfflinePlayQueueRepository(dataStore, queueDao)
     }
-
 
 
     @Provides

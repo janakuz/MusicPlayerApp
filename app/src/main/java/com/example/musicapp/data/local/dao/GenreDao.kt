@@ -12,7 +12,7 @@ interface GenreDao {
 
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(genre: Genre) : Long
+    suspend fun insert(genre: Genre): Long
 
     @Query("SELECT * FROM genres where name=:name")
     suspend fun getGenreByName(name: String): Genre?

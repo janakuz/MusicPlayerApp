@@ -61,14 +61,12 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
     }.distinctUntilChanged()
 
 
-
     override val playlistsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[PLAYLISTS_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[PLAYLISTS_SORT_ASC] ?: true
         )
     }.distinctUntilChanged()
-
 
 
     override suspend fun updateArtistSort(option: SortOption) {

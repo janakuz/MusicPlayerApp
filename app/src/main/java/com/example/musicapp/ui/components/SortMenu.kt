@@ -49,11 +49,21 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         LibraryScreen.ARTISTS -> listOf(SortField.NAME)
         LibraryScreen.ALBUMS ->
             listOf(SortField.NAME, SortField.RELEASE_DATE, SortField.DURATION)
+
         LibraryScreen.TRACKS ->
             listOf(SortField.NAME, SortField.DURATION)
-        LibraryScreen.ALBUM_DETAIL -> listOf(SortField.NAME, SortField.RELEASE_DATE, SortField.DURATION)
-        LibraryScreen.PLAYLISTS -> listOf(SortField.NAME, SortField.DURATION, SortField.TRACK_NUM,
-            SortField.DATE_CREATED, SortField.DATE_UPDATED)
+
+        LibraryScreen.ALBUM_DETAIL -> listOf(
+            SortField.NAME,
+            SortField.RELEASE_DATE,
+            SortField.DURATION
+        )
+
+        LibraryScreen.PLAYLISTS -> listOf(
+            SortField.NAME, SortField.DURATION, SortField.TRACK_NUM,
+            SortField.DATE_CREATED, SortField.DATE_UPDATED
+        )
+
         else -> emptyList()
     }
 
@@ -64,51 +74,51 @@ fun SortMenu(
     onSortSelected: (SortOption) -> Unit,
 ) {
 
-            availableSortFields(screen).forEach { field ->
-                DropdownMenuItem(
-                    text = {
-                        Row (verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                "Sort by ${
-                                    field.name.lowercase().replace("_", " ")
-                                        .replaceFirstChar { it.uppercase() }
-                                } "
-                            )
-                            Icon(
-                                Icons.Default.ArrowUpward,
-                                contentDescription = "ASC",
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    },
-                    onClick = {
-                        onSortSelected(SortOption(field, ascending = true))
-                    }
-                )
-                DropdownMenuItem(
-                    text = {
-                        Row (verticalAlignment = Alignment.Bottom) {
-
-                            Text(
-                                "Sort by ${
-                                    field.name.lowercase().replace("_", " ")
-                                        .replaceFirstChar { it.uppercase() }
-                                } "
-                            )
-
-                            Icon(
-                                Icons.Default.ArrowDownward,
-                                contentDescription = "DESC",
-                                modifier = Modifier.size(16.dp),
-                            )
-
-                        }
-                    },
-                    onClick = {
-                        onSortSelected(SortOption(field, ascending = false))
-                    }
-                )
+    availableSortFields(screen).forEach { field ->
+        DropdownMenuItem(
+            text = {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        "Sort by ${
+                            field.name.lowercase().replace("_", " ")
+                                .replaceFirstChar { it.uppercase() }
+                        } "
+                    )
+                    Icon(
+                        Icons.Default.ArrowUpward,
+                        contentDescription = "ASC",
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            },
+            onClick = {
+                onSortSelected(SortOption(field, ascending = true))
             }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(verticalAlignment = Alignment.Bottom) {
+
+                    Text(
+                        "Sort by ${
+                            field.name.lowercase().replace("_", " ")
+                                .replaceFirstChar { it.uppercase() }
+                        } "
+                    )
+
+                    Icon(
+                        Icons.Default.ArrowDownward,
+                        contentDescription = "DESC",
+                        modifier = Modifier.size(16.dp),
+                    )
+
+                }
+            },
+            onClick = {
+                onSortSelected(SortOption(field, ascending = false))
+            }
+        )
+    }
 
 
 }

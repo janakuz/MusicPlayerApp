@@ -26,8 +26,9 @@ class WorkerManagerRepositoryImpl(private val workManager: WorkManager) :
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(
                 Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build())
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
             .setBackoffCriteria(
                 BackoffPolicy.EXPONENTIAL,
                 WorkRequest.Companion.MIN_BACKOFF_MILLIS,

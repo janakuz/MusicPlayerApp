@@ -23,9 +23,11 @@ interface AlbumGenreDao {
         }
     }
 
-    @Query("SELECT g.name " +
-            "FROM album_genres ag JOIN genres g ON ag.genreId=g.id " +
-            "WHERE ag.albumId=:albumId")
-    suspend fun getAlbumGenres(albumId: Int) : List<String>
+    @Query(
+        "SELECT g.name " +
+                "FROM album_genres ag JOIN genres g ON ag.genreId=g.id " +
+                "WHERE ag.albumId=:albumId"
+    )
+    suspend fun getAlbumGenres(albumId: Int): List<String>
 }
 

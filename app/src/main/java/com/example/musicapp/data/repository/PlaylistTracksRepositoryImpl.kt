@@ -1,11 +1,11 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
-import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.entity.PlaylistTracks
+import com.example.musicapp.data.local.model.PlaylistTrack
 import kotlinx.coroutines.flow.Flow
 
-class PlaylistTracksRepositoryImpl (
+class PlaylistTracksRepositoryImpl(
     private val playlistTracksDao: PlaylistTracksDao,
     private val playlistRepository: PlaylistRepository
 ) : PlaylistTracksRepository {
@@ -43,7 +43,7 @@ class PlaylistTracksRepositoryImpl (
         playlistId: Int,
         sortBy: String,
         ascending: Boolean
-    ) : Flow<List<PlaylistTrack>> {
+    ): Flow<List<PlaylistTrack>> {
         return playlistTracksDao.getTracksForPlaylistByPosition(playlistId)
     }
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +32,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -45,21 +48,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
-import kotlin.math.absoluteValue
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.ui.graphics.Color
-import com.example.musicapp.data.remote.dto.ArtistSearchInfo
-import androidx.compose.foundation.lazy.items
 import com.example.musicapp.ui.viewmodels.NameEditUiState
+import kotlin.math.absoluteValue
 
 
 @Composable
@@ -89,7 +89,9 @@ fun ArtistImagePicker(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().height(300.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
             contentPadding = PaddingValues(horizontal = 80.dp),
             pageSpacing = 16.dp
         ) { page ->
@@ -160,9 +162,12 @@ fun ArtistBioEditor(
             0 -> OutlinedTextField(
                 value = draftBio,
                 onValueChange = onBioChange,
-                modifier = Modifier.fillMaxWidth().height(250.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp),
                 label = { Text("Edit Biography") }
             )
+
             1 -> BioReferenceText(lastFmBio, onCopy = onBioChange)
             2 -> BioReferenceText(discogsBio, onCopy = onBioChange)
         }
@@ -175,7 +180,10 @@ fun BioReferenceText(text: String, onCopy: (String) -> Unit) {
         Text(
             text = if (text.isBlank()) "No data found." else text,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.fillMaxWidth().heightIn(max = 250.dp).verticalScroll(rememberScrollState())
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 250.dp)
+                .verticalScroll(rememberScrollState())
         )
         if (text.isNotBlank()) {
             TextButton(onClick = { onCopy(text) }) {
@@ -240,8 +248,7 @@ fun ArtistDisambiguationDialog(
 @Composable
 fun ArtistEditScreen(
     onNavigateBack: () -> Unit,
-//    onNavigateBack: (Int) -> Unit,
-){
+) {
     val artistEditViewModel: ArtistEditViewModel = hiltViewModel()
 
     val artistEditUiState by artistEditViewModel.uiState.collectAsState()
@@ -255,7 +262,9 @@ fun ArtistEditScreen(
     val handleBack = {
         if (canSave)
             showDiscardDialog = true
-        else { onNavigateBack() }
+        else {
+            onNavigateBack()
+        }
     }
 
     if (showDiscardDialog) {
@@ -367,7 +376,7 @@ fun ArtistEditScreen(
                 is NameEditUiState.Error -> {
                 }
 
-                else -> { }
+                else -> {}
             }
         }
 

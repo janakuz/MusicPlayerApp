@@ -13,4 +13,4 @@ data class TrackInfo(
     val albumId: Int,
     val artistId: Int,
 
-)
+    )

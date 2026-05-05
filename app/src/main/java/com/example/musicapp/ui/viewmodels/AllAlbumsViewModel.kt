@@ -6,9 +6,9 @@ import android.provider.MediaStore
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.remote.dto.Release
-import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
@@ -32,7 +32,6 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.map
 
 @HiltViewModel
 class AllAlbumsViewModel @Inject constructor(
@@ -71,7 +70,7 @@ class AllAlbumsViewModel @Inject constructor(
         )
 
 
-    fun toAlbumInfo(albums: List<Album>): List<AlbumInfo>{
+    fun toAlbumInfo(albums: List<Album>): List<AlbumInfo> {
         val albumInfos = albums.map { album ->
             AlbumInfo(
                 albumId = album.id,
@@ -124,18 +123,20 @@ class AllAlbumsViewModel @Inject constructor(
     }
 
 
-    fun refetchMetadata(id: Int){
+    fun refetchMetadata(id: Int) {
         viewModelScope.launch {
             val album = albumRepository.getAlbum(id).first()
             val artists = albumArtistRepository.getAllAlbumArtists(id)
-            val albumArtist =  artists.first { it.mbId != null }
+            val albumArtist = artists.first { it.mbId != null }
             _refetchState.value = RefetchAlbumState.Saving
-            val query = if (albumArtist.mbId != null) "arid:${albumArtist.mbId} AND release:${album.searchKey}" else """artist:${albumArtist.searchKey} AND release:${album.searchKey}"""
+            val query =
+                if (albumArtist.mbId != null) "arid:${albumArtist.mbId} AND release:${album.searchKey}" else """artist:${albumArtist.searchKey} AND release:${album.searchKey}"""
             val searchResults = albumRepository.findAlbumMB(query)
             if (searchResults == null || searchResults.releases.isEmpty()) {
                 _refetchState.value = RefetchAlbumState.Error("No album found")
             } else if (searchResults.releases.size > 1) {
-                _refetchState.value = RefetchAlbumState.DisambiguationNeeded(searchResults.releases, album)
+                _refetchState.value =
+                    RefetchAlbumState.DisambiguationNeeded(searchResults.releases, album)
                 return@launch
             } else {
                 performFinalSave(searchResults.releases[0], album)
@@ -145,14 +146,14 @@ class AllAlbumsViewModel @Inject constructor(
         }
     }
 
-    fun reset(){
+    fun reset() {
         _refetchState.value = RefetchAlbumState.Idle
     }
 
     suspend fun performFinalSave(
         release: Release,
         oldAlbum: Album,
-        ) {
+    ) {
         val newId = metadataRepository.refetchAlbum(
             album = release,
             currentAlbum = oldAlbum
@@ -160,7 +161,7 @@ class AllAlbumsViewModel @Inject constructor(
         _refetchState.value = RefetchAlbumState.Saved
     }
 
-    fun onAlbumSelected(release: Release){
+    fun onAlbumSelected(release: Release) {
         viewModelScope.launch {
             val currentAlbum = (_refetchState.value as RefetchAlbumState.DisambiguationNeeded).album
             _refetchState.value = RefetchAlbumState.Saving
@@ -177,13 +178,16 @@ class AllAlbumsViewModel @Inject constructor(
 data class AlbumListUiState(
     val isLoading: Boolean = true,
     val albums: List<AlbumInfo> = emptyList(),
-    val error: String? = null)
+    val error: String? = null
+)
 
 
 sealed class RefetchAlbumState {
-    object Idle: RefetchAlbumState()
-    data class DisambiguationNeeded(val matches: List<Release>, val album: Album) : RefetchAlbumState()
-    object Saving: RefetchAlbumState()
+    object Idle : RefetchAlbumState()
+    data class DisambiguationNeeded(val matches: List<Release>, val album: Album) :
+        RefetchAlbumState()
+
+    object Saving : RefetchAlbumState()
     object Saved : RefetchAlbumState()
     data class Error(val message: String) : RefetchAlbumState()
 }

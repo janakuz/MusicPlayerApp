@@ -20,9 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
-import kotlin.collections.plusAssign
 
-class LocalLibraryScanner@Inject constructor(
+class LocalLibraryScanner @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
     private val albumArtistRepository: AlbumArtistRepository,
@@ -34,11 +33,7 @@ class LocalLibraryScanner@Inject constructor(
     suspend fun scanAll(context: Context, onProgress: (Float) -> Unit) {
         val audioEntries = queryMediaStore(context, isManual = true)
 
-//        val albumsAndArtists = extractAlbumsAndArtists(audioEntries) { progress ->
-//            onProgress(progress) }
-//        val albums = albumsAndArtists.first
-
-        val tracks = buildTracks(context, audioEntries, onProgress)
+        buildTracks(context, audioEntries, onProgress)
     }
 
 
@@ -143,7 +138,10 @@ class LocalLibraryScanner@Inject constructor(
     }
 
 
-    private suspend fun queryMediaStore(context: Context, isManual: Boolean = false): List<RawAudioEntry> {
+    private suspend fun queryMediaStore(
+        context: Context,
+        isManual: Boolean = false
+    ): List<RawAudioEntry> {
         val list = mutableListOf<RawAudioEntry>()
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -227,7 +225,6 @@ class LocalLibraryScanner@Inject constructor(
         val BATCH_SIZE = 100
 
         entries.chunked(BATCH_SIZE).forEach { batch ->
-            val toInsert = mutableListOf<Track>()
             database.withTransaction {
                 for (entry in batch) {
                     val artistName = entry.artistName ?: "Unknown"
@@ -309,26 +306,6 @@ class LocalLibraryScanner@Inject constructor(
 
                     done++
 
-//                    try {
-//                        trackRepository.insertAll(toInsert)
-//                    } catch (e: Exception) {
-//                        Log.e("FK_FAIL", "Batch failed, checking tracks...")
-//
-//                        for (track in toInsert) {
-//                            val albumExists = albumRepository.getById(track.albumId)
-//                            val artistExists = artistRepository.getArtist(track.artistId).first()
-//
-//                            if (albumExists.id == -1 || artistExists.id == -1) {
-//                                Log.e(
-//                                    "FK_FAIL",
-//                                    "Bad track: albumId=${track.albumId}, artistId=${track.artistId}"
-//                                )
-//                            }
-//                        }
-//
-//                        throw e
-//                    }
-
                     if (onProgressUpdate != null && (done % 5 == 0 || done == total - 1)) {
                         val percent = (done.toFloat() / total) * 100
                         onProgressUpdate(percent)
@@ -338,126 +315,8 @@ class LocalLibraryScanner@Inject constructor(
             }
         }
 
-        for (entry in entries){
-//                val artistName = entry.artistName ?: "Unknown"
-//                val albumTitle = entry.albumTitle ?: "Unknown"
-//                val releaseYear = entry.releaseDate?.take(4)
-//                val trackTitle = entry.title ?: "Unknown"
-//                val trackUri = entry.fileUri
-//
-//
-//                val existing = trackRepository.getTrackByUri(trackUri)
-//
-//
-//                if (existing == null) {
-//                    Log.d(
-//                        "scan local start",
-//                        "${entry.albumTitle} ${entry.artistName} ${entry.title}"
-//                    )
-//                    val artistId = artistRepository.getOrCreateArtistByName(
-//                        artistName,
-//                        artistName.normalizeForMatching()
-//                    )
-//                    var albumId: Int? = null
-//                    albumId = albumRepository.getByTitle(albumTitle, releaseYear)?.id
-//                    Log.d("scan local mid", "$albumId")
-//
-//                    if (albumId == null) {
-//                        val albumArt = findAlbumArt(context, entry.filePath)
-//
-//                        val newAlbum = Album(
-//                            title = albumTitle,
-//                            searchKey = albumTitle.normalizeForMatching(),
-//                            duration = 0,
-//                            image = albumArt,
-//                            numTracks = 0,
-//                            mbId = null,
-//                            label = null,
-//                            discogsId = null,
-//                            releaseDate = entry.releaseDate
-//                        )
-//
-//                        albumId = albumRepository.insertWithReturn(newAlbum).toInt()
-//                    }
-//
-//
-//                    val pairKey = "${artistId}_${albumId}"
-//
-//                    if (!linkedPairs.contains(pairKey)) {
-//                        Log.d("scan local mid", pairKey)
-//                        albumArtistRepository.insert(
-//                            AlbumArtist(
-//                                albumId = albumId,
-//                                artistId = artistId
-//                            )
-//                        )
-//                        linkedPairs.add(pairKey)
-//                    }
-//
-//                    val newTrack = Track(
-//                        title = trackTitle,
-//                        artistId = artistId,
-//                        albumId = albumId,
-//                        duration = entry.duration ?: 0L,
-//                        plays = 0,
-//                        mbId = null,
-//                        lyrics = null,
-//                        trackNumber = normalizeTrackNumber(entry.trackNumber),
-//                        lastPlayed = null,
-//                        fileUri = trackUri,
-//                        filePath = entry.filePath,
-//                        valence = null,
-//                        energy = null,
-//                        key = null,
-//                        bpm = null
-//                    )
-//
-//                    toInsert.add(newTrack)
-//
-//                }
-//
-//                done++
-//                if (done % 100 == 0) {
-//
-//                    try {
-//                        trackRepository.insertAll(toInsert)
-//                    } catch (e: Exception) {
-//                        Log.e("FK_FAIL", "Batch failed, checking tracks...")
-//
-//                        for (track in toInsert) {
-//                            val albumExists = albumRepository.getById(track.albumId)
-//                            val artistExists = artistRepository.getArtist(track.artistId).first()
-//
-//                            if (albumExists.id == -1 || artistExists.id == -1) {
-//                                Log.e(
-//                                    "FK_FAIL",
-//                                    "Bad track: albumId=${track.albumId}, artistId=${track.artistId}"
-//                                )
-//                            }
-//                        }
-//
-//                        throw e
-//                    }
-//
-////                trackRepository.insertAll(toInsert)
-//                    toInsert.clear()
-//                }
-//
-//                if (onProgressUpdate != null && (done % 5 == 0 || done == total - 1)) {
-//                    val percent = (done.toFloat() / total) * 100
-//                    onProgressUpdate(percent)
-//                    Log.d("scan local", trackTitle)
-//                }
-
-
-        }
-
-//        if (toInsert.isNotEmpty()){
-//            trackRepository.insertAll(toInsert)
-//        }
-
         val allAlbums = albumRepository.getAll()
-        for (album in allAlbums){
+        for (album in allAlbums) {
             var toUpdate = album
             val tracks = trackRepository.getAlbumTracks(album.id)
             val total = tracks.sumOf { it.duration }
@@ -478,7 +337,6 @@ class LocalLibraryScanner@Inject constructor(
         if (rawTrackNumber == null) return null
         return if (rawTrackNumber >= 1000) rawTrackNumber % 1000 else rawTrackNumber
     }
-
 
 
 }

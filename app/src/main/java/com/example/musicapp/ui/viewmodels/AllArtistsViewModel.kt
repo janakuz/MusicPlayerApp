@@ -4,16 +4,18 @@ import android.app.PendingIntent
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
-
 import com.example.musicapp.data.local.entity.Artist
-
-import com.example.musicapp.data.repository.ArtistRepository;
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,17 +23,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.core.net.toUri
-import com.example.musicapp.data.remote.dto.ArtistSearchInfo
-import com.example.musicapp.data.repository.AlbumRepository
-import com.example.musicapp.data.repository.MetadataRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 
 @HiltViewModel
 class AllArtistsViewModel @Inject constructor(
@@ -56,7 +54,7 @@ class AllArtistsViewModel @Inject constructor(
     val artistListUiState: StateFlow<ArtistListUiState> = userPreferencesRepository.artistSortOption
         .flatMapLatest { option ->
             artistRepository.getAllArtistsSorted(option.ascending)
-                .map {  artists -> ArtistListUiState(artists = artists, isLoading = false) }
+                .map { artists -> ArtistListUiState(artists = artists, isLoading = false) }
                 .onStart { emit(ArtistListUiState(isLoading = true)) }
                 .catch { e -> emit(ArtistListUiState(error = e.message, isLoading = false)) }
         }
@@ -68,7 +66,7 @@ class AllArtistsViewModel @Inject constructor(
         )
 
 
-    fun setSort(option: SortOption){
+    fun setSort(option: SortOption) {
         viewModelScope.launch {
             userPreferencesRepository.updateArtistSort(option)
         }
@@ -86,7 +84,7 @@ class AllArtistsViewModel @Inject constructor(
     fun prepareDeletion(artistId: Int) {
         viewModelScope.launch {
             val uris = artistRepository.getTrackUrisByArtist(artistId)
-            _pendingDeleteUris. value = uris
+            _pendingDeleteUris.value = uris
         }
     }
 
@@ -101,11 +99,11 @@ class AllArtistsViewModel @Inject constructor(
         }
     }
 
-    fun clearPendingDeletion(){
+    fun clearPendingDeletion() {
         _pendingDeleteUris.value = emptyList()
     }
 
-    fun refetchMetadata(id: Int){
+    fun refetchMetadata(id: Int) {
         viewModelScope.launch {
             val artist = artistRepository.getArtist(id).first()
             _refetchState.value = RefetchState.Saving
@@ -124,7 +122,7 @@ class AllArtistsViewModel @Inject constructor(
         }
     }
 
-    fun reset(){
+    fun reset() {
         _refetchState.value = RefetchState.Idle
     }
 
@@ -139,7 +137,7 @@ class AllArtistsViewModel @Inject constructor(
         _refetchState.value = RefetchState.Saved
     }
 
-    fun onArtistSelected(artistResult: ArtistSearchInfo){
+    fun onArtistSelected(artistResult: ArtistSearchInfo) {
         viewModelScope.launch {
             val currentArtist = (_refetchState.value as RefetchState.DisambiguationNeeded).artist
             _refetchState.value = RefetchState.Saving
@@ -152,19 +150,21 @@ class AllArtistsViewModel @Inject constructor(
     }
 
 
-
 }
 
 data class ArtistListUiState(
     val isLoading: Boolean = true,
     val artists: List<Artist> = emptyList(),
-    val error: String? = null)
+    val error: String? = null
+)
 
 
 sealed class RefetchState {
-    object Idle: RefetchState()
-    data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>, val artist: Artist) : RefetchState()
-    object Saving: RefetchState()
+    object Idle : RefetchState()
+    data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>, val artist: Artist) :
+        RefetchState()
+
+    object Saving : RefetchState()
     object Saved : RefetchState()
     data class Error(val message: String) : RefetchState()
 }

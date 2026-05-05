@@ -18,22 +18,19 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class TrackSelectionViewModel @Inject constructor (
+class TrackSelectionViewModel @Inject constructor(
     private val trackRepository: TrackRepository
-): ViewModel() {
+) : ViewModel() {
     private val _selectionMode = MutableStateFlow(false)
     val selectionMode = _selectionMode.asStateFlow()
 
 
     private val _selectedTrackIds = MutableStateFlow<Set<Int>>(emptySet())
-    val selectedTrackIds = _selectedTrackIds.asStateFlow()
 
     private val _selectedPlaylistEntryIds = MutableStateFlow<Set<Int>>(emptySet())
-    val selectedPlaylistEntryIds = _selectedPlaylistEntryIds.asStateFlow()
 
 
     private val _selectedTrackUUIDs = MutableStateFlow<Set<String>>(emptySet())
-    val selectedTrackUUIDs = _selectedTrackUUIDs.asStateFlow()
 
     private val _deletionRequestTrigger = MutableSharedFlow<Unit>(replay = 0)
     val deletionRequestTrigger = _deletionRequestTrigger.asSharedFlow()
@@ -50,12 +47,12 @@ class TrackSelectionViewModel @Inject constructor (
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val selectionState: StateFlow<SelectionState> =
-        combine (
+        combine(
             _selectedTrackIds,
             _selectedTrackUUIDs,
             _selectedPlaylistEntryIds
         ) { trackIds, UUIDs, entryIds ->
-            SelectionState (
+            SelectionState(
                 selectedTrackIds = trackIds,
                 selectedQueueIds = UUIDs,
                 selectedPlaylistEntryIds = entryIds,
@@ -72,7 +69,7 @@ class TrackSelectionViewModel @Inject constructor (
             )
         )
 
-    fun toggleSelection(trackId: Int){
+    fun toggleSelection(trackId: Int) {
         _selectedTrackIds.update { set ->
             if (trackId in set) set - trackId
             else set + trackId
@@ -81,7 +78,7 @@ class TrackSelectionViewModel @Inject constructor (
         _selectionMode.value = _selectedTrackIds.value.isNotEmpty()
     }
 
-    fun toggleSelectionPlaylist(entryId: Int){
+    fun toggleSelectionPlaylist(entryId: Int) {
         _selectedPlaylistEntryIds.update { set ->
             if (entryId in set) set - entryId
             else set + entryId
@@ -98,7 +95,7 @@ class TrackSelectionViewModel @Inject constructor (
         _selectionMode.value = false
     }
 
-    fun toggleSelection(uuid: String){
+    fun toggleSelection(uuid: String) {
         _selectedTrackUUIDs.update { set ->
             if (uuid in set) set - uuid
             else set + uuid
@@ -113,7 +110,7 @@ class TrackSelectionViewModel @Inject constructor (
         }
     }
 
-    fun requestMove(){
+    fun requestMove() {
         viewModelScope.launch {
             _moveTrigger.emit(Unit)
         }

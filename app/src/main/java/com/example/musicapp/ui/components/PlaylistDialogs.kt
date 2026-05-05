@@ -36,7 +36,7 @@ fun AddToPlaylistDialog(
     onDismiss: () -> Unit,
     onPlaylistSelected: (Playlist) -> Unit,
     onCreateNewPlaylist: () -> Unit
-    ) {
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Add to Playlist") },
@@ -61,7 +61,10 @@ fun AddToPlaylistDialog(
                         ListItem(
                             headlineContent = { Text(playlist.name) },
                             leadingContent = {
-                                Icon(Icons.AutoMirrored.Default.PlaylistAdd, contentDescription = null)
+                                Icon(
+                                    Icons.AutoMirrored.Default.PlaylistAdd,
+                                    contentDescription = null
+                                )
                             },
                             modifier = Modifier.clickable {
                                 onPlaylistSelected(playlist)

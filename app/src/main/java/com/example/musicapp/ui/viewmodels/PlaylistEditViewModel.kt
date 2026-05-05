@@ -41,23 +41,22 @@ class PlaylistEditViewModel @Inject constructor(
     private var initialState: PlaylistEditUiState? = null
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
-        val hasChanges = state.name != initialState?.name || state.draftImageUrl != initialState?.draftImageUrl
-                || state.draftDescription != initialState?.draftDescription
+        val hasChanges =
+            state.name != initialState?.name || state.draftImageUrl != initialState?.draftImageUrl
+                    || state.draftDescription != initialState?.draftDescription
         (initialState != null && hasChanges && !state.isSaving) || !isEditMode
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
 
 
     init {
         if (isEditMode) {
             loadPlaylist(playlistId!!)
-        }
-        else {
+        } else {
             _uiState.update { it.copy(name = "New Playlist") }
         }
     }
 
-    fun loadPlaylist(playlistId: Int){
+    fun loadPlaylist(playlistId: Int) {
         viewModelScope.launch {
             val playlist = playlistRepository.getPlaylistById(playlistId)
 
@@ -101,7 +100,7 @@ class PlaylistEditViewModel @Inject constructor(
     }
 
 
-    fun onSave(context: Context){
+    fun onSave(context: Context) {
         if (isEditMode) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
@@ -109,7 +108,10 @@ class PlaylistEditViewModel @Inject constructor(
                 val currentPlaylist = playlistRepository.getPlaylistById(playlistId!!)
 
                 val newPath =
-                    if (_uiState.value.draftImageUrl != null) playlistRepository.savePlaylistImage(context, _uiState.value.draftImageUrl!!.toUri())
+                    if (_uiState.value.draftImageUrl != null) playlistRepository.savePlaylistImage(
+                        context,
+                        _uiState.value.draftImageUrl!!.toUri()
+                    )
                     else _uiState.value.draftImageUrl
 
                 val newPlaylist = currentPlaylist.copy(
@@ -120,8 +122,7 @@ class PlaylistEditViewModel @Inject constructor(
 
                 playlistRepository.update(newPlaylist)
             }
-        }
-        else{
+        } else {
             viewModelScope.launch {
 
                 val newPlaylist = Playlist(

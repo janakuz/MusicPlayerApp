@@ -24,8 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.ui.viewmodels.PlaylistDetailViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,11 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.local.model.VisualTrack
-import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.ui.components.TrackList
+import com.example.musicapp.ui.viewmodels.PlaylistDetailViewModel
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
@@ -55,7 +55,7 @@ fun PlaylistDetailScreen(
     onEdit: (TrackInfo) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onRemove: (Int, Int) -> Unit,
-    ) {
+) {
 
     val playlistDetailViewModel: PlaylistDetailViewModel = hiltViewModel()
 
@@ -71,7 +71,8 @@ fun PlaylistDetailScreen(
     var isDragging by remember { mutableStateOf(false) }
     var visiblePlaylist by remember { mutableStateOf(tracks.toList()) }
 
-    val visualTracks = visiblePlaylist.map { track -> VisualTrack(key = track.entryId, data = track.trackInfo) }
+    val visualTracks =
+        visiblePlaylist.map { track -> VisualTrack(key = track.entryId, data = track.trackInfo) }
 
 
     LaunchedEffect(tracks) {
@@ -80,11 +81,11 @@ fun PlaylistDetailScreen(
         }
     }
 
-    val reorderableLazyListState = rememberReorderableLazyListState (
+    val reorderableLazyListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
         onMove = { from, to ->
             visiblePlaylist = visiblePlaylist.toMutableList().apply {
-                add(to.index-1, removeAt(from.index-1))
+                add(to.index - 1, removeAt(from.index - 1))
             }
         },
     )
@@ -153,8 +154,7 @@ fun PlaylistHeader(
     ) {
         if (playlistInfo?.image != null && playlistInfo.image != "") {
             ImageHeader(image = playlistInfo.image)
-        }
-        else if (top4Images.isNotEmpty()) {
+        } else if (top4Images.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -183,8 +183,7 @@ fun PlaylistHeader(
                         )
                 )
             }
-        }
-        else {
+        } else {
             Box(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -239,12 +238,6 @@ fun PlaylistHeader(
         )
 
         AlbumInfoRow(duration = duration, numTracks = trackCount)
-
-//        Text(
-//            text = "$trackCount tracks • ${formatDuration(duration)}",
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = MaterialTheme.colorScheme.onSurfaceVariant
-//        )
 
         Spacer(Modifier.height(16.dp))
 

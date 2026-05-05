@@ -29,7 +29,6 @@ class PlaybackService : MediaSessionService() {
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build()
-//            mediaSession = MediaSession.Builder(this, player).build()
 
         val callback = object : MediaSession.Callback {
             @OptIn(UnstableApi::class)
@@ -79,18 +78,18 @@ class PlaybackService : MediaSessionService() {
             .setCallback(callback)
             .setSessionActivity(pendingIntent)
             .build()
-        }
+    }
 
     override fun onGetSession(
         controllerInfo: MediaSession.ControllerInfo
     ): MediaSession? = mediaSession
 
     override fun onDestroy() {
-            mediaSession?.run {
-                player.release()
-                release()
-                mediaSession = null
-            }
-            super.onDestroy()
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
         }
+        super.onDestroy()
     }
+}

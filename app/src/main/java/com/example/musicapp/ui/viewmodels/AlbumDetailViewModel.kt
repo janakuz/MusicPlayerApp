@@ -8,8 +8,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.MetadataRepository
@@ -61,11 +61,13 @@ class AlbumDetailViewModel @Inject constructor(
     val currentNewAlbum: StateFlow<NewAlbum> = _currentNewAlbum.asStateFlow()
 
 
-    var albumColors by mutableStateOf(PlayerColors(
-        mainColor = Color(0xFF121212),
-        secondaryColor = Color.Cyan,
-        onColor = Color.White
-    ))
+    var albumColors by mutableStateOf(
+        PlayerColors(
+            mainColor = Color(0xFF121212),
+            secondaryColor = Color.Cyan,
+            onColor = Color.White
+        )
+    )
 
     init {
         viewModelScope.launch {
@@ -81,14 +83,14 @@ class AlbumDetailViewModel @Inject constructor(
     }
 
 
-    fun getAlbumById(id: Int){
+    fun getAlbumById(id: Int) {
         viewModelScope.launch {
             albumRepository.getAlbum(id)
                 .collect { album -> _currentAlbumUiState.update { it.copy(album = album) } }
         }
     }
 
-    fun getTracksInAlbum(albumId: Int){
+    fun getTracksInAlbum(albumId: Int) {
         viewModelScope.launch {
             trackRepository.getTracksInAlbum(albumId)
                 .onStart { _albumTracksUiState.update { it.copy(isLoading = true) } }
@@ -125,16 +127,18 @@ class AlbumDetailViewModel @Inject constructor(
     }
 
 
-    fun splitToAlbum(ids: List<Int>, artist: String, album: String){
+    fun splitToAlbum(ids: List<Int>, artist: String, album: String) {
         viewModelScope.launch {
             _moveState.value = RefetchAlbumTracksState.Saving
-            val query = """artist:${artist.normalizeForMatching()} AND release:${album.normalizeForMatching()}"""
+            val query =
+                """artist:${artist.normalizeForMatching()} AND release:${album.normalizeForMatching()}"""
             val searchResults = albumRepository.findAlbumMB(query)
             if (searchResults == null || searchResults.releases.isEmpty() || (artist.isEmpty() && album.isEmpty())) {
                 metadataRepository.moveToUnenriched(album, artist, ids, albumId)
                 _moveState.value = RefetchAlbumTracksState.Error("No album found")
             } else if (searchResults.releases.size > 1) {
-                _moveState.value = RefetchAlbumTracksState.DisambiguationNeeded(searchResults.releases, ids)
+                _moveState.value =
+                    RefetchAlbumTracksState.DisambiguationNeeded(searchResults.releases, ids)
                 return@launch
             } else {
                 performFinalSave(searchResults.releases[0], ids)
@@ -145,13 +149,13 @@ class AlbumDetailViewModel @Inject constructor(
         }
     }
 
-    fun splitToUnenriched(ids: List<Int>, artist: String, album: String){
+    fun splitToUnenriched(ids: List<Int>, artist: String, album: String) {
         viewModelScope.launch {
             metadataRepository.moveToUnenriched(album, artist, ids, albumId, true)
         }
     }
 
-    fun reset(){
+    fun reset() {
         _moveState.value = RefetchAlbumTracksState.Idle
     }
 
@@ -167,9 +171,10 @@ class AlbumDetailViewModel @Inject constructor(
         _moveState.value = RefetchAlbumTracksState.Saved
     }
 
-    fun onAlbumSelected(release: Release){
+    fun onAlbumSelected(release: Release) {
         viewModelScope.launch {
-            val tracksToMove = (_moveState.value as RefetchAlbumTracksState.DisambiguationNeeded).tracks
+            val tracksToMove =
+                (_moveState.value as RefetchAlbumTracksState.DisambiguationNeeded).tracks
             _moveState.value = RefetchAlbumTracksState.Saving
             performFinalSave(
                 release,
@@ -189,7 +194,6 @@ class AlbumDetailViewModel @Inject constructor(
     }
 
 
-
 }
 
 data class AlbumState(
@@ -202,10 +206,12 @@ data class NewAlbum(
 )
 
 sealed class RefetchAlbumTracksState {
-    object Idle: RefetchAlbumTracksState()
-    object InputExpected: RefetchAlbumTracksState()
-    data class DisambiguationNeeded(val matches: List<Release>, val tracks: List<Int>) : RefetchAlbumTracksState()
-    object Saving: RefetchAlbumTracksState()
+    object Idle : RefetchAlbumTracksState()
+    object InputExpected : RefetchAlbumTracksState()
+    data class DisambiguationNeeded(val matches: List<Release>, val tracks: List<Int>) :
+        RefetchAlbumTracksState()
+
+    object Saving : RefetchAlbumTracksState()
     object Saved : RefetchAlbumTracksState()
     data class Error(val message: String) : RefetchAlbumTracksState()
 }

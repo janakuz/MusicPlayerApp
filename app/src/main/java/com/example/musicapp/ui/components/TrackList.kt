@@ -29,26 +29,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.ReorderableLazyListState
-import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -59,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -72,6 +68,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import coil.compose.AsyncImage
@@ -85,6 +82,9 @@ import com.example.musicapp.ui.viewmodels.TrackDeletionViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 import com.example.musicapp.util.formatDuration
 import kotlinx.coroutines.launch
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 
 @Composable
@@ -95,9 +95,21 @@ fun LiveEqualizer(
     val transition = rememberInfiniteTransition(label = "equalizer")
 
     val heights = listOf(
-        transition.animateFloat(0.3f, 1f, infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse)),
-        transition.animateFloat(0.2f, 0.8f, infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse)),
-        transition.animateFloat(0.4f, 0.9f, infiniteRepeatable(tween(520, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+        transition.animateFloat(
+            0.3f,
+            1f,
+            infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        ),
+        transition.animateFloat(
+            0.2f,
+            0.8f,
+            infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        ),
+        transition.animateFloat(
+            0.4f,
+            0.9f,
+            infiniteRepeatable(tween(520, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        )
     )
 
     Row(
@@ -130,7 +142,7 @@ fun TrackInfoRow(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if(showArtwork) {
+        if (showArtwork) {
             Box {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -152,11 +164,6 @@ fun TrackInfoRow(
                 )
             }
 
-//            Image(
-//                painter = artwork,
-//                contentDescription = null,
-//                modifier = Modifier.size(48.dp)
-//            )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Column {
@@ -193,10 +200,11 @@ fun TrackRow(
     onDelete: (List<Int>) -> Unit,
     onMove: ((List<Int>) -> Unit)? = null,
     onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
-    ) {
+) {
     var expanded by remember { mutableStateOf(false) }
 
-    val selectionViewModel: TrackSelectionViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
+    val selectionViewModel: TrackSelectionViewModel =
+        hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
     val selectionState by selectionViewModel.selectionState.collectAsState()
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
     val selection by selectionViewModel.selectionState.collectAsState()
@@ -226,7 +234,7 @@ fun TrackRow(
                 .fillMaxWidth()
                 .background(
                     if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                    else if (!useQueueId && ! usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                    else if (!useQueueId && !usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
                     else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(
@@ -240,7 +248,9 @@ fun TrackRow(
                 .combinedClickable(
                     onClick = {
                         if (!selectionMode) onClick(track)
-                        else if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(track.data.trackId)
+                        else if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(
+                            track.data.trackId
+                        )
                         else if (useQueueId) selectionViewModel.toggleSelection(track.key.toString())
                         else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
                     },
@@ -470,13 +480,6 @@ fun FastScrollbar(
                     val thumbHeight = 40.dp.toPx()
                     val xPosition = size.width - thumbWidth - 8.dp.toPx()
 
-//                    drawRoundRect(
-//                        color = Color.Gray.copy(alpha = 0.1f),
-//                        topLeft = Offset(xPosition, 0f),
-//                        size = Size(thumbWidth, size.height),
-//                        cornerRadius = CornerRadius(2f, 2f)
-//                    )
-
                     drawRoundRect(
                         color = if (isDragging) Color.Black else Color.Gray.copy(alpha = 0.5f),
                         topLeft = Offset(xPosition, offsetY - (thumbHeight / 2).coerceAtLeast(0f)),
@@ -511,7 +514,7 @@ fun TrackList(
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to -> {} },
     header: (@Composable () -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
-    ) {
+) {
     val hapticFeedback = LocalHapticFeedback.current
 
     val activity = LocalActivity.current
@@ -519,7 +522,8 @@ fun TrackList(
     val playerViewModel: PlayerViewModel = hiltViewModel(activity as ViewModelStoreOwner)
     val currentTrack by playerViewModel.currentTrack.collectAsState()
 
-    val currentTrackId = if (strictHighlight) currentTrack?.queueId else if (playlistHighlight) currentTrack?.playlistEntryId else currentTrack?.track?.trackId
+    val currentTrackId =
+        if (strictHighlight) currentTrack?.queueId else if (playlistHighlight) currentTrack?.playlistEntryId else currentTrack?.track?.trackId
 
     val trackDeletionViewModel: TrackDeletionViewModel = hiltViewModel()
 
@@ -561,9 +565,10 @@ fun TrackList(
         )
     }
 
-    LazyColumn(state = state,
-        ) {
-        if (header != null){
+    LazyColumn(
+        state = state,
+    ) {
+        if (header != null) {
             item { header() }
         }
         itemsIndexed(tracks, key = { index, track -> track.key }) { id, queueTrack ->
@@ -597,7 +602,7 @@ fun TrackList(
                         },
                     ),
                     onEdit = onEdit,
-                    onDelete = {ids -> pendingDeletion = DeleteEvent(ids)},
+                    onDelete = { ids -> pendingDeletion = DeleteEvent(ids) },
                     onMove = onMove,
                     onRemoveFromPlaylist = onRemoveFromPlaylist,
                     onAddToPlaylist = onAddToPlaylist
@@ -606,7 +611,7 @@ fun TrackList(
             }
         }
 
-        if (footer != null){
+        if (footer != null) {
             item { footer() }
         }
     }

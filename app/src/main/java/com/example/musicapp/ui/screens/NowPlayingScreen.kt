@@ -35,18 +35,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -62,7 +62,7 @@ fun NowPlayingView(
     playerViewModel: PlayerViewModel,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit
-){
+) {
     val trackState by playerViewModel.currentTrack.collectAsState()
     val isPlaying by playerViewModel.isPlaying.collectAsState()
     val position by playerViewModel.position.collectAsState()
@@ -75,7 +75,9 @@ fun NowPlayingView(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
-        modifier = Modifier.fillMaxSize().navigationBarsPadding()
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
     ) {
         val track = trackState?.track
         val gradientColors = playerViewModel.albumColors
@@ -88,25 +90,25 @@ fun NowPlayingView(
                 title = track.title,
                 gradientColors = gradientColors
             )
-//            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = it.artistName,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
-                    .clickable(onClick = { onArtistClick(track.artistId) }))
-//            Spacer(modifier = Modifier.height(4.dp))
+                    .clickable(onClick = { onArtistClick(track.artistId) })
+            )
             Text(
                 text = it.albumTitle,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
-                    .clickable(onClick = { onAlbumClick(track.albumId) }))
+                    .clickable(onClick = { onAlbumClick(track.albumId) })
+            )
         }
-//        Spacer(Modifier.height(10.dp))
         val accentColor = MaterialTheme.colorScheme.primary
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(8.dp)) {
+            modifier = Modifier.padding(8.dp)
+        ) {
             Text(
                 text = position.formatDuration(),
                 style = MaterialTheme.typography.bodySmall,
@@ -131,9 +133,6 @@ fun NowPlayingView(
                     colors = SliderDefaults.colors(
                         thumbColor = accentColor,
                         activeTickColor = accentColor
-//                thumbColor = gradientColors.secondaryColor,
-//                activeTrackColor = gradientColors.secondaryColor,
-//                inactiveTrackColor = gradientColors.onColor.copy(alpha = 0.1f)
                     ),
                     thumb = {
                         Box(
@@ -146,7 +145,11 @@ fun NowPlayingView(
                         val fraction = (sliderState.value - sliderState.valueRange.start) /
                                 (sliderState.valueRange.endInclusive - sliderState.valueRange.start)
 
-                        Canvas(modifier = Modifier.fillMaxWidth().height(2.dp)) {
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(2.dp)
+                        ) {
                             drawRoundRect(
                                 color = accentColor.copy(alpha = 0.2f),
                                 size = size,
@@ -169,15 +172,15 @@ fun NowPlayingView(
 
         }
 
-//        Spacer(Modifier.height(10.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            ) {
+        ) {
 
-            IconButton(onClick = {
-                playerViewModel.toggleShuffle()
-            },
+            IconButton(
+                onClick = {
+                    playerViewModel.toggleShuffle()
+                },
                 Modifier.size(64.dp)
             ) {
                 Icon(
@@ -188,25 +191,28 @@ fun NowPlayingView(
             }
 
 
-            IconButton(onClick = {
-                if (playerViewModel.hasPrevMediaItem() == true) {
-                    playerViewModel.skipToPrevious()
-                }
-            },
-                Modifier.size(64.dp)) {
+            IconButton(
+                onClick = {
+                    if (playerViewModel.hasPrevMediaItem() == true) {
+                        playerViewModel.skipToPrevious()
+                    }
+                },
+                Modifier.size(64.dp)
+            ) {
                 Icon(
                     Icons.Default.SkipPrevious,
                     contentDescription = "Previous",
-                    Modifier.size(32.dp))
+                    Modifier.size(32.dp)
+                )
             }
 
 
             IconButton(
                 onClick = {
-                playerViewModel.togglePlayback()
-            },
+                    playerViewModel.togglePlayback()
+                },
                 Modifier.size(128.dp)
-                ) {
+            ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
                     contentDescription = if (isPlaying) "Pause" else "Play",
@@ -214,26 +220,31 @@ fun NowPlayingView(
                 )
             }
 
-            IconButton(onClick = {
-                if (playerViewModel.hasNextMediaItem() == true) {
-                    playerViewModel.skipToNext()
-                }
-            },
-                Modifier.size(64.dp)) {
+            IconButton(
+                onClick = {
+                    if (playerViewModel.hasNextMediaItem() == true) {
+                        playerViewModel.skipToNext()
+                    }
+                },
+                Modifier.size(64.dp)
+            ) {
                 Icon(
                     Icons.Default.SkipNext,
                     contentDescription = "Next",
-                    Modifier.size(32.dp))
+                    Modifier.size(32.dp)
+                )
             }
 
-            IconButton(onClick = {
-                playerViewModel.toggleRepeat()
-            },
-                Modifier.size(64.dp)) {
+            IconButton(
+                onClick = {
+                    playerViewModel.toggleRepeat()
+                },
+                Modifier.size(64.dp)
+            ) {
                 Icon(
                     imageVector =
-                        if (repeatMode== Player.REPEAT_MODE_OFF) Icons.Default.Repeat
-                        else if (repeatMode==Player.REPEAT_MODE_ALL) Icons.Default.RepeatOn
+                        if (repeatMode == Player.REPEAT_MODE_OFF) Icons.Default.Repeat
+                        else if (repeatMode == Player.REPEAT_MODE_ALL) Icons.Default.RepeatOn
                         else Icons.Default.RepeatOne,
                     contentDescription = "Repeat",
                     Modifier.size(32.dp)
@@ -242,7 +253,6 @@ fun NowPlayingView(
             }
 
         }
-//        Spacer(Modifier.height(32.dp))
     }
 
 }
@@ -261,7 +271,8 @@ fun NowPlayingWithQueue(
 ) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState()
-    val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val navigationBarsPadding =
+        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val totalPeekHeight = 10.dp
 
     val tracks by playerViewModel.queue.collectAsState()
@@ -290,9 +301,9 @@ fun NowPlayingWithQueue(
             ) {
                 PlayQueueScreen(
                     tracks,
-                    {track -> onTrackClick(track.key.toString())},
+                    { track -> onTrackClick(track.key.toString()) },
                     onPlayNext = { track -> playerViewModel.playNext(track) },
-                    onAddToQueue = { track -> playerViewModel.addToQueue(track)},
+                    onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                     onEdit = onEdit,
                     onAddToPlaylist = onAddToPlaylist,
                     playerViewModel = playerViewModel
@@ -308,14 +319,3 @@ fun NowPlayingWithQueue(
         }
     )
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun NowPlayingPreview() {
-//    MusicAppTheme {
-//        NowPlayingView(
-//            playerViewModel = viewModel(),
-//        )
-//    }
-//
-//}

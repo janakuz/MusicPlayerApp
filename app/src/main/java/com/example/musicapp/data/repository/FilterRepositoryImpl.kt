@@ -23,18 +23,19 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.selectedLabels.isNotEmpty()){
+        if (filter.selectedLabels.isNotEmpty()) {
             val labels = filter.selectedLabels.joinToString(",") { "?" }
             bindArgs.addAll(filter.selectedLabels)
             conditions.add("al.label in ($labels)")
         }
 
 
-        val baseQuery = "SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, " +
-                "ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks " +
-                "FROM albums al " +
-                "JOIN album_artists aa ON al.id=aa.albumId " +
-                "JOIN artists ar on ar.id=aa.artistId "
+        val baseQuery =
+            "SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, " +
+                    "ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks " +
+                    "FROM albums al " +
+                    "JOIN album_artists aa ON al.id=aa.albumId " +
+                    "JOIN artists ar on ar.id=aa.artistId "
         val joiner = if (filter.logic == FilterLogic.AND) " AND " else " OR "
         val sql = baseQuery + if (conditions.isNotEmpty()) {
             " WHERE ${conditions.joinToString(joiner)}"

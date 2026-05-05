@@ -48,11 +48,10 @@ fun LibraryTopBar(
         },
         navigationIcon = {
             if (!showBack) {
-                IconButton(onClick = onMenuClick ) {
+                IconButton(onClick = onMenuClick) {
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                 }
-            }
-            else if (onBack != null){
+            } else if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                 }
@@ -88,7 +87,7 @@ fun SelectionTopBar(
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
     onAddToPlaylist: () -> Unit,
-    ){
+) {
     TopAppBar(
         title = {
             Text(

@@ -13,14 +13,14 @@ class AlbumGenreRepositoryImpl(
     override suspend fun updateAlbumGenres(albumId: Int, genres: List<String>) {
         val genreIds = genres.map { name ->
             val normalized = name.normalizeGenre()
-            genreDao.getGenreByName(normalized)?.id ?:
-            genreDao.insert(Genre(name = normalized)).toInt()
+            genreDao.getGenreByName(normalized)?.id ?: genreDao.insert(Genre(name = normalized))
+                .toInt()
         }
 
         albumGenreDao.syncGenres(albumId, genreIds)
     }
 
-    override suspend fun getAlbumGenres(albumId: Int) : List<String> {
+    override suspend fun getAlbumGenres(albumId: Int): List<String> {
         return albumGenreDao.getAlbumGenres(albumId)
     }
 }

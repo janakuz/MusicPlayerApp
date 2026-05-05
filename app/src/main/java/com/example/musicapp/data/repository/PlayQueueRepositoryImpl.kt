@@ -8,24 +8,25 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import com.example.musicapp.data.local.dao.QueueDao
-import com.example.musicapp.data.local.model.QueueItemFull
 import com.example.musicapp.data.local.entity.QueueItem
+import com.example.musicapp.data.local.model.QueueItemFull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-class OfflinePlayQueueRepository (
+class OfflinePlayQueueRepository(
     private val dataStore: DataStore<Preferences>,
-    private val queueDao: QueueDao) : PlayQueueRepository {
-    private companion object{
+    private val queueDao: QueueDao
+) : PlayQueueRepository {
+    private companion object {
         val LAST_PLAYED_INDEX = intPreferencesKey("last_played_index")
         val LAST_POSITION_MS = longPreferencesKey("last_position_ms")
         val SHUFFLE_ON = booleanPreferencesKey("shuffle_on")
         val REPEAT_TYPE = intPreferencesKey("repeat_type")
     }
 
-    override val currentSession: Flow<PlaybackSession> = dataStore.data.map {prefs ->
+    override val currentSession: Flow<PlaybackSession> = dataStore.data.map { prefs ->
         PlaybackSession(
             playQueueIndex = prefs[LAST_PLAYED_INDEX] ?: 0,
             position = prefs[LAST_POSITION_MS] ?: 0L,
@@ -34,7 +35,7 @@ class OfflinePlayQueueRepository (
         )
     }
 
-    override val shuffleOn: Flow<Boolean> = dataStore.data.map {  prefs ->
+    override val shuffleOn: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[SHUFFLE_ON] ?: false
     }.distinctUntilChanged()
 

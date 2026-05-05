@@ -8,5 +8,5 @@ data class CAAImage(
     val front: Boolean,
     val back: Boolean,
     val image: String,
-    
-)
+
+    )

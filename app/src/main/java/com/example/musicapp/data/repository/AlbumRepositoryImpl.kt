@@ -3,17 +3,17 @@ package com.example.musicapp.data.repository
 import android.util.Log
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.TrackDao
-import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
 import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
-import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
-import com.example.musicapp.util.normalizeForMatching
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 
@@ -69,18 +69,18 @@ class AlbumRepositoryImpl(
 
     override suspend fun getByTitle(title: String, year: String?): Album? {
         return if (year != null) {
-            albumDao.getAlbumByTitleAndYear(title.normalizeForMatching(), year) ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
-        } else{
+            albumDao.getAlbumByTitleAndYear(title.normalizeForMatching(), year)
+                ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
+        } else {
             albumDao.getAlbumByTitle(title.normalizeForMatching())
         }
 
     }
 
-    override suspend fun findAlbumMB(query: String) : ReleaseSearchResponse? {
+    override suspend fun findAlbumMB(query: String): ReleaseSearchResponse? {
         return try {
             musicbrainzApiService.findAlbum(query)
-        }
-        catch (e: Exception){
+        } catch (e: Exception) {
             Log.e("album search", e.message.toString())
             null
         }
@@ -93,31 +93,27 @@ class AlbumRepositoryImpl(
     ): DiscogsSearchResponse? {
         return try {
             val response = discogsApiService.searchAlbum(artist, album, year)
-            if (response.results.isEmpty()){
+            if (response.results.isEmpty()) {
                 try {
                     delay(1000)
                     discogsApiService.searchAlbum(artist, album, null)
-                }
-                catch (e: Exception){
+                } catch (e: Exception) {
                     Log.e("discogs search", e.message.toString())
                     null
                 }
-            }
-            else{
+            } else {
                 response
             }
-        }
-        catch (e: Exception){
+        } catch (e: Exception) {
             Log.e("discogs search", e.message.toString())
             null
         }
     }
 
     override suspend fun getAlbumDiscogs(releaseId: String): AlbumDiscogsResponse? {
-        return try{
+        return try {
             discogsApiService.getAlbum(releaseId)
-        }
-        catch (e: Exception){
+        } catch (e: Exception) {
             Log.e("discogs album", e.message.toString())
             null
         }
@@ -141,7 +137,7 @@ class AlbumRepositoryImpl(
         return try {
             val response = coverArtArchiveApiService.getAlbumImage(mbid)
             if (response.images.isNotEmpty()) {
-                response.images.map {it.image.replace("http://", "https://")}
+                response.images.map { it.image.replace("http://", "https://") }
             } else {
                 emptyList()
             }
@@ -181,7 +177,10 @@ class AlbumRepositoryImpl(
     }
 
     override suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>?) {
-        val trackIds = if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAlbumTracks(oldAlbumId).map { it.trackId }
+        val trackIds =
+            if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAlbumTracks(
+                oldAlbumId
+            ).map { it.trackId }
         trackDao.moveToAlbum(oldAlbumId, newAlbumId, trackIds)
     }
 

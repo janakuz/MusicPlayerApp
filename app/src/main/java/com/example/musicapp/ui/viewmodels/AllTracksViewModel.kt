@@ -32,7 +32,7 @@ class AllTracksViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = SortOption(SortField.NAME, )
+            initialValue = SortOption(SortField.NAME)
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,7 +40,7 @@ class AllTracksViewModel @Inject constructor(
         .flatMapLatest { option ->
             trackRepository.getAllTracks(option)
                 .map { tracks -> TracksUiState(tracks = tracks, isLoading = false) }
-                .onStart { emit(TracksUiState(isLoading = true))  }
+                .onStart { emit(TracksUiState(isLoading = true)) }
                 .catch { e -> emit(TracksUiState(error = e.message, isLoading = false)) }
         }
         .stateIn(
@@ -61,4 +61,5 @@ class AllTracksViewModel @Inject constructor(
 data class TracksUiState(
     val isLoading: Boolean = true,
     val tracks: List<TrackInfo> = emptyList(),
-    val error: String? = null)
+    val error: String? = null
+)

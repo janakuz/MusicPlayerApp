@@ -60,44 +60,51 @@ fun ImageWithTextColumn(
 
     Column(
         modifier = modifier
-            .then(if (onClick != null) Modifier.combinedClickable(
-                onClick = {
-                    if (item != null) {
-                        onClick(item)
-                    }
-                },
-                onLongClick = { expanded = true }
-            ) else Modifier).fillMaxWidth(),
+            .then(
+                if (onClick != null) Modifier.combinedClickable(
+                    onClick = {
+                        if (item != null) {
+                            onClick(item)
+                        }
+                    },
+                    onLongClick = { expanded = true }
+                ) else Modifier)
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val defaultImage = if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_groups_24)
-        Surface(modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(imageShape),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        val defaultImage =
+            if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_groups_24)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(imageShape),
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            ),
         ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(image)
-                        .size(400)
-                        .crossfade(false)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCacheKey(image)
-                        .memoryCacheKey(image)
-                        .placeholderMemoryCacheKey(image)
-                        .build(),
-                    placeholder = defaultImage,
-                    error = defaultImage,
-                    fallback = defaultImage,
-                    contentDescription = null,
-                    modifier = imageModifier
-                        .clip(imageShape)
-                        .fillMaxWidth()
-                        .aspectRatio(1f),
-                    contentScale = ContentScale.Crop
-                )
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(image)
+                    .size(400)
+                    .crossfade(false)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(image)
+                    .memoryCacheKey(image)
+                    .placeholderMemoryCacheKey(image)
+                    .build(),
+                placeholder = defaultImage,
+                error = defaultImage,
+                fallback = defaultImage,
+                contentDescription = null,
+                modifier = imageModifier
+                    .clip(imageShape)
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -106,7 +113,7 @@ fun ImageWithTextColumn(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        if (isAlbum){
+        if (isAlbum) {
             Text(
                 text = albumArtist,
                 style = MaterialTheme.typography.bodySmall,
@@ -115,8 +122,6 @@ fun ImageWithTextColumn(
             )
         }
     }
-
-    var showDeleteDialog by remember { mutableStateOf(false) }
 
     DropdownMenu(
         expanded = expanded,
@@ -131,36 +136,38 @@ fun ImageWithTextColumn(
         )
         DropdownMenuItem(
             text = { Text("Add to Queue") },
-            onClick = { if (item != null) onAddToQueue(item)
+            onClick = {
+                if (item != null) onAddToQueue(item)
                 expanded = false
             }
         )
 
         DropdownMenuItem(
             text = { Text("Add to Playlist") },
-            onClick = { if (item != null) onAddToPlaylist(item)
+            onClick = {
+                if (item != null) onAddToPlaylist(item)
                 expanded = false
             }
         )
 
         DropdownMenuItem(
             text = { Text("Edit") },
-            onClick = { if (item != null) onEdit(item)
+            onClick = {
+                if (item != null) onEdit(item)
                 expanded = false
             }
         )
 
         DropdownMenuItem(
-            text = { Text("Delete")},
+            text = { Text("Delete") },
             onClick = {
                 if (item != null) onDelete(item.id, item.displayName)
-//                showDeleteDialog = true
                 expanded = false
             }
         )
 
         DropdownMenuItem(
-            text = {Text("Refetch Metadata")},
+            text = { Text("Refetch Metadata") },
             onClick = {
                 if (item != null) onRefetch(item.id)
                 expanded = false
@@ -175,7 +182,7 @@ fun DeleteConfirmationDialog(
     text: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-){
+) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = { Text("Delete ${text}?") },

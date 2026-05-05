@@ -7,11 +7,11 @@ import androidx.room.withTransaction
 import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.database.AppDatabase
+import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.PlaylistWithArt
 import com.example.musicapp.data.local.model.PlaylistWithStats
-import com.example.musicapp.data.local.entity.Playlist
-import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -83,7 +83,7 @@ class PlaylistRepositoryImpl(
         playlistDao.deleteById(playlistId)
     }
 
-    override fun getArtForCollage(playlistId: Int) : Flow<List<String>> {
+    override fun getArtForCollage(playlistId: Int): Flow<List<String>> {
         return playlistTracksDao.getTop4ImagesForPlaylist(playlistId)
     }
 
@@ -128,7 +128,7 @@ class PlaylistRepositoryImpl(
         }
     }
 
-    private fun readFile(context: Context, file: Uri) : List<String> {
+    private fun readFile(context: Context, file: Uri): List<String> {
         val trackTails = mutableListOf<String>()
 
         context.contentResolver.openInputStream(file)?.use { inputStream ->
@@ -143,7 +143,7 @@ class PlaylistRepositoryImpl(
         return trackTails
     }
 
-    private fun getPlaylistName(context: Context, file: Uri) : String? {
+    private fun getPlaylistName(context: Context, file: Uri): String? {
         var result: String? = null
         if (file.scheme == "content") {
             val cursor = context.contentResolver.query(file, null, null, null, null)
@@ -158,7 +158,6 @@ class PlaylistRepositoryImpl(
         }
         return result
     }
-
 
 
     override suspend fun importPlaylist(file: Uri) {
@@ -178,7 +177,7 @@ class PlaylistRepositoryImpl(
 
             trackPaths.forEachIndexed { index, pathTail ->
                 val track = db.trackDao().findTrackByPath("%$pathTail")
-                if (track != null){
+                if (track != null) {
                     playlistTracks.add(
                         PlaylistTracks(
                             playlistId = playlistId,

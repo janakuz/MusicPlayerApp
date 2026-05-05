@@ -4,9 +4,9 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.DiscogsImage
-import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,7 +43,8 @@ class ArtistEditViewModel @Inject constructor(
     private var initialImageUrl: String? = ""
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
-        val hasChanges = state.draftBio != initialBio || state.draftImageUrl != initialImageUrl || state.name != initialName
+        val hasChanges =
+            state.draftBio != initialBio || state.draftImageUrl != initialImageUrl || state.name != initialName
         Log.d("bio", initialBio + " " + state.draftBio)
         Log.d("image", "init:" + initialImageUrl + " " + "draft:" + state.draftImageUrl)
         Log.d("name", initialName + " " + state.name)
@@ -60,10 +61,11 @@ class ArtistEditViewModel @Inject constructor(
             initialName = artist.name
             initialBio = artist.bio
             initialImageUrl = artist.image ?: ""
-            _uiState.update { it.copy(
-                name = artist.name,
-                draftBio = artist.bio ?: "",
-                draftImageUrl = artist.image ?: ""
+            _uiState.update {
+                it.copy(
+                    name = artist.name,
+                    draftBio = artist.bio ?: "",
+                    draftImageUrl = artist.image ?: ""
                 )
             }
 
@@ -71,7 +73,6 @@ class ArtistEditViewModel @Inject constructor(
             if (artist.discogsId != null) getDiscogsInfo(artist.discogsId)
             getLastfmInfo(artist.mbId, artist.name)
         }
-
 
 
     }
@@ -90,7 +91,7 @@ class ArtistEditViewModel @Inject constructor(
     }
 
 
-    suspend fun getDiscogsInfo(discogsId: String){
+    suspend fun getDiscogsInfo(discogsId: String) {
         val discogs = artistRepository.getArtistDiscogsInfo(discogsId)
         if (discogs != null) {
             _uiState.update {
@@ -99,7 +100,7 @@ class ArtistEditViewModel @Inject constructor(
         }
     }
 
-    suspend fun getLastfmInfo(mbId: String?, name: String){
+    suspend fun getLastfmInfo(mbId: String?, name: String) {
         val lastFm = artistRepository.getArtistBio(mbId, name)
         _uiState.update {
             it.copy(lastFmBio = lastFm)
@@ -133,9 +134,9 @@ class ArtistEditViewModel @Inject constructor(
                     _uiState.update { it.copy(isSaving = false) }
                     onBack()
 
-                }
-                catch (e: SocketTimeoutException) {
-                    _workflowState.value = NameEditUiState.Error("MusicBrainz is taking too long. Please try again.")
+                } catch (e: SocketTimeoutException) {
+                    _workflowState.value =
+                        NameEditUiState.Error("MusicBrainz is taking too long. Please try again.")
                     _uiState.update { it.copy(isSaving = false) }
                 } catch (e: Exception) {
                     _workflowState.value = NameEditUiState.Error("Network error: ${e.message}")
@@ -144,25 +145,28 @@ class ArtistEditViewModel @Inject constructor(
                     Log.d("SaveError", "Failed to save: ${e.message}", e)
                     _uiState.update { it.copy(isSaving = false) }
                 }
-            }
-            else{
+            } else {
                 onBack()
             }
         }
     }
 
-    suspend fun performFinalSave(artistResult: ArtistSearchInfo, oldArtist: Artist, onBack: () -> Unit) {
-            val updatedArtist = metadataRepository.updateArtist(
-                newArtistName = _uiState.value.name,
-                oldArtist = oldArtist,
-                mbArtist = artistResult
-            )
-            _uiState.update { it.copy(id = updatedArtist.id) }
-            _workflowState.value = NameEditUiState.Saved
-            onBack()
+    suspend fun performFinalSave(
+        artistResult: ArtistSearchInfo,
+        oldArtist: Artist,
+        onBack: () -> Unit
+    ) {
+        val updatedArtist = metadataRepository.updateArtist(
+            newArtistName = _uiState.value.name,
+            oldArtist = oldArtist,
+            mbArtist = artistResult
+        )
+        _uiState.update { it.copy(id = updatedArtist.id) }
+        _workflowState.value = NameEditUiState.Saved
+        onBack()
     }
 
-    fun onArtistSelected(artistResult: ArtistSearchInfo, onBack: () -> Unit){
+    fun onArtistSelected(artistResult: ArtistSearchInfo, onBack: () -> Unit) {
         viewModelScope.launch {
             _workflowState.value = NameEditUiState.Saving
             val currentArtist = artistRepository.getArtist(artistId).first()
@@ -171,17 +175,21 @@ class ArtistEditViewModel @Inject constructor(
         }
     }
 
-    fun resetName(){
-        _uiState.update { it.copy(
-            name = initialName ?: ""
-        ) }
+    fun resetName() {
+        _uiState.update {
+            it.copy(
+                name = initialName ?: ""
+            )
+        }
     }
 
     fun resetToOriginal() {
-        _uiState.update { it.copy(
-            draftBio = initialBio ?: "",
-            draftImageUrl = initialImageUrl ?: ""
-        )}
+        _uiState.update {
+            it.copy(
+                draftBio = initialBio ?: "",
+                draftImageUrl = initialImageUrl ?: ""
+            )
+        }
     }
 }
 

@@ -9,5 +9,5 @@ interface CoverArtArchiveApiService {
     @GET("release-group/{mbid}")
     suspend fun getAlbumImage(
         @Path("mbid") mbid: String
-    ) : AlbumArtImage
+    ): AlbumArtImage
 }

@@ -28,13 +28,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.data.local.model.GridItem
-import com.example.musicapp.ui.components.Grid
-import com.example.musicapp.ui.theme.MusicAppTheme
-import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,10 +36,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
+import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.theme.MusicAppTheme
+import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState
 import com.example.musicapp.ui.viewmodels.RefetchState
 
@@ -63,7 +63,7 @@ fun AlbumsGrid(
     header: (@Composable () -> Unit)? = null,
     onDelete: (Int, String) -> Unit,
     onRefetch: (Int) -> Unit,
-    ){
+) {
 
 
     val items = albums.map { album ->
@@ -204,7 +204,6 @@ fun AllAlbumsScreen(
         }
 
 
-
     }
 
     pendingDeletion?.let { item ->
@@ -220,7 +219,6 @@ fun AllAlbumsScreen(
 
 
 }
-
 
 
 @Composable
@@ -271,7 +269,7 @@ fun AlbumDisambiguationDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {onNotMatchedSelected()}
+                                .clickable { onNotMatchedSelected() }
                                 .padding(vertical = 12.dp, horizontal = 8.dp)
                         ) { Text("Add as unmatched") }
                     }
@@ -291,7 +289,5 @@ fun AlbumDisambiguationDialog(
 @Composable
 fun AlbumsPreview() {
     MusicAppTheme {
-//        AlbumsGrid(DataSource.albums)
     }
-
 }

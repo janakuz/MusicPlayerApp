@@ -48,7 +48,7 @@ import com.example.musicapp.ui.viewmodels.TrackEditViewModel
 @Composable
 fun TrackEditScreen(
     onNavigateBack: () -> Unit,
-){
+) {
     val trackEditViewModel: TrackEditViewModel = hiltViewModel()
 
     val trackEditUiState by trackEditViewModel.uiState.collectAsState()

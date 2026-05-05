@@ -21,7 +21,7 @@ class TrackDeletionViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val trackRepository: TrackRepository,
-    ) : ViewModel() {
+) : ViewModel() {
 
     private val _pendingDeleteUris = MutableStateFlow<List<String>>(emptyList())
     val pendingDeleteUris = _pendingDeleteUris.asStateFlow()

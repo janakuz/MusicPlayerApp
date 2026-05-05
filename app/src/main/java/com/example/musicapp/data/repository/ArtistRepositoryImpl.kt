@@ -3,10 +3,10 @@ package com.example.musicapp.data.repository
 import android.util.Log
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
-import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
@@ -31,7 +31,7 @@ class ArtistRepositoryImpl(
     }
 
     override fun getAllArtistsSorted(ascending: Boolean): Flow<List<Artist>> {
-        when(ascending){
+        when (ascending) {
             true -> return artistDao.getAllArtistsSortedAsc();
             false -> return artistDao.getAllArtistsSortedDesc();
         }
@@ -70,13 +70,11 @@ class ArtistRepositoryImpl(
         return try {
             val response = lastfmApiService.getArtistInfo(mbid = mbid, artist = null)
             response.artist.bio.content
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             try {
                 val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
                 fallbackResponse.artist.bio.content
-            }
-            catch (e: Exception){
+            } catch (e: Exception) {
                 "No bio available."
             }
         }
@@ -129,7 +127,10 @@ class ArtistRepositoryImpl(
         newArtistId: Int,
         tracks: List<Int>?
     ) {
-        val trackIds = if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAllTracksByArtist(oldArtistId).first().map { it.trackId }
+        val trackIds =
+            if (tracks != null && tracks.isNotEmpty()) tracks else trackDao.getAllTracksByArtist(
+                oldArtistId
+            ).first().map { it.trackId }
         trackDao.moveToArtist(oldArtistId, newArtistId, trackIds)
     }
 

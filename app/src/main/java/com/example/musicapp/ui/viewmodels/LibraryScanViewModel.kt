@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
-import com.example.musicapp.service.LocalLibraryScanner
 import com.example.musicapp.data.repository.WorkerManagerRepository
+import com.example.musicapp.service.LocalLibraryScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,14 +30,13 @@ sealed class Phase {
     object Idle : Phase()
     object Scanning : Phase()
     object Enriching : Phase()
-    data class Error(val error: String): Phase()
+    data class Error(val error: String) : Phase()
 }
 
 @HiltViewModel
 class LibraryScanViewModel @Inject constructor(
     private val scanner: LocalLibraryScanner,
     private val workerManagerRepository: WorkerManagerRepository
-//    private val workManager: WorkManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
@@ -63,23 +62,6 @@ class LibraryScanViewModel @Inject constructor(
 
                 workerManagerRepository.startWorker(true)
 
-//                val request = OneTimeWorkRequestBuilder<MetadataWorker>()
-//                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-//                    .setConstraints(Constraints.Builder()
-//                        .setRequiredNetworkType(NetworkType.CONNECTED)
-//                        .build())
-//                    .setBackoffCriteria(
-//                        BackoffPolicy.EXPONENTIAL,
-//                        WorkRequest.MIN_BACKOFF_MILLIS,
-//                        TimeUnit.MILLISECONDS
-//                    )
-//                    .setInputData(workDataOf("IS_MANUAL_SCAN" to true))
-//                    .build()
-//                workManager.enqueueUniqueWork(
-//                    "MetadataSync",
-//                    ExistingWorkPolicy.KEEP,
-//                    request
-//                )
             } catch (e: Exception) {
                 _uiState.update { it.copy(isScanning = false, error = e.message) }
                 _workflowState.value = Phase.Error(e.message.toString())
@@ -98,11 +80,13 @@ class LibraryScanViewModel @Inject constructor(
 
                 if (info.state == WorkInfo.State.RUNNING) {
                     _workflowState.value = Phase.Enriching
-                    _uiState.update { it.copy(
-                        isEnriching = true,
-                        enrichmentProgress = if (total > 0) current.toFloat() / total else 0f,
-                        statusMessage = "Enriching $albumTitle..."
-                    ) }
+                    _uiState.update {
+                        it.copy(
+                            isEnriching = true,
+                            enrichmentProgress = if (total > 0) current.toFloat() / total else 0f,
+                            statusMessage = "Enriching $albumTitle..."
+                        )
+                    }
                 } else if (info.state.isFinished) {
                     _uiState.update { it.copy(isEnriching = false, isScanning = false) }
                     _workflowState.value = Phase.Idle

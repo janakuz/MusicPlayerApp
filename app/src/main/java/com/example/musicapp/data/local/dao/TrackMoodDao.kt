@@ -23,10 +23,11 @@ interface TrackMoodDao {
         }
     }
 
-    @Query("SELECT m.name " +
-            "FROM track_moods tm JOIN moods m ON tm.moodId = m.id " +
-            "WHERE tm.trackId=:trackId"
+    @Query(
+        "SELECT m.name " +
+                "FROM track_moods tm JOIN moods m ON tm.moodId = m.id " +
+                "WHERE tm.trackId=:trackId"
     )
-    suspend fun getTrackMoods(trackId: Int) : List<String>
+    suspend fun getTrackMoods(trackId: Int): List<String>
 
 }

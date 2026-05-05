@@ -16,37 +16,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.example.musicapp.data.local.entity.Playlist
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
+import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
@@ -56,7 +56,6 @@ import com.example.musicapp.util.formatDuration
 
 @Composable
 fun PlaylistsScreen(
-//    playlists: List<Playlist>,
     playlistStates: List<PlaylistUiModel>,
     createInfo: CreatePlaylistState,
     onNameChange: (String) -> Unit,
@@ -72,7 +71,7 @@ fun PlaylistsScreen(
     onExport: (Uri, Int) -> Unit,
     sortRequest: SortOption?,
     onSort: (SortOption) -> Unit,
-    ) {
+) {
 
     LaunchedEffect(sortRequest) {
         sortRequest?.let {
@@ -135,7 +134,7 @@ fun PlaylistRow(
     onEdit: (Int) -> Unit,
     onDelete: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
-    ) {
+) {
 
     val exportM3uLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("audio/x-mpegurl")
@@ -144,23 +143,24 @@ fun PlaylistRow(
     }
 
     var expanded by remember { mutableStateOf(false) }
-        Row(Modifier
+    Row(
+        Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { expanded = true }
             )
             .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .size(48.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .size(48.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (playlist.image != null && playlist.image != "")
-                    AsyncImage(
+            if (playlist.image != null && playlist.image != "")
+                AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(playlist.image)
                         .build(),
@@ -169,88 +169,89 @@ fun PlaylistRow(
                     modifier = Modifier
                         .fillMaxWidth(),
                 )
-                else if (images.isNotEmpty()) PlaylistCollage(images, modifier = Modifier)
-                else Icon(Icons.Default.MusicNote, contentDescription = "")
-            }
+            else if (images.isNotEmpty()) PlaylistCollage(images, modifier = Modifier)
+            else Icon(Icons.Default.MusicNote, contentDescription = "")
+        }
 
-            Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(16.dp))
 
-            Column (modifier = Modifier.weight(1f)) {
-                Text(
-                    text = playlist.name,
-                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-//                    text = "2 tracks • 3:50",
-                    text = "$trackCount tracks • ${duration.formatDuration()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = playlist.name,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "$trackCount tracks • ${duration.formatDuration()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
-            IconButton(onClick = { expanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-            }
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+        }
 
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
 
-                DropdownMenuItem(
-                    text = { Text("Play") },
-                    onClick = {
-                        onPlay(playlist.id)
-                        expanded = false
-                    }
-                )
-
-
-                DropdownMenuItem(
-                    text = { Text("Play Next") },
-                    onClick = {
-                        onPlayNext(playlist.id)
-                        expanded = false
-                    }
-                )
+            DropdownMenuItem(
+                text = { Text("Play") },
+                onClick = {
+                    onPlay(playlist.id)
+                    expanded = false
+                }
+            )
 
 
-                DropdownMenuItem(
-                    text = { Text("Add to Queue") },
-                    onClick = {
-                        onAddToQueue(playlist.id)
-                        expanded = false
-                    }
-                )
+            DropdownMenuItem(
+                text = { Text("Play Next") },
+                onClick = {
+                    onPlayNext(playlist.id)
+                    expanded = false
+                }
+            )
 
 
-                DropdownMenuItem(
-                    text = { Text("Edit") },
-                    onClick = {
-                        onEdit(playlist.id)
-                        expanded = false
-                    }
-                )
+            DropdownMenuItem(
+                text = { Text("Add to Queue") },
+                onClick = {
+                    onAddToQueue(playlist.id)
+                    expanded = false
+                }
+            )
 
-                DropdownMenuItem(
-                    text = { Text("Delete") },
-                    onClick = {
-                        onDelete(playlist.id)
-                        expanded = false
-                    }
-                )
 
-                DropdownMenuItem(
-                    text = { Text("Export .m3u") },
-                    onClick = {
-                        exportM3uLauncher.launch("${playlist.name}.m3u")
-                        expanded = false
-                    }
-                )
-            }
+            DropdownMenuItem(
+                text = { Text("Edit") },
+                onClick = {
+                    onEdit(playlist.id)
+                    expanded = false
+                }
+            )
+
+            DropdownMenuItem(
+                text = { Text("Delete") },
+                onClick = {
+                    onDelete(playlist.id)
+                    expanded = false
+                }
+            )
+
+            DropdownMenuItem(
+                text = { Text("Export .m3u") },
+                onClick = {
+                    exportM3uLauncher.launch("${playlist.name}.m3u")
+                    expanded = false
+                }
+            )
+        }
 
 
     }
@@ -277,7 +278,9 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
                 )
 
                 AsyncImage(
@@ -296,7 +299,9 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
                 )
             }
             Row(Modifier.weight(1f)) {
@@ -316,7 +321,9 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
                 )
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -334,29 +341,31 @@ fun PlaylistCollage(images: List<String>, modifier: Modifier = Modifier) {
                     fallback = painterResource(R.drawable.baseline_album_24),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
                 )
             }
         }
     } else {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(images[0])
-                    .size(400)
-                    .crossfade(false)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCacheKey(images[0])
-                    .memoryCacheKey(images[0])
-                    .placeholderMemoryCacheKey(images[0])
-                    .build(),
-                placeholder = painterResource(R.drawable.baseline_album_24),
-                error = painterResource(R.drawable.baseline_album_24),
-                fallback = painterResource(R.drawable.baseline_album_24),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth(),
-            )
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(images[0])
+                .size(400)
+                .crossfade(false)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCacheKey(images[0])
+                .memoryCacheKey(images[0])
+                .placeholderMemoryCacheKey(images[0])
+                .build(),
+            placeholder = painterResource(R.drawable.baseline_album_24),
+            error = painterResource(R.drawable.baseline_album_24),
+            fallback = painterResource(R.drawable.baseline_album_24),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth(),
+        )
     }
 }

@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface GenreRepository {
 
-    suspend fun getOrCreateGenre(name: String) : Int
+    suspend fun getOrCreateGenre(name: String): Int
 
-    fun findGenre(query: String) : Flow<List<String>>
+    fun findGenre(query: String): Flow<List<String>>
 }

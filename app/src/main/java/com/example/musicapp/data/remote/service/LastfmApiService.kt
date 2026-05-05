@@ -14,6 +14,6 @@ interface LastfmApiService {
         @Query("mbid") mbid: String?,
         @Query("artist") artist: String?,
         @Query("format") format: String = "json"
-    ) : ArtistLastfmResponse
+    ): ArtistLastfmResponse
 
 }

@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -18,19 +18,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.data.repository.SearchResult
-import com.example.musicapp.ui.components.SearchTopBar
-import com.example.musicapp.ui.viewmodels.SearchViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.local.model.VisualTrack
-import com.example.musicapp.data.local.model.GridItem
+import com.example.musicapp.data.repository.SearchResult
 import com.example.musicapp.ui.components.ImageWithTextColumn
+import com.example.musicapp.ui.components.SearchTopBar
 import com.example.musicapp.ui.components.TrackRow
+import com.example.musicapp.ui.viewmodels.SearchViewModel
 import com.example.musicapp.util.formatDuration
 
 @Composable
@@ -42,7 +42,7 @@ fun SearchResultsScreen(
     onAddToPlaylistArtist: (GridItem) -> Unit,
     onAddToPlaylistAlbum: (GridItem) -> Unit,
     onBack: () -> Unit,
-){
+) {
     val searchViewModel: SearchViewModel = hiltViewModel()
 
     val query by searchViewModel.searchQuery.collectAsState()
@@ -56,8 +56,8 @@ fun SearchResultsScreen(
                 onQueryChange = { query -> searchViewModel.onQueryChange(query) },
                 onClose = onBack,
                 placeholder = if (searchViewModel.scope?.scopeType == "ARTIST") "Search in artist..."
-                              else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
-                              else "Search..."
+                else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
+                else "Search..."
             )
         },
     ) { padding ->
@@ -71,7 +71,8 @@ fun SearchResultsScreen(
             onAddToPlaylist = onAddToPlaylist,
             onAddToPlaylistArtist = onAddToPlaylistArtist,
             onAddToPlaylistAlbum = onAddToPlaylistAlbum,
-            padding = padding,)
+            padding = padding,
+        )
     }
 }
 
@@ -85,8 +86,11 @@ fun SearchContent(
     onAddToPlaylistArtist: (GridItem) -> Unit,
     onAddToPlaylistAlbum: (GridItem) -> Unit,
     padding: PaddingValues
-){
-    LazyColumn(modifier = Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+) {
+    LazyColumn(
+        modifier = Modifier.padding(padding),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
 
         if (results.artists.isNotEmpty()) {
             item { SearchSectionHeader("Artists") }
@@ -117,7 +121,7 @@ fun SearchContent(
                                 onEdit = {},
                                 onDelete = { a, b -> {} },
                                 onRefetch = {},
-                                onClick = { gridItem -> onArtistClick( gridItem.id) },
+                                onClick = { gridItem -> onArtistClick(gridItem.id) },
                                 onAddToPlaylist = onAddToPlaylistArtist
                             )
                         }
@@ -165,7 +169,7 @@ fun SearchContent(
                                 onEdit = {},
                                 onDelete = { a, b -> {} },
                                 onRefetch = {},
-                                onClick = {gridItem -> onAlbumClick(gridItem.id)},
+                                onClick = { gridItem -> onAlbumClick(gridItem.id) },
                                 onAddToPlaylist = onAddToPlaylistAlbum
                             )
                         }
@@ -190,7 +194,7 @@ fun SearchContent(
                     title = track.title,
                     artist = track.artistName,
                     isPlaying = false,
-                    onClick = {track -> onTrackClick(results.tracks, track.data)},
+                    onClick = { track -> onTrackClick(results.tracks, track.data) },
                     onPlayNext = {},
                     onAddToQueue = {},
                     showArtwork = true,
@@ -204,7 +208,7 @@ fun SearchContent(
                     trackIndex = id,
                     onRemoveFromQueue = {},
                     onEdit = {},
-                    onDelete = {ids ->{}},
+                    onDelete = { ids -> {} },
                     onMove = {},
                     onAddToPlaylist = onAddToPlaylist,
                 )

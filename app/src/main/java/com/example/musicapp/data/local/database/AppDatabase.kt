@@ -20,12 +20,12 @@ import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.AlbumGenre
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.Genre
-import com.example.musicapp.data.local.entity.QueueItem
-import com.example.musicapp.data.local.entity.Track
-import com.example.musicapp.data.local.entity.TrackMood
 import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
+import com.example.musicapp.data.local.entity.QueueItem
+import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackMood
 
 @Database(
     entities = [
@@ -40,9 +40,10 @@ import com.example.musicapp.data.local.entity.PlaylistTracks
         TrackMood::class,
         Playlist::class,
         PlaylistTracks::class,
-        ],
+    ],
     version = 14,
-    exportSchema = true)
+    exportSchema = true
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao
     abstract fun albumDao(): AlbumDao
@@ -57,20 +58,17 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistTracksDao(): PlaylistTracksDao
 
 
-
     companion object {
-        @Volatile private var INSTANCE: AppDatabase? = null
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                                context.applicationContext,
-                                AppDatabase::class.java,
-                                "music_app_db"
-                            )
-        //            .setQueryCallback(RoomDatabase.QueryCallback { sqlQuery, bindArgs ->
-       //                 Log.d("RoomQuery", "SQL: $sqlQuery\nArgs: $bindArgs")
-       //             }, Executors.newSingleThreadExecutor())
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "music_app_db"
+                )
                     .fallbackToDestructiveMigration(true)
                     .build()
                 INSTANCE = instance

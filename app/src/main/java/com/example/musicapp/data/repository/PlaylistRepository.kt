@@ -2,9 +2,9 @@ package com.example.musicapp.data.repository
 
 import android.content.Context
 import android.net.Uri
+import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.PlaylistWithArt
-import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
@@ -23,11 +23,11 @@ interface PlaylistRepository {
 
     suspend fun deleteById(playlistId: Int)
 
-    fun getArtForCollage(playlistId: Int) : Flow<List<String>>
+    fun getArtForCollage(playlistId: Int): Flow<List<String>>
 
-    fun getPlaylistStats(playlistId: Int) : Flow<PlaylistStats>
+    fun getPlaylistStats(playlistId: Int): Flow<PlaylistStats>
 
-    suspend fun getPlaylistImages(playlistId: Int) : List<String>
+    suspend fun getPlaylistImages(playlistId: Int): List<String>
 
     fun savePlaylistImage(context: Context, uri: Uri): String?
 

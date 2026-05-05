@@ -1,17 +1,17 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.local.model.AlbumIdWithArtist
-import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.AlbumIdWithArtist
+import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface AlbumArtistRepository {
     fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>>
 
-    fun getAllAlbumsByArtistSorted(artistId: Int, oredrBy: SortOption): Flow<List<AlbumInfo>>
+    fun getAllAlbumsByArtistSorted(artistId: Int, orderBy: SortOption): Flow<List<AlbumInfo>>
 
     fun getAllAlbumsByArtistFull(artistId: Int): Flow<List<Album>>
 

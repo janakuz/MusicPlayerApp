@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -123,58 +122,59 @@ fun PlaylistEditScreen(
 
 
                 item {
-                     Box(
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp),
+                                .size(250.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .shadow(4.dp, RoundedCornerShape(12.dp))
+                                .clickable {
+                                    pickMedia.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
+                                },
                             contentAlignment = Alignment.Center
                         ) {
+                            AsyncImage(
+                                model = playlistEditUiState.draftImageUrl
+                                    ?: R.drawable.baseline_album_24,
+                                contentDescription = "Edit Image",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                            )
                             Box(
                                 modifier = Modifier
-                                    .size(250.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .shadow(4.dp, RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        pickMedia.launch(
-                                            PickVisualMediaRequest(
-                                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                                            )
-                                        )
-                                    },
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.3f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                AsyncImage(
-                                    model = playlistEditUiState.draftImageUrl
-                                        ?: R.drawable.baseline_album_24,
-                                    contentDescription = "Edit Image",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                )
-                                Box(
-                                    modifier = Modifier.fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.3f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.PhotoCamera, null, tint = Color.White)
-                                }
+                                Icon(Icons.Default.PhotoCamera, null, tint = Color.White)
+                            }
 
-                                if (playlistEditUiState.draftImageUrl != null) {
-                                    TextButton(
-                                        onClick = { playlistEditViewModel.onRemoveImage() },
-                                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Remove Custom Cover")
-                                    }
+                            if (playlistEditUiState.draftImageUrl != null) {
+                                TextButton(
+                                    onClick = { playlistEditViewModel.onRemoveImage() },
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Remove Custom Cover")
                                 }
                             }
                         }
+                    }
                 }
 
                 item {

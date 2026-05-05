@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 class GenreRepositoryImpl(
     private val genreDao: GenreDao
 ) : GenreRepository {
-    override suspend fun getOrCreateGenre(name: String) : Int {
+    override suspend fun getOrCreateGenre(name: String): Int {
         val normalized = name.normalizeGenre()
         val existingGenre = genreDao.getGenreByName(normalized)
         return existingGenre?.id ?: genreDao.insert(Genre(name = normalized)).toInt()

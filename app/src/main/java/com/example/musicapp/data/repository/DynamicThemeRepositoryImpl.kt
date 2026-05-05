@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 
 class DynamicThemeRepositoryImpl(
     private val imageLoader: ImageLoader,
-): DynamicThemeRepository {
+) : DynamicThemeRepository {
     override suspend fun extractColorsFromUrl(
         url: String,
         context: Context

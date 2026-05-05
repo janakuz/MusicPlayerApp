@@ -1,10 +1,10 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
+import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
 import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
-import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
@@ -36,7 +36,11 @@ interface AlbumRepository {
 
     suspend fun findAlbumMB(query: String): ReleaseSearchResponse?
 
-    suspend fun findAlbumDiscogs(artist: String, album: String, year: String?): DiscogsSearchResponse?
+    suspend fun findAlbumDiscogs(
+        artist: String,
+        album: String,
+        year: String?
+    ): DiscogsSearchResponse?
 
     suspend fun getAlbumDiscogs(releaseId: String): AlbumDiscogsResponse?
 
@@ -60,5 +64,5 @@ interface AlbumRepository {
 
     suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>? = emptyList())
 
-    suspend fun getAlbumByMbid(mbid: String) : Album?
+    suspend fun getAlbumByMbid(mbid: String): Album?
 }
