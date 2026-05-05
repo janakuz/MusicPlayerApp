@@ -1,17 +1,15 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
-import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.data.entity.Track
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository

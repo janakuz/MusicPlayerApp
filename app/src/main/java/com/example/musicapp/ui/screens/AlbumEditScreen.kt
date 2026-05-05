@@ -73,8 +73,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import com.example.musicapp.R
-import com.example.musicapp.normalizeGenre
-import com.example.musicapp.toTitleCase
+import com.example.musicapp.util.normalizeGenre
+import com.example.musicapp.util.toTitleCase
 import com.example.musicapp.ui.viewmodels.AlbumEditViewModel
 import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
 

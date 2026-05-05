@@ -8,10 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.musicapp.data.dto.PlayQueueItemUUID
+import com.example.musicapp.data.local.model.PlayQueueItemUUID
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.theme.MusicAppTheme
 import sh.calvin.reorderable.rememberReorderableLazyListState

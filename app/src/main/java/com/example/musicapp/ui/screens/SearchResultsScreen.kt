@@ -3,49 +3,35 @@ package com.example.musicapp.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.repository.SearchResult
-import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.components.SearchTopBar
 import com.example.musicapp.ui.viewmodels.SearchViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.ui.components.TrackRow
-import com.example.musicapp.ui.components.formatDuration
-import com.example.musicapp.ui.viewmodels.SearchScope
+import com.example.musicapp.util.formatDuration
 
 @Composable
 fun SearchResultsScreen(
@@ -212,7 +198,7 @@ fun SearchContent(
                     showReorderIconStart = false,
                     showReorderIconEnd = false,
                     trackNum = track.trackNum ?: 0,
-                    duration = formatDuration(track.duration),
+                    duration = track.duration.formatDuration(),
                     track = VisualTrack(key = track.trackId, data = track),
                     useQueueId = false,
                     trackIndex = id,

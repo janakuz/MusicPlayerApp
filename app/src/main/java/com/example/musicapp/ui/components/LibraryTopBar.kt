@@ -24,7 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.example.musicapp.LibraryScreen
+import com.example.musicapp.ui.LibraryScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

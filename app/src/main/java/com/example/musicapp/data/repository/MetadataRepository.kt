@@ -1,14 +1,12 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.dto.DiscogsSearchResponse
-import com.example.musicapp.data.dto.Release
-import com.example.musicapp.data.dto.ReleaseSearchResponse
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.data.entity.Track
-import com.example.musicapp.data.repository.impl.AlbumArtistUpdate
-import com.example.musicapp.data.repository.impl.ScanProgress
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
+import com.example.musicapp.data.remote.dto.Release
+import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
+import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.Track
 import kotlinx.coroutines.flow.Flow
 
 interface MetadataRepository {

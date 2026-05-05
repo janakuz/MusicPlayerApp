@@ -1,10 +1,10 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.AlbumIdWithArtist
-import com.example.musicapp.data.dto.AlbumInfo
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.AlbumArtist
-import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.local.model.AlbumIdWithArtist
+import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.AlbumArtist
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 

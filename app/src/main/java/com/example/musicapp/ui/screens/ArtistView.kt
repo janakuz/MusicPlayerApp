@@ -44,8 +44,8 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme

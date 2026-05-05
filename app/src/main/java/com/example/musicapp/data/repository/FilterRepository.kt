@@ -1,6 +1,6 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.AlbumInfo
+import com.example.musicapp.data.local.model.AlbumInfo
 import kotlinx.coroutines.flow.Flow
 
 interface FilterRepository {

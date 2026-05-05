@@ -3,8 +3,7 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.dto.PlayQueueItemUUID
-import com.example.musicapp.data.dto.PlaylistTrack
+import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

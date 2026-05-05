@@ -1,7 +1,5 @@
 package com.example.musicapp.ui.components
 
-import android.util.Log
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.model.GridItem
 
 
 @Composable

@@ -1,6 +1,5 @@
 package com.example.musicapp.ui.screens
 
-import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -51,14 +49,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.ui.components.formatDuration
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
-import java.nio.file.WatchEvent
+import com.example.musicapp.util.formatDuration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +108,7 @@ fun NowPlayingView(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(8.dp)) {
             Text(
-                text = formatDuration(position),
+                text = position.formatDuration(),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier
@@ -164,7 +160,7 @@ fun NowPlayingView(
                 )
             }
             Text(
-                text = formatDuration(duration),
+                text = duration.formatDuration(),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier.width(32.dp)

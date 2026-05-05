@@ -2,7 +2,6 @@ package com.example.musicapp.ui.screens
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,8 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -34,7 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AllAlbumsViewModel
@@ -46,15 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.navigation.NavBackStackEntry
-import androidx.room.Delete
-import com.example.musicapp.HomeScreen
-import com.example.musicapp.data.dto.AlbumInfo
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.dto.Release
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState

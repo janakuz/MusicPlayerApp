@@ -2,15 +2,11 @@ package com.example.musicapp.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.example.musicapp.data.dto.PlaylistTrack
-import com.example.musicapp.data.dto.PlaylistWithArt
-import com.example.musicapp.data.dto.PlaylistWithStats
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.data.entity.Playlist
-import com.example.musicapp.data.entity.PlaylistTracks
+import com.example.musicapp.data.local.model.PlaylistTrack
+import com.example.musicapp.data.local.model.PlaylistWithArt
+import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
-import java.io.File
 
 interface PlaylistRepository {
     fun getAllPlaylists(sortBy: SortOption): Flow<List<PlaylistWithArt>>

@@ -5,10 +5,10 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.LocalLibraryScanner
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.service.LocalLibraryScanner
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository

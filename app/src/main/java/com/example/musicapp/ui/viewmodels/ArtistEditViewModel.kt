@@ -4,9 +4,9 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.dto.DiscogsImage
-import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.remote.dto.DiscogsImage
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
-import java.util.jar.Attributes
 import javax.inject.Inject
 
 @HiltViewModel

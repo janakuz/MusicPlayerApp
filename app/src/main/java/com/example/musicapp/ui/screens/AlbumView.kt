@@ -1,8 +1,5 @@
 package com.example.musicapp.ui.screens
 
-import android.app.AlertDialog
-import android.text.Layout
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,11 +26,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,20 +40,16 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.dto.Release
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
-import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
+import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.ui.components.TrackList
-import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AlbumDetailViewModel
 import com.example.musicapp.ui.viewmodels.NewAlbum
-import com.example.musicapp.ui.viewmodels.RefetchAlbumState
 import com.example.musicapp.ui.viewmodels.RefetchAlbumTracksState
-import com.example.musicapp.ui.viewmodels.RefetchState
-import java.nio.file.WatchEvent
+import com.example.musicapp.util.formatDuration
 
 
 @Composable
@@ -158,7 +148,7 @@ fun AlbumInfoRow(
 
         DotSeparator()
 
-        InfoChip(text = formatDuration(duration))
+        InfoChip(text = duration.formatDuration())
     }
 }
 

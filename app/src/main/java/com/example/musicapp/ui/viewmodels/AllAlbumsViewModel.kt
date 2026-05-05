@@ -3,16 +3,12 @@ package com.example.musicapp.ui.viewmodels
 import android.app.PendingIntent
 import android.content.Context
 import android.provider.MediaStore
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.runtime.currentComposer
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.dto.AlbumInfo
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.dto.Release
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.remote.dto.Release
+import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
@@ -34,7 +30,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.collections.map

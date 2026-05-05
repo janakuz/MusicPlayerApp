@@ -2,8 +2,6 @@ package com.example.musicapp.ui.components
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -15,7 +13,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -47,7 +44,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -82,14 +78,13 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackDeletionViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
+import com.example.musicapp.util.formatDuration
 import kotlinx.coroutines.launch
-import java.util.Locale
-
 
 
 @Composable
@@ -379,13 +374,6 @@ fun TrackRow(
     }
 }
 
-fun formatDuration(durationMs: Long): String {
-    val totalSeconds = durationMs / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
-}
-
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun FastScrollbar(
@@ -433,7 +421,7 @@ fun FastScrollbar(
             val label =
                 when (sortOption.field) {
                     SortField.NAME -> track?.title?.firstOrNull()?.uppercase() ?: ""
-                    SortField.DURATION -> formatDuration(track?.duration!!.toLong())
+                    SortField.DURATION -> track?.duration!!.toLong().formatDuration()
                     else -> ""
                 }
 
@@ -594,7 +582,7 @@ fun TrackList(
                     showReorderIconStart = showReorderIconStart,
                     showReorderIconEnd = showReorderIconEnd,
                     trackNum = track.trackNum ?: 0,
-                    duration = formatDuration(track.duration),
+                    duration = track.duration.formatDuration(),
                     track = queueTrack,
                     useQueueId = strictHighlight,
                     usePlaylistId = playlistHighlight,
