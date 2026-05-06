@@ -44,8 +44,8 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
@@ -68,9 +68,6 @@ fun ArtistDetailHeader(
             modifier = Modifier
                 .height(300.dp)
                 .fillMaxWidth()
-//                .shadow(8.dp, RoundedCornerShape(16.dp)),
-//            shape = RoundedCornerShape(16.dp),
-//            color = MaterialTheme.colorScheme.surfaceVariant
         ) {
 
             val defaultImage = painterResource(R.drawable.rounded_groups_24)
@@ -91,10 +88,9 @@ fun ArtistDetailHeader(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1.5f),
-//                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.TopCenter,
-                )
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -111,14 +107,14 @@ fun ArtistDetailHeader(
 
 
 @Composable
-fun ExpandableBio(bio: String){
-    var expanded by remember { mutableStateOf(false)}
+fun ExpandableBio(bio: String) {
+    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .clickable {expanded = !expanded}
+            .clickable { expanded = !expanded }
             .animateContentSize()
     ) {
         Text(
@@ -162,7 +158,7 @@ fun ArtistView(
     onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
     onAddToPlaylist: (GridItem) -> Unit
-){
+) {
 
     val artistDetailViewModel: ArtistDetailViewModel = hiltViewModel()
 
@@ -286,8 +282,6 @@ fun ArtistView(
 @Composable
 fun ArtistPreview() {
     MusicAppTheme {
-        val albumArtistSort = null
-//        ArtistView(sortRequest = albumArtistSort)
     }
 
 }

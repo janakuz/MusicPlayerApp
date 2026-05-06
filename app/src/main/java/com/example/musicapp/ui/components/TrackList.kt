@@ -2,8 +2,6 @@ package com.example.musicapp.ui.components
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -15,7 +13,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -32,27 +29,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.ReorderableLazyListState
-import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -63,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -76,20 +68,23 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackDeletionViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
+import com.example.musicapp.util.formatDuration
 import kotlinx.coroutines.launch
-import java.util.Locale
-
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 
 @Composable
@@ -100,9 +95,21 @@ fun LiveEqualizer(
     val transition = rememberInfiniteTransition(label = "equalizer")
 
     val heights = listOf(
-        transition.animateFloat(0.3f, 1f, infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse)),
-        transition.animateFloat(0.2f, 0.8f, infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse)),
-        transition.animateFloat(0.4f, 0.9f, infiniteRepeatable(tween(520, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+        transition.animateFloat(
+            0.3f,
+            1f,
+            infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        ),
+        transition.animateFloat(
+            0.2f,
+            0.8f,
+            infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        ),
+        transition.animateFloat(
+            0.4f,
+            0.9f,
+            infiniteRepeatable(tween(520, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        )
     )
 
     Row(
@@ -135,7 +142,7 @@ fun TrackInfoRow(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if(showArtwork) {
+        if (showArtwork) {
             Box {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -157,11 +164,6 @@ fun TrackInfoRow(
                 )
             }
 
-//            Image(
-//                painter = artwork,
-//                contentDescription = null,
-//                modifier = Modifier.size(48.dp)
-//            )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Column {
@@ -195,21 +197,24 @@ fun TrackRow(
     trackNum: Int = 0,
     modifier: Modifier = Modifier,
     reorderModifier: Modifier = Modifier,
-    onDelete: (List<Int>) -> Unit,
+    onDelete: ((List<Int>) -> Unit)? = null,
     onMove: ((List<Int>) -> Unit)? = null,
     onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
-    ) {
+) {
     var expanded by remember { mutableStateOf(false) }
 
-    val selectionViewModel: TrackSelectionViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
+    val selectionViewModel: TrackSelectionViewModel =
+        hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
     val selectionState by selectionViewModel.selectionState.collectAsState()
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
     val selection by selectionViewModel.selectionState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        selectionViewModel.deletionRequestTrigger.collect {
-            val idsToDelete = selection.selectedTrackIds
-            onDelete(idsToDelete.toList())
+    if (onDelete != null) {
+        LaunchedEffect(Unit) {
+            selectionViewModel.deletionRequestTrigger.collect {
+                val idsToDelete = selection.selectedTrackIds
+                onDelete(idsToDelete.toList())
+            }
         }
     }
 
@@ -224,14 +229,14 @@ fun TrackRow(
     }
 
 
-    Column {
-
         Row(
             modifier = modifier
                 .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp)
                 .background(
+                    color =
                     if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                    else if (!useQueueId && ! usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                    else if (!useQueueId && !usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
                     else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(
@@ -240,12 +245,15 @@ fun TrackRow(
                     else if (usePlaylistId && track.key in selectionState.selectedPlaylistEntryIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
-                    else Color.Transparent
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp)
                 )
                 .combinedClickable(
                     onClick = {
                         if (!selectionMode) onClick(track)
-                        else if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(track.data.trackId)
+                        else if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(
+                            track.data.trackId
+                        )
                         else if (useQueueId) selectionViewModel.toggleSelection(track.key.toString())
                         else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
                     },
@@ -257,7 +265,7 @@ fun TrackRow(
                         else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
                     }
                 )
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
 
             ) {
@@ -270,10 +278,15 @@ fun TrackRow(
                 )
             }
             if (showTrackNum) {
-                if (isPlaying) LiveEqualizer() else Text(
-                    text = trackNum.toString(),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Box(
+                    modifier = Modifier.width(28.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (isPlaying) LiveEqualizer() else Text(
+                        text = trackNum.toString(),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
 
             TrackInfoRow(
@@ -306,84 +319,60 @@ fun TrackRow(
                 }
 
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Play Next") },
-                        onClick = {
-                            onPlayNext(track.data)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Add to Queue") },
-                        onClick = {
-                            onAddToQueue(track.data)
-                            expanded = false
-                        }
-                    )
 
-                    DropdownMenuItem(
-                        text = { Text("Add to Playlist") },
-                        onClick = {
-                            onAddToPlaylist(track.data.trackId)
+                val actions = MenuActions(
+                    onPlayNext = {
+                        onPlayNext(track.data)
+                        expanded = false
+                    },
+                    onAddToQueue = {
+                        onAddToQueue(track.data)
+                        expanded = false
+                    },
+                    onRemoveFromQueue = if (onRemoveFromQueue != null) {
+                        {
+                            onRemoveFromQueue(trackIndex)
                             expanded = false
                         }
-                    )
-
-                    if (onRemoveFromQueue != null) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Queue")) },
-                            onClick = {
-                                onRemoveFromQueue(trackIndex)
-                                expanded = false
-                            }
-                        )
-                    }
-                    if (onRemoveFromPlaylist != null) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Playlist")) },
-                            onClick = {
-                                onRemoveFromPlaylist(track)
-                                expanded = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Edit") },
-                        onClick = {
-                            onEdit(track.data)
+                    } else null,
+                    onAddToPlaylist = {
+                        onAddToPlaylist(track.data.trackId)
+                        expanded = false
+                    },
+                    onRemoveFromPlaylist = if (onRemoveFromPlaylist != null) {
+                        {
+                            onRemoveFromPlaylist(track)
                             expanded = false
                         }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
+                    } else null,
+                    onEdit = {
+                        onEdit(track.data)
+                        expanded = false
+                    },
+                    onDelete = if (onDelete != null) {
+                        {
                             onDelete(listOf(track.data.trackId))
                             expanded = false
                         }
-                    )
+                    } else null,
+                )
 
+                if (expanded) {
+                    ActionMenu(
+                        title = track.data.title,
+                        subtitle = "${track.data.artistName} - ${track.data.albumTitle}",
+                        actions = actions,
+                        onDismiss = { expanded = false }
+                    )
                 }
             }
         }
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth(),
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-        )
+//        HorizontalDivider(
+//            modifier = Modifier.fillMaxWidth(),
+//            thickness = 1.dp,
+//            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+//        )
 
-    }
-}
-
-fun formatDuration(durationMs: Long): String {
-    val totalSeconds = durationMs / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
 }
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -433,7 +422,7 @@ fun FastScrollbar(
             val label =
                 when (sortOption.field) {
                     SortField.NAME -> track?.title?.firstOrNull()?.uppercase() ?: ""
-                    SortField.DURATION -> formatDuration(track?.duration!!.toLong())
+                    SortField.DURATION -> track?.duration!!.toLong().formatDuration()
                     else -> ""
                 }
 
@@ -482,13 +471,6 @@ fun FastScrollbar(
                     val thumbHeight = 40.dp.toPx()
                     val xPosition = size.width - thumbWidth - 8.dp.toPx()
 
-//                    drawRoundRect(
-//                        color = Color.Gray.copy(alpha = 0.1f),
-//                        topLeft = Offset(xPosition, 0f),
-//                        size = Size(thumbWidth, size.height),
-//                        cornerRadius = CornerRadius(2f, 2f)
-//                    )
-
                     drawRoundRect(
                         color = if (isDragging) Color.Black else Color.Gray.copy(alpha = 0.5f),
                         topLeft = Offset(xPosition, offsetY - (thumbHeight / 2).coerceAtLeast(0f)),
@@ -523,7 +505,7 @@ fun TrackList(
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to -> {} },
     header: (@Composable () -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
-    ) {
+) {
     val hapticFeedback = LocalHapticFeedback.current
 
     val activity = LocalActivity.current
@@ -531,7 +513,8 @@ fun TrackList(
     val playerViewModel: PlayerViewModel = hiltViewModel(activity as ViewModelStoreOwner)
     val currentTrack by playerViewModel.currentTrack.collectAsState()
 
-    val currentTrackId = if (strictHighlight) currentTrack?.queueId else if (playlistHighlight) currentTrack?.playlistEntryId else currentTrack?.track?.trackId
+    val currentTrackId =
+        if (strictHighlight) currentTrack?.queueId else if (playlistHighlight) currentTrack?.playlistEntryId else currentTrack?.track?.trackId
 
     val trackDeletionViewModel: TrackDeletionViewModel = hiltViewModel()
 
@@ -549,6 +532,18 @@ fun TrackList(
             trackDeletionViewModel.finalizeDeletion(pendingUris)
         } else {
             trackDeletionViewModel.clearPendingDeletion()
+        }
+    }
+
+    if (strictHighlight) {
+        LaunchedEffect(currentTrack) {
+            if (currentTrack != null){
+                val index = tracks.indexOfFirst { it.key == currentTrack?.queueId }
+                val scrollIndex = if (index > 4) index - 4 else if (index > 0) 0 else -1
+                if (scrollIndex != -1){
+                    state.scrollToItem(scrollIndex)
+                }
+            }
         }
     }
 
@@ -573,9 +568,10 @@ fun TrackList(
         )
     }
 
-    LazyColumn(state = state,
-        ) {
-        if (header != null){
+    LazyColumn(
+        state = state,
+    ) {
+        if (header != null) {
             item { header() }
         }
         itemsIndexed(tracks, key = { index, track -> track.key }) { id, queueTrack ->
@@ -594,7 +590,7 @@ fun TrackList(
                     showReorderIconStart = showReorderIconStart,
                     showReorderIconEnd = showReorderIconEnd,
                     trackNum = track.trackNum ?: 0,
-                    duration = formatDuration(track.duration),
+                    duration = track.duration.formatDuration(),
                     track = queueTrack,
                     useQueueId = strictHighlight,
                     usePlaylistId = playlistHighlight,
@@ -609,7 +605,7 @@ fun TrackList(
                         },
                     ),
                     onEdit = onEdit,
-                    onDelete = {ids -> pendingDeletion = DeleteEvent(ids)},
+                    onDelete = { ids -> pendingDeletion = DeleteEvent(ids) },
                     onMove = onMove,
                     onRemoveFromPlaylist = onRemoveFromPlaylist,
                     onAddToPlaylist = onAddToPlaylist
@@ -618,7 +614,7 @@ fun TrackList(
             }
         }
 
-        if (footer != null){
+        if (footer != null) {
             item { footer() }
         }
     }

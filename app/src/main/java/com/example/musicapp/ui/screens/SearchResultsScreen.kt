@@ -3,60 +3,56 @@ package com.example.musicapp.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.data.repository.SearchResult
-import com.example.musicapp.ui.components.EditTopBar
-import com.example.musicapp.ui.components.SearchTopBar
-import com.example.musicapp.ui.viewmodels.SearchViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
-import com.example.musicapp.data.entity.Artist
-import com.example.musicapp.model.GridItem
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.musicapp.data.local.model.GridItem
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
+import com.example.musicapp.data.repository.SearchResult
 import com.example.musicapp.ui.components.ImageWithTextColumn
+import com.example.musicapp.ui.components.SearchTopBar
 import com.example.musicapp.ui.components.TrackRow
-import com.example.musicapp.ui.components.formatDuration
-import com.example.musicapp.ui.viewmodels.SearchScope
+import com.example.musicapp.ui.viewmodels.SearchViewModel
+import com.example.musicapp.util.formatDuration
 
 @Composable
 fun SearchResultsScreen(
+    selectionMode: Boolean,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
     onTrackClick: (List<TrackInfo>, TrackInfo) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onAddToPlaylistArtist: (GridItem) -> Unit,
     onAddToPlaylistAlbum: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onPlayNextAlbum: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onAddToQueueAlbum: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onEditAlbum: (GridItem) -> Unit,
+    onPlayNextTrack: (TrackInfo) -> Unit,
+    onAddToQueueTrack: (TrackInfo) -> Unit,
+    onEditTrack: (TrackInfo) -> Unit,
     onBack: () -> Unit,
-){
+) {
     val searchViewModel: SearchViewModel = hiltViewModel()
 
     val query by searchViewModel.searchQuery.collectAsState()
@@ -65,14 +61,16 @@ fun SearchResultsScreen(
 
     Scaffold(
         topBar = {
-            SearchTopBar(
-                query = query,
-                onQueryChange = { query -> searchViewModel.onQueryChange(query) },
-                onClose = onBack,
-                placeholder = if (searchViewModel.scope?.scopeType == "ARTIST") "Search in artist..."
-                              else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
-                              else "Search..."
-            )
+            if (!selectionMode) {
+                SearchTopBar(
+                    query = query,
+                    onQueryChange = { query -> searchViewModel.onQueryChange(query) },
+                    onClose = onBack,
+                    placeholder = if (searchViewModel.scope?.scopeType == "ARTIST") "Search in artist..."
+                    else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
+                    else "Search..."
+                )
+            }
         },
     ) { padding ->
 
@@ -85,7 +83,17 @@ fun SearchResultsScreen(
             onAddToPlaylist = onAddToPlaylist,
             onAddToPlaylistArtist = onAddToPlaylistArtist,
             onAddToPlaylistAlbum = onAddToPlaylistAlbum,
-            padding = padding,)
+            padding = padding,
+            onPlayNextArtist = onPlayNextArtist,
+            onPlayNextAlbum = onPlayNextAlbum,
+            onAddToQueueArtist = onAddToQueueArtist,
+            onAddToQueueAlbum = onAddToQueueAlbum,
+            onEditArtist = onEditArtist,
+            onEditAlbum = onEditAlbum,
+            onPlayNextTrack = onPlayNextTrack,
+            onAddToQueueTrack = onAddToQueueTrack,
+            onEditTrack = onEditTrack,
+        )
     }
 }
 
@@ -98,9 +106,21 @@ fun SearchContent(
     onAddToPlaylist: (Int) -> Unit,
     onAddToPlaylistArtist: (GridItem) -> Unit,
     onAddToPlaylistAlbum: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onPlayNextAlbum: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onAddToQueueAlbum: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onEditAlbum: (GridItem) -> Unit,
+    onPlayNextTrack: (TrackInfo) -> Unit,
+    onAddToQueueTrack: (TrackInfo) -> Unit,
+    onEditTrack: (TrackInfo) -> Unit,
     padding: PaddingValues
-){
-    LazyColumn(modifier = Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+) {
+    LazyColumn(
+        modifier = Modifier.padding(padding),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
 
         if (results.artists.isNotEmpty()) {
             item { SearchSectionHeader("Artists") }
@@ -123,15 +143,13 @@ fun SearchContent(
                                 image = artist.image ?: "",
                                 text = artist.name,
                                 isAlbum = false,
-                                onPlayNext = {},
+                                onPlayNext = onPlayNextArtist,
                                 imageShape = CircleShape,
                                 imageModifier = Modifier.size(80.dp),
                                 textStyle = MaterialTheme.typography.bodyMedium,
-                                onAddToQueue = {},
-                                onEdit = {},
-                                onDelete = { a, b -> {} },
-                                onRefetch = {},
-                                onClick = { gridItem -> onArtistClick( gridItem.id) },
+                                onAddToQueue = onAddToQueueArtist,
+                                onEdit = onEditArtist,
+                                onClick = { artistItem -> onArtistClick(artistItem.id) },
                                 onAddToPlaylist = onAddToPlaylistArtist
                             )
                         }
@@ -174,12 +192,10 @@ fun SearchContent(
                                 albumArtist = album.releaseDate ?: "",
                                 imageModifier = Modifier.size(80.dp),
                                 textStyle = MaterialTheme.typography.bodyMedium,
-                                onPlayNext = {},
-                                onAddToQueue = {},
-                                onEdit = {},
-                                onDelete = { a, b -> {} },
-                                onRefetch = {},
-                                onClick = {gridItem -> onAlbumClick(gridItem.id)},
+                                onPlayNext = onPlayNextAlbum,
+                                onAddToQueue = onAddToQueueAlbum,
+                                onEdit = onEditAlbum,
+                                onClick = { gridItem -> onAlbumClick(gridItem.id) },
                                 onAddToPlaylist = onAddToPlaylistAlbum
                             )
                         }
@@ -204,23 +220,21 @@ fun SearchContent(
                     title = track.title,
                     artist = track.artistName,
                     isPlaying = false,
-                    onClick = {track -> onTrackClick(results.tracks, track.data)},
-                    onPlayNext = {},
-                    onAddToQueue = {},
+                    onClick = { track -> onTrackClick(results.tracks, track.data) },
+                    onPlayNext = onPlayNextTrack,
+                    onAddToQueue = onAddToQueueTrack,
                     showArtwork = true,
                     showTrackNum = false,
                     showReorderIconStart = false,
                     showReorderIconEnd = false,
                     trackNum = track.trackNum ?: 0,
-                    duration = formatDuration(track.duration),
+                    duration = track.duration.formatDuration(),
                     track = VisualTrack(key = track.trackId, data = track),
                     useQueueId = false,
                     trackIndex = id,
-                    onRemoveFromQueue = {},
-                    onEdit = {},
-                    onDelete = {ids ->{}},
-                    onMove = {},
+                    onEdit = onEditTrack,
                     onAddToPlaylist = onAddToPlaylist,
+                    onDelete = {},
                 )
             }
         }

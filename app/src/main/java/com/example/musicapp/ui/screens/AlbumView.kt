@@ -1,8 +1,5 @@
 package com.example.musicapp.ui.screens
 
-import android.app.AlertDialog
-import android.text.Layout
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,11 +26,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,20 +40,16 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.dto.Release
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
-import com.example.musicapp.data.entity.Album
+import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.ui.components.TrackList
-import com.example.musicapp.ui.components.formatDuration
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.AlbumDetailViewModel
 import com.example.musicapp.ui.viewmodels.NewAlbum
-import com.example.musicapp.ui.viewmodels.RefetchAlbumState
 import com.example.musicapp.ui.viewmodels.RefetchAlbumTracksState
-import com.example.musicapp.ui.viewmodels.RefetchState
-import java.nio.file.WatchEvent
+import com.example.musicapp.util.formatDuration
 
 
 @Composable
@@ -69,7 +59,6 @@ fun ImageHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth(),
-//            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -140,7 +129,8 @@ fun AlbumDetailHeader(
 fun AlbumInfoRow(
     duration: Long,
     numTracks: Int,
-    releaseDate: String? = null, ) {
+    releaseDate: String? = null,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,7 +148,7 @@ fun AlbumInfoRow(
 
         DotSeparator()
 
-        InfoChip(text = formatDuration(duration))
+        InfoChip(text = duration.formatDuration())
     }
 }
 
@@ -197,7 +187,11 @@ fun FullHeader(album: Album, gradientColors: PlayerColors) {
             gradientColors = gradientColors
         )
         Spacer(modifier = Modifier.height(8.dp))
-        AlbumInfoRow(duration = album.duration, numTracks = album.numTracks, releaseDate = album.releaseDate)
+        AlbumInfoRow(
+            duration = album.duration,
+            numTracks = album.numTracks,
+            releaseDate = album.releaseDate?.take(4)
+        )
         Spacer(modifier = Modifier.height(8.dp))
 
     }
@@ -228,7 +222,7 @@ fun AlbumView(
     onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier
-){
+) {
     val albumDetailViewModel: AlbumDetailViewModel = hiltViewModel()
 
     val albumUiState by albumDetailViewModel.currentAlbumUiState.collectAsState()
@@ -247,24 +241,6 @@ fun AlbumView(
 
         albumDetailViewModel.getAlbumColors(album.image.toString())
         val gradientColors = albumDetailViewModel.albumColors
-
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .height(500.dp)
-//                .background(
-//                    brush =
-//                        Brush.verticalGradient(
-//                            colors = listOf(
-////                                MaterialTheme.colorScheme.background,
-////                                gradientColors.mainColor.copy(alpha = 0.5f),
-//                                gradientColors.mainColor.copy(alpha = 0.4f),
-//                                Color.Transparent,
-////                                MaterialTheme.colorScheme.background
-//                            )
-//                        )
-//                )
-//        )
 
         Box(modifier = Modifier.fillMaxSize()) {
 
@@ -315,16 +291,28 @@ fun AlbumView(
                         onDismiss = {
                             albumDetailViewModel.reset()
                         },
-                        onNotMatchedSelected = { albumDetailViewModel.splitToUnenriched(pendingMoveIds, moveToAlbum.artist ?: "", moveToAlbum.title ?: "") }
+                        onNotMatchedSelected = {
+                            albumDetailViewModel.splitToUnenriched(
+                                pendingMoveIds,
+                                moveToAlbum.artist ?: "",
+                                moveToAlbum.title ?: ""
+                            )
+                        }
                     )
                 }
 
                 is RefetchAlbumTracksState.InputExpected -> {
                     SplitAlbumDialog(
-                        onSave = {albumDetailViewModel.splitToAlbum(pendingMoveIds, moveToAlbum.artist ?: "", moveToAlbum.title ?: "")},
-                        onDismiss = {albumDetailViewModel.reset()},
-                        onAlbumChange = {title -> albumDetailViewModel.onTitleChange(title)},
-                        onArtistChange = {name -> albumDetailViewModel.onArtistChange(name)},
+                        onSave = {
+                            albumDetailViewModel.splitToAlbum(
+                                pendingMoveIds,
+                                moveToAlbum.artist ?: "",
+                                moveToAlbum.title ?: ""
+                            )
+                        },
+                        onDismiss = { albumDetailViewModel.reset() },
+                        onAlbumChange = { title -> albumDetailViewModel.onTitleChange(title) },
+                        onArtistChange = { name -> albumDetailViewModel.onArtistChange(name) },
                         uiState = moveToAlbum
                     )
                 }
@@ -337,9 +325,7 @@ fun AlbumView(
             }
 
 
-
         }
-//        }
     }
 
 }
@@ -358,14 +344,14 @@ fun SplitAlbumDialog(
         title = { Text("Input New Artist and Title") },
         confirmButton = {
             TextButton(onClick = { onSave() }) {
-            Text("Find Album")
+                Text("Find Album")
             }
         },
         text = {
             LazyColumn {
                 item {
                     OutlinedTextField(
-                        value = uiState.title ?: "" ,
+                        value = uiState.title ?: "",
                         onValueChange = { onAlbumChange(it) },
                         label = { Text("Album Title") },
                         enabled = true,
@@ -401,15 +387,6 @@ fun SplitAlbumDialog(
 @Composable
 fun AlbumPreview() {
     MusicAppTheme {
-//        AlbumView(name= stringResource(R.string.sw),
-// //           artist = stringResource(R.string.sw),
-//            releaseDate = stringResource(R.string.release),
-//            image = "",
-//            numTracks = stringResource(R.string.tracksnum),
-//            duration = stringResource(R.string.duration),
-//            tracks = DataSource.tracks,
-//            onTrackClick = {}
-//        )
     }
 
 }

@@ -1,7 +1,5 @@
 package com.example.musicapp.ui.components
 
-import android.util.Log
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,17 +7,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.example.musicapp.ui.theme.MusicAppTheme
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
-import com.example.musicapp.model.GridItem
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.example.musicapp.data.local.model.GridItem
+import com.example.musicapp.ui.theme.MusicAppTheme
 
 
 @Composable
@@ -47,23 +45,22 @@ fun Grid(
         modifier = modifier
     ) {
 
-        if (header != null){
+        if (header != null) {
             item(span = {
                 GridItemSpan(maxLineSpan)
             }) { header() }
         }
 
 
-        items(listItems, key = {it.id}) { item ->
+        items(listItems, key = { it.id }) { item ->
             var artist = ""
             if (isAlbum) {
-    //            if (!showReleaseDate)
-     //               artist = stringResource((item as GridItem.AlbumItem).artist)
-    //            else
-                    artist = (item as GridItem.AlbumItem).releaseYear
+                artist = (item as GridItem.AlbumItem).releaseYear
             }
-            Box( modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
                 ImageWithTextColumn(
                     image = item.imageRes,
                     text = item.displayName,
@@ -87,23 +84,10 @@ fun Grid(
 }
 
 
-
-
-
 @Preview(showBackground = true)
 @Composable
 fun GridPreview() {
     MusicAppTheme {
-//        Grid(
-//            listItems = DataSource.albums,
-//            isAlbum = true,
-//            showReleaseDate = false,
-//            shape = RoundedCornerShape(
-//                topStart = 4.dp,
-//                topEnd = 4.dp,
-//                bottomStart = 4.dp,
-//                bottomEnd = 4.dp),
-//            textStyle = MaterialTheme.typography.bodyMedium)
     }
 
 }

@@ -1,8 +1,7 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.QueueItemFull
-import com.example.musicapp.data.entity.QueueItem
-import com.example.musicapp.data.repository.impl.PlaybackSession
+import com.example.musicapp.data.local.entity.QueueItem
+import com.example.musicapp.data.local.model.QueueItemFull
 import kotlinx.coroutines.flow.Flow
 
 interface PlayQueueRepository {
@@ -19,7 +18,7 @@ interface PlayQueueRepository {
 
     suspend fun updateRepeat(mode: Int)
 
-    fun getCurrentQueue(shuffleOn: Boolean) : Flow<List<QueueItemFull>>
+    fun getCurrentQueue(shuffleOn: Boolean): Flow<List<QueueItemFull>>
 
     suspend fun saveQueue(tracks: List<QueueItem>)
 

@@ -24,7 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.example.musicapp.LibraryScreen
+import com.example.musicapp.ui.LibraryScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,11 +48,10 @@ fun LibraryTopBar(
         },
         navigationIcon = {
             if (!showBack) {
-                IconButton(onClick = onMenuClick ) {
+                IconButton(onClick = onMenuClick) {
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                 }
-            }
-            else if (onBack != null){
+            } else if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                 }
@@ -88,7 +87,7 @@ fun SelectionTopBar(
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
     onAddToPlaylist: () -> Unit,
-    ){
+) {
     TopAppBar(
         title = {
             Text(
@@ -113,77 +112,59 @@ fun SelectionTopBar(
                 }
 
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Play Next") },
-                        onClick = {
-                            onPlayNext()
+
+                val actions = MenuActions(
+                    onPlayNext = {
+                        onPlayNext()
+                        onClear()
+                        expanded = false
+                    },
+                    onAddToQueue = {
+                        onAddToQueue()
+                        onClear()
+                        expanded = false
+                    },
+                    onRemoveFromQueue = if (onRemoveFromQueue != null && isQueueScreen) {
+                        {
+                            onRemoveFromQueue()
                             onClear()
                             expanded = false
                         }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Add to Queue") },
-                        onClick = {
-                            onAddToQueue()
+                    } else null,
+                    onDelete = {
+                        onDelete()
+                        onClear()
+                        expanded = false
+                    },
+                    onAddToPlaylist = {
+                        onAddToPlaylist()
+                        onClear()
+                        expanded = false
+                    },
+                    onRemoveFromPlaylist = if (onRemoveFromPlaylist != null && isPlaylistScreen) {
+                        {
+                            onRemoveFromPlaylist()
                             onClear()
                             expanded = false
                         }
-                    )
-                    if (onRemoveFromQueue != null && isQueueScreen) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Queue")) },
-                            onClick = {
-                                onRemoveFromQueue()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
-                            onDelete()
+                    } else null,
+                    onMoveToAlbum = if (moveEnabled) {
+                        {
+                            onMove()
                             onClear()
                             expanded = false
                         }
+                    } else null
+                )
+
+                if (expanded) {
+                    ActionMenu(
+                        title = "$count tracks",
+                        actions = actions,
+                        onDismiss = { expanded = false }
                     )
-
-                    DropdownMenuItem(
-                        text = { Text("Add to Playlist") },
-                        onClick = {
-                            onAddToPlaylist()
-                            onClear()
-                            expanded = false
-                        }
-                    )
-
-                    if (onRemoveFromPlaylist != null && isPlaylistScreen) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Playlist")) },
-                            onClick = {
-                                onRemoveFromPlaylist()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-
-                    if (moveEnabled) {
-                        DropdownMenuItem(
-                            text = { (Text("Split to Album")) },
-                            onClick = {
-                                onMove()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-
                 }
+
             }
         }
     )

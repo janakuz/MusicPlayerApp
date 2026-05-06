@@ -1,6 +1,5 @@
 package com.example.musicapp.ui.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -42,7 +41,7 @@ class SearchViewModel @Inject constructor(
             if (query.length < 2) {
                 flowOf(SearchResult())
             } else {
-                when (scopeType){
+                when (scopeType) {
                     "ARTIST" -> searchRepository.searchWithinArtist(query, scopeId.toInt())
                     "ALBUM" -> searchRepository.searchWithinAlbum(query, scopeId.toInt())
                     else -> searchRepository.globalSearch(query)
@@ -52,14 +51,13 @@ class SearchViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Lazily, SearchResult())
 
 
-    fun onQueryChange(query: String){
+    fun onQueryChange(query: String) {
         _searchQuery.value = query
     }
 }
 
 
-
-data class SearchScope (
+data class SearchScope(
     val scopeType: String? = "global",
     val scopeId: Int? = -1
 )

@@ -1,26 +1,16 @@
 package com.example.musicapp.ui.components
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Album
-import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,8 +35,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.model.GridItem
 
 @Composable
 fun ImageWithTextColumn(
@@ -64,51 +53,58 @@ fun ImageWithTextColumn(
     item: GridItem? = null,
     albumArtist: String = "",
     onClick: ((GridItem) -> Unit)? = null,
-    onDelete: (Int, String) -> Unit,
-    onRefetch: (Int) -> Unit,
+    onDelete: ((Int, String) -> Unit)? = null,
+    onRefetch: ((Int) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
-            .then(if (onClick != null) Modifier.combinedClickable(
-                onClick = {
-                    if (item != null) {
-                        onClick(item)
-                    }
-                },
-                onLongClick = { expanded = true }
-            ) else Modifier).fillMaxWidth(),
+            .then(
+                if (onClick != null) Modifier.combinedClickable(
+                    onClick = {
+                        if (item != null) {
+                            onClick(item)
+                        }
+                    },
+                    onLongClick = { expanded = true }
+                ) else Modifier)
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val defaultImage = if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_groups_24)
-        Surface(modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(imageShape),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        val defaultImage =
+            if (isAlbum) painterResource(R.drawable.baseline_album_24) else painterResource(R.drawable.rounded_groups_24)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(imageShape),
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            ),
         ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(image)
-                        .size(400)
-                        .crossfade(false)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCacheKey(image)
-                        .memoryCacheKey(image)
-                        .placeholderMemoryCacheKey(image)
-                        .build(),
-                    placeholder = defaultImage,
-                    error = defaultImage,
-                    fallback = defaultImage,
-                    contentDescription = null,
-                    modifier = imageModifier
-                        .clip(imageShape)
-                        .fillMaxWidth()
-                        .aspectRatio(1f),
-                    contentScale = ContentScale.Crop
-                )
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(image)
+                    .size(400)
+                    .crossfade(false)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(image)
+                    .memoryCacheKey(image)
+                    .placeholderMemoryCacheKey(image)
+                    .build(),
+                placeholder = defaultImage,
+                error = defaultImage,
+                fallback = defaultImage,
+                contentDescription = null,
+                modifier = imageModifier
+                    .clip(imageShape)
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -117,7 +113,7 @@ fun ImageWithTextColumn(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        if (isAlbum){
+        if (isAlbum) {
             Text(
                 text = albumArtist,
                 style = MaterialTheme.typography.bodySmall,
@@ -127,57 +123,46 @@ fun ImageWithTextColumn(
         }
     }
 
-    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        DropdownMenuItem(
-            text = { Text("Play Next") },
-            onClick = {
-                if (item != null) onPlayNext(item)
-                expanded = false
-            }
-        )
-        DropdownMenuItem(
-            text = { Text("Add to Queue") },
-            onClick = { if (item != null) onAddToQueue(item)
-                expanded = false
-            }
-        )
 
-        DropdownMenuItem(
-            text = { Text("Add to Playlist") },
-            onClick = { if (item != null) onAddToPlaylist(item)
-                expanded = false
-            }
-        )
-
-        DropdownMenuItem(
-            text = { Text("Edit") },
-            onClick = { if (item != null) onEdit(item)
-                expanded = false
-            }
-        )
-
-        DropdownMenuItem(
-            text = { Text("Delete")},
-            onClick = {
+    val actions = MenuActions(
+        onPlayNext = {
+            if (item != null) onPlayNext(item)
+            expanded = false
+        },
+        onAddToQueue = {
+            if (item != null) onAddToQueue(item)
+            expanded = false
+        },
+        onAddToPlaylist = {
+            if (item != null) onAddToPlaylist(item)
+            expanded = false
+        },
+        onEdit = {
+            if (item != null) onEdit(item)
+            expanded = false
+        },
+        onDelete = if (onDelete != null) {
+            {
                 if (item != null) onDelete(item.id, item.displayName)
-//                showDeleteDialog = true
                 expanded = false
             }
-        )
-
-        DropdownMenuItem(
-            text = {Text("Refetch Metadata")},
-            onClick = {
+        } else null,
+        onRefetchMetadata =  if (onRefetch != null) {
+            {
                 if (item != null) onRefetch(item.id)
                 expanded = false
             }
-        )
+        } else null
 
+    )
+
+    if (expanded) {
+        ActionMenu(
+            title = item?.displayName ?: "",
+            actions = actions,
+            onDismiss = { expanded = false }
+        )
     }
 }
 
@@ -186,7 +171,7 @@ fun DeleteConfirmationDialog(
     text: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-){
+) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = { Text("Delete ${text}?") },

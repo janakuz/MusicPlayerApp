@@ -14,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import com.example.musicapp.data.entity.Playlist
+import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
 
 @Composable
@@ -37,7 +36,7 @@ fun AddToPlaylistDialog(
     onDismiss: () -> Unit,
     onPlaylistSelected: (Playlist) -> Unit,
     onCreateNewPlaylist: () -> Unit
-    ) {
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Add to Playlist") },
@@ -62,7 +61,10 @@ fun AddToPlaylistDialog(
                         ListItem(
                             headlineContent = { Text(playlist.name) },
                             leadingContent = {
-                                Icon(Icons.AutoMirrored.Default.PlaylistAdd, contentDescription = null)
+                                Icon(
+                                    Icons.AutoMirrored.Default.PlaylistAdd,
+                                    contentDescription = null
+                                )
                             },
                             modifier = Modifier.clickable {
                                 onPlaylistSelected(playlist)

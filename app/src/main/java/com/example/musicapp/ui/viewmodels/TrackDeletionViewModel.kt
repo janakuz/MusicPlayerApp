@@ -6,8 +6,6 @@ import android.provider.MediaStore
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.entity.Track
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
@@ -23,7 +21,7 @@ class TrackDeletionViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val trackRepository: TrackRepository,
-    ) : ViewModel() {
+) : ViewModel() {
 
     private val _pendingDeleteUris = MutableStateFlow<List<String>>(emptyList())
     val pendingDeleteUris = _pendingDeleteUris.asStateFlow()

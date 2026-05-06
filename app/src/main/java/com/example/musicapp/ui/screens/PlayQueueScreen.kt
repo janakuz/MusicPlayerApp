@@ -8,12 +8,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.musicapp.data.dto.PlayQueueItemUUID
-import com.example.musicapp.ui.viewmodels.PlayerViewModel
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.dto.VisualTrack
+import com.example.musicapp.data.local.model.PlayQueueItemUUID
+import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.ui.components.TrackList
 import com.example.musicapp.ui.theme.MusicAppTheme
+import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
@@ -25,7 +25,7 @@ fun PlayQueueScreen(
     onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
     playerViewModel: PlayerViewModel
-){
+) {
     val lazyListState = rememberLazyListState()
     var isDragging by remember { mutableStateOf(false) }
     var visibleQueue by remember { mutableStateOf(tracks.toList()) }
@@ -36,7 +36,7 @@ fun PlayQueueScreen(
         }
     }
 
-    val reorderableLazyListState = rememberReorderableLazyListState (
+    val reorderableLazyListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
         onMove = { from, to ->
             visibleQueue = visibleQueue.toMutableList().apply {
@@ -45,7 +45,6 @@ fun PlayQueueScreen(
             playerViewModel.moveTrack(from.index, to.index)
         },
     )
-//        playerViewModel.updateQueue(visibleQueue)
 
     LaunchedEffect(reorderableLazyListState.isAnyItemDragging) {
         if (reorderableLazyListState.isAnyItemDragging) {
@@ -58,7 +57,8 @@ fun PlayQueueScreen(
     }
 
 
-    val visualTracks = visibleQueue.map { track -> VisualTrack(key = track.queueId, data = track.track) }
+    val visualTracks =
+        visibleQueue.map { track -> VisualTrack(key = track.queueId, data = track.track) }
 
     TrackList(
         visualTracks,
@@ -73,7 +73,6 @@ fun PlayQueueScreen(
         reorderable = reorderableLazyListState,
         onEdit = onEdit,
         onAddToPlaylist = onAddToPlaylist,
-    //    playerViewModel = playerViewModel
     )
 
 }
@@ -82,6 +81,5 @@ fun PlayQueueScreen(
 @Composable
 fun PlayQueuePreview() {
     MusicAppTheme {
-      //  PlayQueueScreen(DataSource.tracks, {}, viewModel())
     }
 }
