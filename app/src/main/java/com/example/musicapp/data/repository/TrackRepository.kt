@@ -1,7 +1,7 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.TrackInfo
-import com.example.musicapp.data.entity.Track
+import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
@@ -44,10 +44,4 @@ interface TrackRepository {
     suspend fun getAllUris(): List<String>
 
     suspend fun deleteByUri(uris: List<String>)
-}
-
-
-enum class SortField{
-    TITLE,
-    DURATION
 }

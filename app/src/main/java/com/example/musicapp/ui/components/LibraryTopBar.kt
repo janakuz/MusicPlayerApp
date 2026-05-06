@@ -24,7 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.example.musicapp.LibraryScreen
+import com.example.musicapp.ui.LibraryScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +34,7 @@ fun LibraryTopBar(
     onSearchClick: () -> Unit,
     onSortClick: (SortOption) -> Unit,
     onMenuClick: () -> Unit,
+    onImport: (() -> Unit)? = null,
     title: String? = "",
     showBack: Boolean,
     onBack: (() -> Unit)? = null,
@@ -47,11 +48,10 @@ fun LibraryTopBar(
         },
         navigationIcon = {
             if (!showBack) {
-                IconButton(onClick = { /* future */ }) {
+                IconButton(onClick = onMenuClick) {
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                 }
-            }
-            else if (onBack != null){
+            } else if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                 }
@@ -66,7 +66,7 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            SortMenu(screen = currentScreen, onSortSelected = onSortClick)
+            RightMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport)
         }
     )
 }
@@ -80,11 +80,14 @@ fun SelectionTopBar(
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit,
     onRemoveFromQueue: (() -> Unit)? = null,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
     isQueueScreen: Boolean = false,
+    isPlaylistScreen: Boolean = false,
     onDelete: () -> Unit,
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
-    ){
+    onAddToPlaylist: () -> Unit,
+) {
     TopAppBar(
         title = {
             Text(
@@ -109,57 +112,59 @@ fun SelectionTopBar(
                 }
 
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Play Next") },
-                        onClick = {
-                            onPlayNext()
-                            onClear()
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Add to Queue") },
-                        onClick = {
-                            onAddToQueue()
-                            onClear()
-                            expanded = false
-                        }
-                    )
-                    if (onRemoveFromQueue != null && isQueueScreen) {
-                        DropdownMenuItem(
-                            text = { (Text("Remove from Queue")) },
-                            onClick = {
-                                onRemoveFromQueue()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
-                            onDelete()
-                            onClear()
-                            expanded = false
-                        }
-                    )
 
-                    if (moveEnabled) {
-                        DropdownMenuItem(
-                            text = { (Text("Split to Album")) },
-                            onClick = {
-                                onMove()
-                                onClear()
-                                expanded = false
-                            }
-                        )
-                    }
+                val actions = MenuActions(
+                    onPlayNext = {
+                        onPlayNext()
+                        onClear()
+                        expanded = false
+                    },
+                    onAddToQueue = {
+                        onAddToQueue()
+                        onClear()
+                        expanded = false
+                    },
+                    onRemoveFromQueue = if (onRemoveFromQueue != null && isQueueScreen) {
+                        {
+                            onRemoveFromQueue()
+                            onClear()
+                            expanded = false
+                        }
+                    } else null,
+                    onDelete = {
+                        onDelete()
+                        onClear()
+                        expanded = false
+                    },
+                    onAddToPlaylist = {
+                        onAddToPlaylist()
+                        onClear()
+                        expanded = false
+                    },
+                    onRemoveFromPlaylist = if (onRemoveFromPlaylist != null && isPlaylistScreen) {
+                        {
+                            onRemoveFromPlaylist()
+                            onClear()
+                            expanded = false
+                        }
+                    } else null,
+                    onMoveToAlbum = if (moveEnabled) {
+                        {
+                            onMove()
+                            onClear()
+                            expanded = false
+                        }
+                    } else null
+                )
 
+                if (expanded) {
+                    ActionMenu(
+                        title = "$count tracks",
+                        actions = actions,
+                        onDismiss = { expanded = false }
+                    )
                 }
+
             }
         }
     )

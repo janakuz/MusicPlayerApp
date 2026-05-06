@@ -1,10 +1,5 @@
 package com.example.musicapp.ui.screens
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Public
-import com.example.musicapp.ui.viewmodels.ImageOption
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -14,11 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -28,6 +25,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -43,6 +42,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,29 +55,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
-import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import com.example.musicapp.ui.components.EditTopBar
-import kotlin.math.absoluteValue
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.musicapp.R
-import com.example.musicapp.normalizeGenre
-import com.example.musicapp.toTitleCase
-import com.example.musicapp.ui.viewmodels.AlbumEditViewModel
+import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
+import com.example.musicapp.ui.viewmodels.AlbumEditViewModel
+import com.example.musicapp.ui.viewmodels.ImageOption
+import com.example.musicapp.util.normalizeGenre
+import com.example.musicapp.util.toTitleCase
+import kotlin.math.absoluteValue
 
 
 @Composable
@@ -104,7 +104,9 @@ fun AlbumImagePicker(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().height(300.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
             contentPadding = PaddingValues(horizontal = 80.dp),
             pageSpacing = 16.dp
         ) { page ->
@@ -158,7 +160,9 @@ fun AlbumImagePicker(
                         else -> Icons.Default.QuestionMark
                     },
                     contentDescription = images[pagerState.currentPage].source,
-                    modifier = Modifier.padding(6.dp).size(18.dp),
+                    modifier = Modifier
+                        .padding(6.dp)
+                        .size(18.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -184,17 +188,18 @@ fun GenrePicker(
     val focusManager = LocalFocusManager.current
     val dummyFocusRequester = remember { FocusRequester() }
 
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp)
-        .focusRequester(dummyFocusRequester)
-        .focusable()
-        .clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null
-        ){
-            dummyFocusRequester.requestFocus()
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .focusRequester(dummyFocusRequester)
+            .focusable()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                dummyFocusRequester.requestFocus()
+            }
     ) {
         Text("${label}s", style = MaterialTheme.typography.labelMedium)
 
@@ -209,9 +214,17 @@ fun GenrePicker(
                     onClick = {
                         onGenresChange(genres.filter { it != genre })
                     },
-                    label = {if (titleCase) Text(genre.normalizeGenre().toTitleCase()) else Text(genre)},
+                    label = {
+                        if (titleCase) Text(genre.normalizeGenre().toTitleCase()) else Text(
+                            genre
+                        )
+                    },
                     trailingIcon = {
-                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 )
             }
@@ -221,7 +234,7 @@ fun GenrePicker(
             expanded = expanded && suggestions.isNotEmpty(),
             onExpandedChange = {
                 expanded = it
-                if (expanded == false){
+                if (expanded == false) {
                     keyboardController?.hide()
                     focusManager.clearFocus(force = true)
                 }
@@ -234,7 +247,9 @@ fun GenrePicker(
                     onGenreQueryChange(it)
                     expanded = true
                 },
-                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
+                modifier = Modifier
+                    .menuAnchor(MenuAnchorType.PrimaryEditable, true)
+                    .fillMaxWidth(),
                 label = { Text("Add $label") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
@@ -245,7 +260,6 @@ fun GenrePicker(
                         textFieldValue = ""
 
                         keyboardController?.hide()
-//                        focusManager.clearFocus(force = true)
                     }
                 })
             )
@@ -279,7 +293,7 @@ fun GenrePicker(
 @Composable
 fun AlbumEditScreen(
     onNavigateBack: (Int?) -> Unit,
-    ){
+) {
     val albumEditViewModel: AlbumEditViewModel = hiltViewModel()
 
     val albumEditUiState by albumEditViewModel.uiState.collectAsState()
@@ -338,7 +352,6 @@ fun AlbumEditScreen(
     ) { padding ->
 
         Box(modifier = Modifier.fillMaxSize()) {
-
 
 
             LazyColumn(modifier = Modifier.padding(padding)) {
@@ -452,7 +465,7 @@ fun AlbumEditScreen(
                 is AlbumArtistEditUiState.Error -> {
                 }
 
-                else -> { }
+                else -> {}
             }
 
         }

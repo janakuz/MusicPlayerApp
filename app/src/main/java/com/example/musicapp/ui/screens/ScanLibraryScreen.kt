@@ -24,29 +24,30 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.musicapp.ui.viewmodels.LibraryScanViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.musicapp.ui.theme.MusicAppTheme
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.musicapp.ui.viewmodels.LibraryScanViewModel
 import com.example.musicapp.ui.viewmodels.Phase
 
 
 @Composable
 fun ScanLibraryScreen(
     viewModel: LibraryScanViewModel = hiltViewModel(),
-    isInitial: Boolean = false) {
+    isInitial: Boolean = false
+) {
     val uiState by viewModel.uiState.collectAsState()
     val workflowState by viewModel.workflowState.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -68,31 +69,38 @@ fun ScanLibraryScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        Text("Press the button below to scan your music", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "Press the button below to scan your music",
+            style = MaterialTheme.typography.bodyMedium
+        )
 
 
         Spacer(Modifier.height(32.dp))
 
         when (workflowState) {
             is Phase.Scanning -> {
-//        if (uiState.isScanning) {
                 LinearProgressIndicator(
                     progress = { uiState.scanProgress / 100f },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape)
                 )
                 Text("Importing ${(uiState.scanProgress).toInt()}%")
 
             }
 
             is Phase.Enriching -> {
-                //       else if (uiState.isEnriching){
                 Text("Tracks imported! Retrieving metadata...")
 
                 Spacer(Modifier.height(8.dp))
 
                 LinearProgressIndicator(
                     progress = { uiState.enrichmentProgress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape)
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -104,7 +112,6 @@ fun ScanLibraryScreen(
                 Text((workflowState as Phase.Error).error)
             }
 
-//        else {
             is Phase.Idle -> {
                 val context = LocalContext.current
                 val permission =
@@ -132,37 +139,4 @@ fun ScanLibraryScreen(
             }
         }
     }
-
-//    Column {
-//        if (uiState.isScanning) {
-//            Text("Scanning... ${uiState.scanProgress}%")
-//        }
-//        else if (uiState.isEnriching){
-//            Text("Enriching... ${uiState.enrichmentProgress}%")
-//            Text("${uiState.statusMessage}")
-//        }
-//        else {
-//
-//            val context = LocalContext.current
-//            val permission =
-//                Manifest.permission.READ_MEDIA_AUDIO
-//
-//            val launcher = rememberLauncherForActivityResult(
-//                contract = ActivityResultContracts.RequestPermission(),
-//                onResult = { granted ->
-//                    if (granted) {
-//                        viewModel.startScan(context)
-//                    } else {
-//                        Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//            )
-//
-//            Button(onClick = {
-//                launcher.launch(permission)
-//            }) {
-//                Text("Scan Library")
-//            }
-//        }
-//    }
 }

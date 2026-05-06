@@ -7,17 +7,16 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.dto.AlbumInfo
-import com.example.musicapp.data.dto.Release
-import com.example.musicapp.data.entity.Album
-import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
-import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +33,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -48,11 +45,11 @@ class ArtistDetailViewModel @Inject constructor(
     private val metadataRepository: MetadataRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
-    ) : ViewModel() {
+) : ViewModel() {
 
-        companion object {
-            private const val TIMEOUT_MILLIS = 5_000L
-        }
+    companion object {
+        private const val TIMEOUT_MILLIS = 5_000L
+    }
 
     private val artistId: Int = savedStateHandle.get<String>("artistId")?.toInt()
         ?: throw IllegalStateException("artistId not found in SavedStateHandle")
@@ -85,10 +82,10 @@ class ArtistDetailViewModel @Inject constructor(
     }
         .distinctUntilChanged()
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ArtistDetailUiState(isLoading = true)
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ArtistDetailUiState(isLoading = true)
+        )
 
     fun setSort(option: SortOption) {
         viewModelScope.launch {
@@ -126,21 +123,23 @@ class ArtistDetailViewModel @Inject constructor(
     }
 
 
-    fun refetchMetadata(id: Int){
+    fun refetchMetadata(id: Int) {
         viewModelScope.launch {
             val album = albumRepository.getAlbum(id).first()
             var albumArtist = artistDetailUiState.value.artist
-            if (albumArtist == null){
+            if (albumArtist == null) {
                 val artists = albumArtistRepository.getAllAlbumArtists(id)
                 albumArtist = artists.first { it.mbId != null }
             }
             _refetchState.value = RefetchAlbumState.Saving
-            val query = if (albumArtist.mbId != null) "arid:${albumArtist.mbId} AND release:${album.searchKey}" else """artist:${albumArtist.searchKey} AND release:${album.searchKey}"""
+            val query =
+                if (albumArtist.mbId != null) "arid:${albumArtist.mbId} AND release:${album.searchKey}" else """artist:${albumArtist.searchKey} AND release:${album.searchKey}"""
             val searchResults = albumRepository.findAlbumMB(query)
             if (searchResults == null || searchResults.releases.isEmpty()) {
                 _refetchState.value = RefetchAlbumState.Error("No album found")
             } else if (searchResults.releases.size > 1) {
-                _refetchState.value = RefetchAlbumState.DisambiguationNeeded(searchResults.releases, album)
+                _refetchState.value =
+                    RefetchAlbumState.DisambiguationNeeded(searchResults.releases, album)
                 return@launch
             } else {
                 performFinalSave(searchResults.releases[0], album)
@@ -150,7 +149,7 @@ class ArtistDetailViewModel @Inject constructor(
         }
     }
 
-    fun reset(){
+    fun reset() {
         _refetchState.value = RefetchAlbumState.Idle
     }
 
@@ -165,7 +164,7 @@ class ArtistDetailViewModel @Inject constructor(
         _refetchState.value = RefetchAlbumState.Saved
     }
 
-    fun onAlbumSelected(release: Release){
+    fun onAlbumSelected(release: Release) {
         viewModelScope.launch {
             val currentAlbum = (_refetchState.value as RefetchAlbumState.DisambiguationNeeded).album
             _refetchState.value = RefetchAlbumState.Saving

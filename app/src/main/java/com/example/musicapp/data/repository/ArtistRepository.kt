@@ -1,10 +1,9 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.dto.ArtistDicogsResponse
-import com.example.musicapp.data.dto.ArtistMBResponse
-import com.example.musicapp.data.dto.ArtistSearchInfo
-import com.example.musicapp.data.dto.ArtistSearchResponse
-import com.example.musicapp.data.entity.Artist
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
+import com.example.musicapp.data.remote.dto.ArtistMBResponse
+import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import kotlinx.coroutines.flow.Flow
 
 interface ArtistRepository {

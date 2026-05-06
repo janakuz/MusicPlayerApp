@@ -1,9 +1,7 @@
 package com.example.musicapp.ui.screens
 
 import android.app.Activity
-import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,15 +30,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.navigation.NavBackStackEntry
-import com.example.musicapp.ui.viewmodels.AllArtistsViewModel
-import com.example.musicapp.model.GridItem
+import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.Grid
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
-import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
+import com.example.musicapp.ui.viewmodels.AllArtistsViewModel
 import com.example.musicapp.ui.viewmodels.RefetchState
 
 
@@ -49,9 +44,10 @@ fun AllArtistsScreen(
     onClick: ((GridItem) -> Unit)? = null,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     sortRequest: SortOption?,
-){
+) {
     val artistViewModel: AllArtistsViewModel = hiltViewModel()
 
     data class DeleteEvent(val id: Int, val name: String)
@@ -112,7 +108,8 @@ fun AllArtistsScreen(
             onDelete = { id, name ->
                 pendingDeletion = DeleteEvent(id, name)
             },
-            onRefetch = { id -> artistViewModel.refetchMetadata(id) }
+            onRefetch = { id -> artistViewModel.refetchMetadata(id) },
+            onAddToPlaylist = onAddToPlaylist
         )
 
         pendingDeletion?.let { item ->
@@ -168,12 +165,10 @@ fun AllArtistsScreen(
 }
 
 
-
 @Preview(showBackground = true)
 @Composable
 fun ArtistsPreview() {
     MusicAppTheme {
-//        ArtistsGrid(DataSource.artists)
     }
 
 }

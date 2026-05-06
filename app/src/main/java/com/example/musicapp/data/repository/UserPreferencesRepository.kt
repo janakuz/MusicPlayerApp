@@ -9,10 +9,12 @@ interface UserPreferencesRepository {
     val albumSortOption: Flow<SortOption>
     val trackSortOption: Flow<SortOption>
     val artistAlbumsSortOption: Flow<SortOption>
+    val playlistsSortOption: Flow<SortOption>
 
     suspend fun updateArtistSort(option: SortOption)
     suspend fun updateAlbumSort(option: SortOption)
     suspend fun updateTrackSort(option: SortOption)
     suspend fun updateArtistAlbumsSort(option: SortOption)
+    suspend fun updatePlaylistsSort(option: SortOption)
 
 }
