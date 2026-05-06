@@ -60,19 +60,6 @@ fun AboutPage() {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Credits", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Icon by Fahmi Hidayat from The Noun Project.",
-                        style = MaterialTheme.typography.bodySmall
-                    ) }
-            }
         }
 
 }
