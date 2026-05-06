@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.DrawerValue
@@ -61,6 +62,7 @@ import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.components.NowPlayingBar
 import com.example.musicapp.ui.components.SelectionTopBar
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.screens.AboutPage
 import com.example.musicapp.ui.screens.AlbumEditScreen
 import com.example.musicapp.ui.screens.AlbumView
 import com.example.musicapp.ui.screens.AllAlbumsScreen
@@ -80,6 +82,7 @@ import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.PlaylistViewModel
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
+import com.example.musicapp.util.toTitleCase
 import kotlinx.coroutines.launch
 
 
@@ -221,6 +224,17 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     icon = { Icon(Icons.Default.Sync, null) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+
+                NavigationDrawerItem(
+                    label = { Text("About") },
+                    selected = currentRoute == "about",
+                    onClick = {
+                        navController.navigate("about")
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Info, null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
             }
         }
     )
@@ -293,9 +307,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                 )
                             },
                             onMenuClick = { scope.launch { drawerState.open() } },
-                            showBack = backIndex < 0,
-                            onBack = if (backIndex < 0) ({ navController.popBackStack() }) else null,
-                            title = if (backIndex >= 0) currentRoute else null,
+                            showBack = backIndex < 0 && currentRoute != "about",
+                            onBack = if (backIndex < 0 && currentRoute != "about") ({ navController.popBackStack() }) else null,
+                            title = if (backIndex >= 0 || currentRoute=="about") currentRoute.toTitleCase() else null,
                         )
                     }
                     if (selectionMode) {
@@ -511,6 +525,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNextTrack = { track ->playerViewModel.playNext(track) },
                         onAddToQueueTrack = { track -> playerViewModel.addToQueue(track) },
                         onEditTrack = { track -> navController.navigate("track/edit/${track.trackId}") },
+                        selectionMode = selectionMode
                     )
                 }
 
@@ -636,6 +651,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
 
                     )
+                }
+
+                composable("about") {
+                    AboutPage()
                 }
 
             }

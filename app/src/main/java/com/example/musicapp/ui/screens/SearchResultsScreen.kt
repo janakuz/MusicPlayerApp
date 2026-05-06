@@ -35,6 +35,7 @@ import com.example.musicapp.util.formatDuration
 
 @Composable
 fun SearchResultsScreen(
+    selectionMode: Boolean,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
     onTrackClick: (List<TrackInfo>, TrackInfo) -> Unit,
@@ -60,14 +61,16 @@ fun SearchResultsScreen(
 
     Scaffold(
         topBar = {
-            SearchTopBar(
-                query = query,
-                onQueryChange = { query -> searchViewModel.onQueryChange(query) },
-                onClose = onBack,
-                placeholder = if (searchViewModel.scope?.scopeType == "ARTIST") "Search in artist..."
-                else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
-                else "Search..."
-            )
+            if (!selectionMode) {
+                SearchTopBar(
+                    query = query,
+                    onQueryChange = { query -> searchViewModel.onQueryChange(query) },
+                    onClose = onBack,
+                    placeholder = if (searchViewModel.scope?.scopeType == "ARTIST") "Search in artist..."
+                    else if (searchViewModel.scope?.scopeType == "ALBUM") "Search in album..."
+                    else "Search..."
+                )
+            }
         },
     ) { padding ->
 

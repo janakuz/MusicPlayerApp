@@ -124,7 +124,7 @@ fun SelectionTopBar(
                         onClear()
                         expanded = false
                     },
-                    onRemoveFromQueue = if (onRemoveFromQueue != null) {
+                    onRemoveFromQueue = if (onRemoveFromQueue != null && isQueueScreen) {
                         {
                             onRemoveFromQueue()
                             onClear()
