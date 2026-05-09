@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -441,17 +443,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 composable("album/{albumId}") {
                     AlbumView(
                         onTrackClick = { track, tracks ->
-                            playerViewModel.playTracks(tracks, track)
-                            navController.navigate("nowPlaying")
-                            {
-                                launchSingleTop = true
+                            if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+                                playerViewModel.playTracks(tracks, track)
+                                navController.navigate("nowPlaying")
+                                {
+                                    launchSingleTop = true
+                                }
                             }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
-
                     )
                 }
 
