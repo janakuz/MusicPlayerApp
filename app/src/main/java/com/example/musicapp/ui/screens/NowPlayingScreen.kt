@@ -268,8 +268,6 @@ fun NowPlayingWithQueue(
     onEdit: (TrackInfo) -> Unit,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
-    onGoToArtist: ((Int) -> Unit),
-    onGoToAlbum: ((Int) -> Unit)
 ) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState()
@@ -309,8 +307,8 @@ fun NowPlayingWithQueue(
                     onEdit = onEdit,
                     onAddToPlaylist = onAddToPlaylist,
                     playerViewModel = playerViewModel,
-                    onGoToArtist = onGoToArtist,
-                    onGoToAlbum = onGoToAlbum,
+                    onGoToArtist = onArtistClick,
+                    onGoToAlbum = onAlbumClick,
                     )
             }
         },

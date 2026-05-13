@@ -454,7 +454,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onGoToArtist = { id -> navController.navigate("artist/$id")}
                     )
                 }
 
@@ -662,9 +663,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
-                        onGoToAlbum = { id -> navController.navigate("album/$id")},
-                        onGoToArtist = { id -> navController.navigate("artist/$id")}
-
                     )
                 }
 
