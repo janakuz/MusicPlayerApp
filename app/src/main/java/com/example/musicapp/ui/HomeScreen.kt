@@ -624,8 +624,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             )
                         },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
-                        onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) }
-
+                        onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) },
+                        onGoToAlbum = { id -> navController.navigate("album/$id")},
+                        onGoToArtist = { id -> navController.navigate("artist/$id")}
                     )
                 }
 
@@ -660,7 +661,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             navController.navigate("album/${albumId}")
                         },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onGoToAlbum = { id -> navController.navigate("album/$id")},
+                        onGoToArtist = { id -> navController.navigate("artist/$id")}
 
                     )
                 }
