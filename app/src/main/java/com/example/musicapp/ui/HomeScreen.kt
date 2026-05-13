@@ -477,7 +477,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onNavigateBack = { id ->
                             when (source) {
                                 "all_albums" -> navController.popBackStack()
-                                "artist_view" -> navController.navigate(HomeScreen.Artists.name)
+                                "artist_view" ->
+                                {
+                                    if (id == null) navController.popBackStack()
+                                    else navController.navigate("artist/$id") {
+                                        popUpTo(HomeScreen.Artists.name) {
+                                            inclusive = false
+                                        }
+                                        launchSingleTop = true
+                                    }
+                                }
                                 else -> navController.popBackStack()
                             }
                         }
