@@ -33,8 +33,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -117,8 +122,17 @@ fun ExpandableBio(bio: String) {
             .clickable { expanded = !expanded }
             .animateContentSize()
     ) {
+        val formattedBio = bio.replace("Read more on Last.fm", "<br/><br/>Read more on Last.fm")
         Text(
-            text = bio,
+            text = AnnotatedString.fromHtml(
+                formattedBio,
+                linkStyles = TextLinkStyles(
+                    style = SpanStyle(
+                        color = Color(0xFF2196F3),
+                        textDecoration = TextDecoration.Underline
+                    ),
+                )
+            ),
             style = MaterialTheme.typography.bodyMedium.copy(
                 lineHeight = 20.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

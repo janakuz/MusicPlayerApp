@@ -55,7 +55,9 @@ fun PlaylistDetailScreen(
     onEdit: (TrackInfo) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onRemove: (Int, Int) -> Unit,
-) {
+    onGoToArtist: ((Int) -> Unit),
+    onGoToAlbum: ((Int) -> Unit)
+    ) {
 
     val playlistDetailViewModel: PlaylistDetailViewModel = hiltViewModel()
 
@@ -131,7 +133,9 @@ fun PlaylistDetailScreen(
             state = lazyListState,
             reorderable = reorderableLazyListState,
             showReorderIconStart = true,
-            onAddToPlaylist = onAddToPlaylist
+            onAddToPlaylist = onAddToPlaylist,
+            onGoToArtist = onGoToArtist,
+            onGoToAlbum = onGoToAlbum,
         )
     }
 

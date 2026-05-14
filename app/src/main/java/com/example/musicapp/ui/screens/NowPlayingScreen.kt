@@ -267,7 +267,7 @@ fun NowPlayingWithQueue(
     onBack: () -> Unit,
     onEdit: (TrackInfo) -> Unit,
     onArtistClick: (Int) -> Unit,
-    onAlbumClick: (Int) -> Unit
+    onAlbumClick: (Int) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState()
@@ -306,8 +306,10 @@ fun NowPlayingWithQueue(
                     onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                     onEdit = onEdit,
                     onAddToPlaylist = onAddToPlaylist,
-                    playerViewModel = playerViewModel
-                )
+                    playerViewModel = playerViewModel,
+                    onGoToArtist = onArtistClick,
+                    onGoToAlbum = onAlbumClick,
+                    )
             }
         },
         content = {

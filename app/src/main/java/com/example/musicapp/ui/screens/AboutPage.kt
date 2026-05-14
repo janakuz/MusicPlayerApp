@@ -32,7 +32,7 @@ fun AboutPage() {
     val versionName = packageInfo.versionName ?: "1.0"
 
 
-        Column(
+    Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
@@ -60,6 +60,6 @@ fun AboutPage() {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-        }
+    }
 
 }
