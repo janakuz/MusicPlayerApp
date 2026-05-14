@@ -2,13 +2,18 @@ package com.example.musicapp
 
 import android.Manifest
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -66,9 +71,7 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             MusicAppTheme(darkTheme = true) {
-
                 val context = LocalContext.current
-
                 val lifecycleOwner = LocalLifecycleOwner.current
                 val scope = rememberCoroutineScope()
                 val isLibraryInitialized = backgroundScanViewModel.isInitialized.collectAsState()
@@ -86,7 +89,10 @@ class MainActivity : ComponentActivity() {
                         lifecycleOwner.lifecycle.removeObserver(observer)
                     }
                 }
+                val start2 = System.currentTimeMillis()
                 MusicApp(playerViewModel, isLibraryInitialized.value)
+                Log.d("STARTUP_TRACE", "MusicApp: ${System.currentTimeMillis() - start2}ms")
+
             }
         }
     }
