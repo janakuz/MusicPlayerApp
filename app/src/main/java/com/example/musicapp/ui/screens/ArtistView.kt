@@ -128,9 +128,9 @@ fun ExpandableBio(bio: String) {
                 formattedBio,
                 linkStyles = TextLinkStyles(
                     style = SpanStyle(
-                        color = Color(0xFFBB86FC),
+                        color = Color(0xFF2196F3),
                         textDecoration = TextDecoration.Underline
-                    )
+                    ),
                 )
             ),
             style = MaterialTheme.typography.bodyMedium.copy(
