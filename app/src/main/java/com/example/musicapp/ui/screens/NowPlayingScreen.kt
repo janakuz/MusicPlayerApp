@@ -146,8 +146,7 @@ fun NowPlayingView(
                 text = position.formatDuration(),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier
-                    .width(32.dp)
+                modifier = Modifier.widthIn(min = 48.dp)
             )
             BoxWithConstraints(
                 modifier = Modifier
