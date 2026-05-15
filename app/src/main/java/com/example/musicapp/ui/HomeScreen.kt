@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -79,6 +80,7 @@ import com.example.musicapp.ui.screens.PlaylistsScreen
 import com.example.musicapp.ui.screens.ScanLibraryScreen
 import com.example.musicapp.ui.screens.SearchContent
 import com.example.musicapp.ui.screens.SearchResultsScreen
+import com.example.musicapp.ui.screens.SettingsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
@@ -95,7 +97,8 @@ enum class HomeScreen(@StringRes val title: Int) {
     Playlists(title = R.string.playlists),
     Tracks(title = R.string.tracks),
     NowPLaying(title = R.string.app_name),
-    Scan(title = R.string.scan)
+    Scan(title = R.string.scan),
+    Settings(title = R.string.settings)
 }
 
 enum class LibraryScreen {
@@ -120,7 +123,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks)
-    val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists)
+    val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists, HomeScreen.Settings)
 //    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     var artistSort by remember { mutableStateOf<SortOption?>(null) }
@@ -226,6 +229,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     icon = { Icon(Icons.Default.Sync, null) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+
+                NavigationDrawerItem(
+                    label = { Text("Settings") },
+                    selected = currentRoute == HomeScreen.Settings.name,
+                    onClick = {
+                        navController.navigate(HomeScreen.Settings.name)
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Settings, null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+
 
                 NavigationDrawerItem(
                     label = { Text("About") },
@@ -584,6 +599,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     ScanLibraryScreen(
                         isInitial = startDest == HomeScreen.Scan.name
                     )
+                }
+
+                composable(HomeScreen.Settings.name) {
+                    SettingsScreen()
                 }
 
                 composable(HomeScreen.Playlists.name) {
