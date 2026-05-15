@@ -33,12 +33,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -142,6 +144,25 @@ class PlayerViewModel @Inject constructor(
     val isPlaying = _isPlaying.asStateFlow()
 
 
+    private val _loopStart = MutableStateFlow<Long?>(null)
+    val loopStart = _loopStart.asStateFlow()
+
+    private val _loopEnd = MutableStateFlow<Long?>(null)
+    val loopEnd = _loopEnd.asStateFlow()
+
+    val loopState = combine(_loopStart, _loopEnd) { start, end ->
+        when {
+            start == null && end == null -> LoopState.NOT_SET
+            start != null && end == null -> LoopState.A_SET
+            else -> LoopState.ACTIVE
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = LoopState.NOT_SET
+    )
+    private var loopCheckingJob: Job? = null
+
     init {
         viewModelScope.launch {
             val sessionToken =
@@ -240,6 +261,64 @@ class PlayerViewModel @Inject constructor(
     fun updateSpeed(speed: Float){
         _currentSpeed.value = speed
         controller!!.setPlaybackSpeed(speed)
+    }
+
+    fun setLoopStartToCurrent() {
+        _loopStart.value = controller!!.currentPosition
+    }
+
+    fun setLoopEndToCurrent() {
+        val start = _loopStart.value ?: return
+        val current = controller!!.currentPosition
+
+        if (current > start) {
+            _loopEnd.value = current
+            startLoopEnforcer()
+        }
+    }
+
+    fun clearLoop() {
+        loopCheckingJob?.cancel()
+        _loopStart.value = null
+        _loopEnd.value = null
+    }
+
+
+    private fun startLoopEnforcer() {
+        loopCheckingJob?.cancel()
+
+        loopCheckingJob = viewModelScope.launch {
+            while (true) {
+                val start = _loopStart.value
+                val end = _loopEnd.value
+
+                if (start != null && end != null) {
+                    if (controller!!.currentPosition >= end) {
+                        controller!!.seekTo(start)
+                    }
+                } else {
+                    break
+                }
+
+                delay(100)
+            }
+        }
+    }
+
+    fun updateLoopBoundaries(start: Long?, end: Long?) {
+        _loopStart.value = start
+        _loopEnd.value = end
+
+        if (start != null && end != null) {
+            startLoopEnforcer()
+        } else {
+            loopCheckingJob?.cancel()
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        loopCheckingJob?.cancel()
     }
 
     fun getAlbumColors(imagePath: String) {
@@ -754,4 +833,10 @@ class PlayerViewModel @Inject constructor(
 
     }
 
+}
+
+enum class LoopState {
+    NOT_SET,
+    A_SET,
+    ACTIVE
 }
