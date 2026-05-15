@@ -93,6 +93,10 @@ class PlayerViewModel @Inject constructor(
     private val _eventChannel = Channel<String>(Channel.BUFFERED)
     val events = _eventChannel.receiveAsFlow()
 
+
+    private val _currentSpeed = MutableStateFlow<Float>(1.0f)
+    val currentSpeed = _currentSpeed.asStateFlow()
+
     var albumColors by mutableStateOf(
         PlayerColors(
             mainColor = Color(0xFF121212),
@@ -231,6 +235,11 @@ class PlayerViewModel @Inject constructor(
             queueId = item.uuid,
             track = item.trackInfo
         )
+    }
+
+    fun updateSpeed(speed: Float){
+        _currentSpeed.value = speed
+        controller!!.setPlaybackSpeed(speed)
     }
 
     fun getAlbumColors(imagePath: String) {
