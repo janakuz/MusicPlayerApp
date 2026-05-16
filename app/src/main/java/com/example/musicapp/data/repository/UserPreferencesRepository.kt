@@ -11,10 +11,14 @@ interface UserPreferencesRepository {
     val artistAlbumsSortOption: Flow<SortOption>
     val playlistsSortOption: Flow<SortOption>
 
+    val skipSilenceToggle: Flow<Boolean>
+
     suspend fun updateArtistSort(option: SortOption)
     suspend fun updateAlbumSort(option: SortOption)
     suspend fun updateTrackSort(option: SortOption)
     suspend fun updateArtistAlbumsSort(option: SortOption)
     suspend fun updatePlaylistsSort(option: SortOption)
+
+    suspend fun updateSkipSilence(enabled: Boolean)
 
 }

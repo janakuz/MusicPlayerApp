@@ -28,6 +28,8 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
 
         val PLAYLISTS_SORT_FIELD = stringPreferencesKey("playlists_sort_field")
         val PLAYLISTS_SORT_ASC = booleanPreferencesKey("playlists_sort_ascending")
+
+        val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
     }
 
     override val artistSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
@@ -68,6 +70,9 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         )
     }.distinctUntilChanged()
 
+    override val skipSilenceToggle: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[SKIP_SILENCE] ?: false
+    }.distinctUntilChanged()
 
     override suspend fun updateArtistSort(option: SortOption) {
         dataStore.edit { prefs ->
@@ -101,6 +106,12 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         dataStore.edit { prefs ->
             prefs[PLAYLISTS_SORT_FIELD] = option.field.name
             prefs[PLAYLISTS_SORT_ASC] = option.ascending
+        }
+    }
+
+    override suspend fun updateSkipSilence(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[SKIP_SILENCE] = enabled
         }
     }
 
