@@ -71,6 +71,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import com.example.musicapp.data.local.model.TrackInfo
@@ -116,7 +117,7 @@ fun NowPlayingView(
         val gradientColors = playerViewModel.albumColors
 
         track?.let {
-            playerViewModel.getAlbumColors(track.albumArt.toString())
+//            playerViewModel.getAlbumColors(track.albumArt.toString())
 
             AlbumDetailHeader(
                 image = track.albumArt.toString(),
@@ -125,12 +126,14 @@ fun NowPlayingView(
             )
             Text(
                 text = it.artistName,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
                     .clickable(onClick = { onArtistClick(track.artistId) })
             )
             Text(
                 text = it.albumTitle,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .clickable(onClick = { onAlbumClick(track.albumId) })
