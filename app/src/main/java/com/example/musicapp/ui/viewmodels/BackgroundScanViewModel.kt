@@ -13,22 +13,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import dagger.Lazy
 
 @HiltViewModel
 class BackgroundScanViewModel @Inject constructor(
-    @ApplicationContext context: Context,
-    private val scanner: LocalLibraryScanner,
-    private val workerManagerRepository: WorkerManagerRepository
+//    @ApplicationContext context: Context,
+    private val scanner: Lazy<LocalLibraryScanner>,
+    private val workerManagerRepository: Lazy<WorkerManagerRepository>
 ) : ViewModel() {
 
     private val _isInitialized = MutableStateFlow(true)
     val isInitialized = _isInitialized.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            runSync(context)
-        }
-    }
+//    init {
+//        viewModelScope.launch {
+//            runSync(context)
+//        }
+//    }
 
 
     private var isScanning = false
@@ -38,10 +39,10 @@ class BackgroundScanViewModel @Inject constructor(
         if (isScanning) return
         isScanning = true
         withContext(Dispatchers.IO) {
-            val isLibraryInitialized = scanner.findChanges(context)
+            val isLibraryInitialized = scanner.get().findChanges(context)
             if (isLibraryInitialized) {
                 _isInitialized.value = true
-                workerManagerRepository.startWorker(false)
+                workerManagerRepository.get().startWorker(false)
             } else {
                 _isInitialized.value = false
             }

@@ -200,6 +200,8 @@ fun TrackRow(
     onDelete: ((List<Int>) -> Unit)? = null,
     onMove: ((List<Int>) -> Unit)? = null,
     onRemoveFromPlaylist: ((VisualTrack) -> Unit)? = null,
+    onGoToArtist: ((Int) -> Unit)? = null,
+    onGoToAlbum: ((Int) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -355,6 +357,18 @@ fun TrackRow(
                             expanded = false
                         }
                     } else null,
+                    onGoToArtist = if (onGoToArtist != null) {
+                        {
+                            onGoToArtist(track.data.artistId)
+                            expanded = false
+                        }
+                    } else null,
+                    onGoToAlbum = if (onGoToAlbum != null) {
+                        {
+                            onGoToAlbum(track.data.albumId)
+                            expanded = false
+                        }
+                    } else null,
                 )
 
                 if (expanded) {
@@ -505,7 +519,9 @@ fun TrackList(
     reorderable: ReorderableLazyListState = rememberReorderableLazyListState(rememberLazyListState()) { from, to -> {} },
     header: (@Composable () -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
-) {
+    onGoToArtist: ((Int) -> Unit)? = null,
+    onGoToAlbum: ((Int) -> Unit)? = null,
+    ) {
     val hapticFeedback = LocalHapticFeedback.current
 
     val activity = LocalActivity.current
@@ -608,7 +624,9 @@ fun TrackList(
                     onDelete = { ids -> pendingDeletion = DeleteEvent(ids) },
                     onMove = onMove,
                     onRemoveFromPlaylist = onRemoveFromPlaylist,
-                    onAddToPlaylist = onAddToPlaylist
+                    onAddToPlaylist = onAddToPlaylist,
+                    onGoToArtist = onGoToArtist,
+                    onGoToAlbum = onGoToAlbum,
                 )
 
             }

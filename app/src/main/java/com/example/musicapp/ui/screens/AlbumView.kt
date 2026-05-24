@@ -221,15 +221,14 @@ fun AlbumView(
     onAddToQueue: (TrackInfo) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
+    onGoToArtist: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val albumDetailViewModel: AlbumDetailViewModel = hiltViewModel()
 
-    val albumUiState by albumDetailViewModel.currentAlbumUiState.collectAsState()
+    val albumUiState by albumDetailViewModel.albumDetailUiState.collectAsState()
     val album = albumUiState.album
-
-    val tracksUiState by albumDetailViewModel.albumTracksUiState.collectAsState()
-    val tracks = tracksUiState.tracks
+    val tracks = albumUiState.tracks
 
     val moveToAlbum by albumDetailViewModel.currentNewAlbum.collectAsState()
     val pendingMoveIds by albumDetailViewModel.pendingMoveIds.collectAsState()
@@ -261,7 +260,8 @@ fun AlbumView(
                 },
                 onEdit = onEdit,
                 onMove = { ids -> albumDetailViewModel.prepareMove(ids) },
-                onAddToPlaylist = onAddToPlaylist
+                onAddToPlaylist = onAddToPlaylist,
+                onGoToArtist = onGoToArtist
             )
 
             when (moveState) {

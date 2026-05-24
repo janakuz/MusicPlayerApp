@@ -11,12 +11,34 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private lateinit var player: ExoPlayer
+
+    @Inject
+    lateinit var preferencesRepository: UserPreferencesRepository
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
+
+    @OptIn(UnstableApi::class)
+    private fun observePreferences() {
+        serviceScope.launch {
+            preferencesRepository.skipSilenceToggle.collect { isEnabled ->
+                player.skipSilenceEnabled = isEnabled
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -78,6 +100,8 @@ class PlaybackService : MediaSessionService() {
             .setCallback(callback)
             .setSessionActivity(pendingIntent)
             .build()
+
+        observePreferences()
     }
 
     override fun onGetSession(
@@ -85,6 +109,7 @@ class PlaybackService : MediaSessionService() {
     ): MediaSession? = mediaSession
 
     override fun onDestroy() {
+        serviceJob.cancel()
         mediaSession?.run {
             player.release()
             release()

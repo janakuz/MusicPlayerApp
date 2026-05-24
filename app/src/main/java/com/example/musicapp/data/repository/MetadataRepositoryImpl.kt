@@ -455,7 +455,8 @@ class OfflineMetadataRepository(
             }
 
             albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = artistId))
-            if (trackInfos[0].artistId != artistId)
+            val allArtists = albumArtistRepository.getAllAlbumArtists(oldAlbumId)
+            if (trackInfos[0].artistId != artistId || allArtists.size > 1)
                 albumArtistRepository.removeArtistFromAlbum(oldAlbumId, artistId)
             albumRepository.moveTracks(
                 oldAlbumId,
@@ -498,7 +499,8 @@ class OfflineMetadataRepository(
             )
 
             val newId = albumRepository.insertWithReturn(newAlbum).toInt()
-            if (trackInfos[0].artistId != newArtist[0].id)
+            val allArtists = albumArtistRepository.getAllAlbumArtists(oldAlbumId)
+            if (trackInfos[0].artistId != newArtist[0].id || allArtists.size > 1)
                 albumArtistRepository.removeArtistFromAlbum(oldAlbumId, newArtist[0].id)
             albumArtistRepository.insert(AlbumArtist(albumId = newId, artistId = newArtist[0].id))
             albumRepository.moveTracks(
@@ -541,7 +543,10 @@ class OfflineMetadataRepository(
 
 
         val existingAlbum = albumRepository.getAlbumByMbid(albumData.album.mbId ?: "")
-        if (oldAlbum.mbId != null && oldAlbum.mbId == albumData.album.mbId && existingAlbum != null) { //same album
+        if (oldAlbum.mbId != null
+            && oldAlbum.mbId == albumData.album.mbId &&
+            existingAlbum != null &&
+            oldAlbum.id == existingAlbum.id) { //same album
             albumRepository.update(
                 oldAlbum.copy(
                     title = newAlbumTitle,
@@ -553,7 +558,9 @@ class OfflineMetadataRepository(
         }
 
         var albumToMove: Album? = null
-        if (oldAlbum.mbId != null && oldAlbum.mbId != albumData.album.mbId && existingAlbum != null) { //different existing album
+        if (oldAlbum.mbId != null && existingAlbum != null &&
+            (oldAlbum.mbId != albumData.album.mbId || oldAlbum.id != existingAlbum.id)
+            ) { //different existing album
             albumRepository.update(
                 albumData.album.copy(
                     title = newAlbumTitle,

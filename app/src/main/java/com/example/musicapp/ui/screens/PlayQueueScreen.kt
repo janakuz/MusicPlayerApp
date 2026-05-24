@@ -24,6 +24,8 @@ fun PlayQueueScreen(
     onAddToQueue: (TrackInfo) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
+    onGoToArtist: ((Int) -> Unit),
+    onGoToAlbum: ((Int) -> Unit),
     playerViewModel: PlayerViewModel
 ) {
     val lazyListState = rememberLazyListState()
@@ -73,7 +75,9 @@ fun PlayQueueScreen(
         reorderable = reorderableLazyListState,
         onEdit = onEdit,
         onAddToPlaylist = onAddToPlaylist,
-    )
+        onGoToArtist = onGoToArtist,
+        onGoToAlbum = onGoToAlbum,
+        )
 
 }
 

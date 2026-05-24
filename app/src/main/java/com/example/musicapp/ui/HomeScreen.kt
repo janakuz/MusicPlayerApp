@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -77,6 +80,7 @@ import com.example.musicapp.ui.screens.PlaylistsScreen
 import com.example.musicapp.ui.screens.ScanLibraryScreen
 import com.example.musicapp.ui.screens.SearchContent
 import com.example.musicapp.ui.screens.SearchResultsScreen
+import com.example.musicapp.ui.screens.SettingsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
@@ -93,7 +97,8 @@ enum class HomeScreen(@StringRes val title: Int) {
     Playlists(title = R.string.playlists),
     Tracks(title = R.string.tracks),
     NowPLaying(title = R.string.app_name),
-    Scan(title = R.string.scan)
+    Scan(title = R.string.scan),
+    Settings(title = R.string.settings)
 }
 
 enum class LibraryScreen {
@@ -118,7 +123,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks)
-    val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists)
+    val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists, HomeScreen.Settings)
 //    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     var artistSort by remember { mutableStateOf<SortOption?>(null) }
@@ -224,6 +229,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     icon = { Icon(Icons.Default.Sync, null) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+
+                NavigationDrawerItem(
+                    label = { Text("Settings") },
+                    selected = currentRoute == HomeScreen.Settings.name,
+                    onClick = {
+                        navController.navigate(HomeScreen.Settings.name)
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Settings, null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+
 
                 NavigationDrawerItem(
                     label = { Text("About") },
@@ -441,17 +458,19 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 composable("album/{albumId}") {
                     AlbumView(
                         onTrackClick = { track, tracks ->
-                            playerViewModel.playTracks(tracks, track)
-                            navController.navigate("nowPlaying")
-                            {
-                                launchSingleTop = true
+                            if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+                                playerViewModel.playTracks(tracks, track)
+                                navController.navigate("nowPlaying")
+                                {
+                                    launchSingleTop = true
+                                }
                             }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
-
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onGoToArtist = { id -> navController.navigate("artist/$id")}
                     )
                 }
 
@@ -474,7 +493,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onNavigateBack = { id ->
                             when (source) {
                                 "all_albums" -> navController.popBackStack()
-                                "artist_view" -> navController.navigate(HomeScreen.Artists.name)
+                                "artist_view" ->
+                                {
+                                    if (id == null) navController.popBackStack()
+                                    else navController.navigate("artist/$id") {
+                                        popUpTo(HomeScreen.Artists.name) {
+                                            inclusive = false
+                                        }
+                                        launchSingleTop = true
+                                    }
+                                }
                                 else -> navController.popBackStack()
                             }
                         }
@@ -573,6 +601,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     )
                 }
 
+                composable(HomeScreen.Settings.name) {
+                    SettingsScreen()
+                }
+
                 composable(HomeScreen.Playlists.name) {
                     PlaylistsScreen(
                         createInfo = createInfo,
@@ -612,8 +644,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             )
                         },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
-                        onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) }
-
+                        onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) },
+                        onGoToAlbum = { id -> navController.navigate("album/$id")},
+                        onGoToArtist = { id -> navController.navigate("artist/$id")}
                     )
                 }
 
@@ -648,8 +681,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             navController.navigate("album/${albumId}")
                         },
                         onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) }
-
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
                     )
                 }
 

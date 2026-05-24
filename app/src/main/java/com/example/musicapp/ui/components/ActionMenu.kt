@@ -9,9 +9,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistRemove
 import androidx.compose.material.icons.filled.Queue
@@ -43,7 +45,9 @@ data class MenuActions(
     val onDelete: (() -> Unit)? = null,
     val onRefetchMetadata: (() -> Unit)? = null,
     val onExportM3u: (() -> Unit)? = null,
-    val onMoveToAlbum: (() -> Unit)? = null
+    val onMoveToAlbum: (() -> Unit)? = null,
+    val onGoToArtist: (() -> Unit)? = null,
+    val onGoToAlbum: (() -> Unit)? = null,
 )
 
 
@@ -94,6 +98,8 @@ fun ActionMenu(
             if (actions.onEdit != null || actions.onRefetchMetadata != null || actions.onExportM3u != null || actions.onMoveToAlbum != null) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+                MenuActionItem("Artist", Icons.Default.Groups, actions.onGoToArtist, onDismiss)
+                MenuActionItem("Album", Icons.Default.Album, actions.onGoToAlbum, onDismiss)
                 MenuActionItem("Edit Info", Icons.Default.Edit, actions.onEdit, onDismiss)
                 MenuActionItem("Refetch Metadata", Icons.Default.Refresh, actions.onRefetchMetadata, onDismiss)
                 MenuActionItem("Export .m3u", Icons.Default.FileDownload, actions.onExportM3u, onDismiss)
