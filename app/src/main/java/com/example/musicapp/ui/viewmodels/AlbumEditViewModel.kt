@@ -192,10 +192,14 @@ class AlbumEditViewModel @Inject constructor(
             val caaOptions = caa.map { ImageOption(url = it, source = "Web") }
 
             options.addAll(caaOptions)
+
         }
         if (options.isNotEmpty()) {
+            // if draft image url not in options, set draft to options[0]
+            val current = options.find { it.url == _uiState.value.draftImageUrl }
+            val draft = if (current != null) _uiState.value.draftImageUrl else options[0].url
             _uiState.update {
-                it.copy(availableImages = options)
+                it.copy(availableImages = options.distinctBy { it.url }, draftImageUrl = draft)
             }
         }
     }

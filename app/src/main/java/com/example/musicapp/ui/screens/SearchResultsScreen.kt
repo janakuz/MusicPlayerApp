@@ -119,7 +119,7 @@ fun SearchContent(
 ) {
     LazyColumn(
         modifier = Modifier.padding(padding),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+//        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
         if (results.artists.isNotEmpty()) {
@@ -184,12 +184,12 @@ fun SearchContent(
                                     imageRes = album.image ?: "",
                                     duration = album.duration.toInt(),
                                     numTracks = album.numTracks,
-                                    releaseYear = album.releaseDate ?: ""
+                                    releaseYear = album.releaseDate?.take(4) ?: ""
                                 ),
                                 image = album.image ?: "",
                                 text = album.title,
                                 isAlbum = true,
-                                albumArtist = album.releaseDate ?: "",
+                                albumArtist = album.releaseDate?.take(4) ?: "",
                                 imageModifier = Modifier.size(80.dp),
                                 textStyle = MaterialTheme.typography.bodyMedium,
                                 onPlayNext = onPlayNextAlbum,
@@ -234,7 +234,9 @@ fun SearchContent(
                     trackIndex = id,
                     onEdit = onEditTrack,
                     onAddToPlaylist = onAddToPlaylist,
-                    onDelete = {},
+                    onDelete = null,
+                    onGoToAlbum = onAlbumClick,
+                    onGoToArtist = onArtistClick
                 )
             }
         }
