@@ -510,14 +510,14 @@ class PlayerViewModel @Inject constructor(
 
     }
 
-    fun playNextListIds(trackIds: Set<Int>) {
+    fun playNextListIds(trackIds: List<Int>) {
         viewModelScope.launch {
             val tracks = trackRepository.getTracksByIds(trackIds)
             playNextList(tracks)
         }
     }
 
-    fun addToQueueListIds(trackIds: Set<Int>) {
+    fun addToQueueListIds(trackIds: List<Int>) {
         viewModelScope.launch {
             val tracks = trackRepository.getTracksByIds(trackIds)
             addToQueueList(tracks)

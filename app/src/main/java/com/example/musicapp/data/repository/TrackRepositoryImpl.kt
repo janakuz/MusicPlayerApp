@@ -53,7 +53,7 @@ class TrackRepositoryImpl(private val trackDao: TrackDao) : TrackRepository {
         return trackDao.getTrackByUri(uri)
     }
 
-    override suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo> {
+    override suspend fun getTracksByIds(trackIds: List<Int>): List<TrackInfo> {
         return trackDao.getTracksByIds(trackIds)
     }
 

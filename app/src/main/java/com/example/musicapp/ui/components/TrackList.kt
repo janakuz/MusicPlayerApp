@@ -241,10 +241,10 @@ fun TrackRow(
                     else if (!useQueueId && !usePlaylistId && track.data.trackId in selectionState.selectedTrackIds) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
-                    else if (useQueueId && track.key in selectionState.selectedQueueIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                    else if (useQueueId && track.key in selectionState.selectedQueueIds.map { it.queueId }) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
-                    else if (usePlaylistId && track.key in selectionState.selectedPlaylistEntryIds) MaterialTheme.colorScheme.primaryContainer.copy(
+                    else if (usePlaylistId && track.key in selectionState.selectedPlaylistEntryIds.map { it.entryId }) MaterialTheme.colorScheme.primaryContainer.copy(
                         alpha = 0.7f
                     )
                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
@@ -256,15 +256,15 @@ fun TrackRow(
                         else if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(
                             track.data.trackId
                         )
-                        else if (useQueueId) selectionViewModel.toggleSelection(track.key.toString())
-                        else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
+                        else if (useQueueId) selectionViewModel.toggleSelection(track.key.toString(), track.data.trackId)
+                        else selectionViewModel.toggleSelectionPlaylist(track.key as Int, track.data.trackId)
                     },
                     onLongClick = {
                         if (!useQueueId && !usePlaylistId) selectionViewModel.toggleSelection(track.data.trackId)
                         else if (useQueueId) selectionViewModel.toggleSelection(
-                            track.key.toString()
+                            track.key.toString(), track.data.trackId
                         )
-                        else selectionViewModel.toggleSelectionPlaylist(track.key as Int)
+                        else selectionViewModel.toggleSelectionPlaylist(track.key as Int, track.data.trackId)
                     }
                 )
                 .padding(horizontal = 8.dp, vertical = 8.dp),

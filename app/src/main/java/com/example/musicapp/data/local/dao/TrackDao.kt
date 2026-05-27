@@ -152,7 +152,7 @@ interface TrackDao {
         ORDER BY t.trackNumber ASC
         """
     )
-    suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo>
+    suspend fun getTracksByIds(trackIds: List<Int>): List<TrackInfo>
 
     @Query(
         """

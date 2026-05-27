@@ -2,6 +2,7 @@ package com.example.musicapp.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,7 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrackSelectionViewModel @Inject constructor(
-    private val trackRepository: TrackRepository
+    private val trackRepository: TrackRepository,
 ) : ViewModel() {
     private val _selectionMode = MutableStateFlow(false)
     val selectionMode = _selectionMode.asStateFlow()
@@ -27,10 +28,10 @@ class TrackSelectionViewModel @Inject constructor(
 
     private val _selectedTrackIds = MutableStateFlow<Set<Int>>(emptySet())
 
-    private val _selectedPlaylistEntryIds = MutableStateFlow<Set<Int>>(emptySet())
+    private val _selectedPlaylistEntryIds = MutableStateFlow<Set<PlaylistSelect>>(emptySet())
 
 
-    private val _selectedTrackUUIDs = MutableStateFlow<Set<String>>(emptySet())
+    private val _selectedTrackUUIDs = MutableStateFlow<Set<QueueSelect>>(emptySet())
 
     private val _deletionRequestTrigger = MutableSharedFlow<Unit>(replay = 0)
     val deletionRequestTrigger = _deletionRequestTrigger.asSharedFlow()
@@ -39,7 +40,7 @@ class TrackSelectionViewModel @Inject constructor(
     val moveTrigger = _moveTrigger.asSharedFlow()
 
     val moveEnabled: StateFlow<Boolean> = _selectedTrackIds.map { list ->
-        val tracks = trackRepository.getTracksByIds(list.toSet())
+        val tracks = trackRepository.getTracksByIds(list.toList())
         val uniqueAlbumIds = tracks.map { it.albumId }.distinct()
         val uniqueArtistIds = tracks.map { it.artistId }.distinct()
 
@@ -78,15 +79,15 @@ class TrackSelectionViewModel @Inject constructor(
         _selectionMode.value = _selectedTrackIds.value.isNotEmpty()
     }
 
-    fun toggleSelectionPlaylist(entryId: Int) {
+    fun toggleSelectionPlaylist(entryId: Int, trackId: Int) {
+        val selection = PlaylistSelect(entryId, trackId)
         _selectedPlaylistEntryIds.update { set ->
-            if (entryId in set) set - entryId
-            else set + entryId
+            if (selection in set) set - selection
+            else set + selection
         }
 
         _selectionMode.value = _selectedPlaylistEntryIds.value.isNotEmpty()
     }
-
 
     fun clearSelection() {
         _selectedTrackIds.value = emptySet()
@@ -95,10 +96,11 @@ class TrackSelectionViewModel @Inject constructor(
         _selectionMode.value = false
     }
 
-    fun toggleSelection(uuid: String) {
+    fun toggleSelection(uuid: String, trackId: Int) {
+        val selection = QueueSelect(uuid, trackId)
         _selectedTrackUUIDs.update { set ->
-            if (uuid in set) set - uuid
-            else set + uuid
+            if (selection in set) set - selection
+            else set + selection
         }
 
         _selectionMode.value = _selectedTrackUUIDs.value.isNotEmpty()
@@ -120,7 +122,17 @@ class TrackSelectionViewModel @Inject constructor(
 
 data class SelectionState(
     val selectedTrackIds: Set<Int> = emptySet<Int>(),
-    val selectedQueueIds: Set<String> = emptySet<String>(),
-    val selectedPlaylistEntryIds: Set<Int> = emptySet<Int>(),
+    val selectedQueueIds: Set<QueueSelect> = emptySet<QueueSelect>(),
+    val selectedPlaylistEntryIds: Set<PlaylistSelect> = emptySet<PlaylistSelect>(),
     val count: Int = 0
+)
+
+data class PlaylistSelect(
+    val entryId: Int,
+    val trackId: Int,
+)
+
+data class QueueSelect(
+    val queueId: String,
+    val trackId: Int
 )

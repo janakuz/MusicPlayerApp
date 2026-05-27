@@ -332,22 +332,45 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     if (selectionMode) {
                         val selection by selectionViewModel.selectionState.collectAsState()
                         val moveEnabled by selectionViewModel.moveEnabled.collectAsState()
+                        val playlistScreen = currentRoute != null && currentRoute.startsWith("playlist/")
+                        val selectedPlaylistTracks = selection.selectedPlaylistEntryIds.map { it.trackId }
+                        val selectedPlaylistEntries = selection.selectedPlaylistEntryIds.map { it.entryId }
+                        val selectedQueueTracks = selection.selectedQueueIds.map { it.trackId }
+                        val selectedQueueUUIDs = selection.selectedQueueIds.map { it.queueId }
                         SelectionTopBar(
                             count = selection.count,
                             onClear = { selectionViewModel.clearSelection() },
-                            onPlayNext = { playerViewModel.playNextListIds(selection.selectedTrackIds) },
-                            onAddToQueue = { playerViewModel.addToQueueListIds(selection.selectedTrackIds) },
-                            onRemoveFromQueue = { playerViewModel.removeFromQueue(selection.selectedQueueIds) },
+                            onPlayNext = {
+                                if (playlistScreen)
+                                    playerViewModel.playNextListIds(selectedPlaylistTracks)
+                                else if (currentRoute == "nowPlaying")
+                                    playerViewModel.playNextListIds(selectedQueueTracks)
+                                else
+                                    playerViewModel.playNextListIds(selection.selectedTrackIds.toList()) },
+                            onAddToQueue = {
+                                if (playlistScreen)
+                                    playerViewModel.addToQueueListIds(selectedPlaylistTracks)
+                                else if (currentRoute == "nowPlaying")
+                                    playerViewModel.addToQueueListIds(selectedQueueTracks)
+                                else
+                                    playerViewModel.addToQueueListIds(selection.selectedTrackIds.toList()) },
+                            onRemoveFromQueue = { playerViewModel.removeFromQueue(selectedQueueUUIDs.toSet()) },
                             isQueueScreen = (currentRoute == "nowPlaying"),
                             onRemoveFromPlaylist = {
                                 playlistViewModel.removeTracksFromPlaylist(
-                                    selection.selectedPlaylistEntryIds
+                                    selectedPlaylistEntries.toSet()
                                 )
                             },
-                            isPlaylistScreen = (currentRoute != null && currentRoute.startsWith("playlist/")),
+                            isPlaylistScreen = (playlistScreen),
                             onDelete = { selectionViewModel.requestDeletionOfSelected() },
                             onMove = { selectionViewModel.requestMove() },
-                            onAddToPlaylist = { playlistViewModel.onAdd(selection.selectedTrackIds.toList()) },
+                            onAddToPlaylist = {
+                                if (playlistScreen)
+                                    playlistViewModel.onAdd(selectedPlaylistTracks)
+                                else if (currentRoute == "nowPlaying")
+                                    playlistViewModel.onAdd(selectedQueueTracks)
+                                else
+                                    playlistViewModel.onAdd(selection.selectedTrackIds.toList()) },
                             moveEnabled = moveEnabled
                         )
                     }

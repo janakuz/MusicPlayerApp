@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
 import kotlinx.coroutines.flow.Flow
 
@@ -24,4 +25,6 @@ interface PlaylistTracksRepository {
     fun getAll(): Flow<List<PlaylistTrack>>
 
     suspend fun reorder(reordered: List<PlaylistTrack>)
+
+    suspend fun getEntry(entryId: Int): PlaylistTracks?
 }
