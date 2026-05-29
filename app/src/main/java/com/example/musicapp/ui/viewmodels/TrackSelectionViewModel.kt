@@ -2,7 +2,6 @@ package com.example.musicapp.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -96,7 +95,7 @@ class TrackSelectionViewModel @Inject constructor(
         _selectionMode.value = false
     }
 
-    fun toggleSelection(uuid: String, trackId: Int) {
+    fun toggleSelectionQueue(uuid: String, trackId: Int) {
         val selection = QueueSelect(uuid, trackId)
         _selectedTrackUUIDs.update { set ->
             if (selection in set) set - selection
@@ -136,3 +135,9 @@ data class QueueSelect(
     val queueId: String,
     val trackId: Int
 )
+
+enum class SelectSource {
+    ALBUM,
+    QUEUE,
+    PLAYLIST
+}

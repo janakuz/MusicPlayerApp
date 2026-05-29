@@ -85,6 +85,7 @@ import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.PlaylistViewModel
+import com.example.musicapp.ui.viewmodels.SelectSource
 import com.example.musicapp.ui.viewmodels.TrackSelectionViewModel
 import com.example.musicapp.util.toTitleCase
 import kotlinx.coroutines.launch
@@ -342,16 +343,20 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             onClear = { selectionViewModel.clearSelection() },
                             onPlayNext = {
                                 if (playlistScreen)
-                                    playerViewModel.playNextListIds(selectedPlaylistTracks)
+                                    playerViewModel.playNextListIds(selectedPlaylistEntries,
+                                        SelectSource.PLAYLIST)
                                 else if (currentRoute == "nowPlaying")
-                                    playerViewModel.playNextListIds(selectedQueueTracks)
+                                    playerViewModel.playNextListIds(selectedQueueTracks,
+                                        SelectSource.QUEUE)
                                 else
                                     playerViewModel.playNextListIds(selection.selectedTrackIds.toList()) },
                             onAddToQueue = {
                                 if (playlistScreen)
-                                    playerViewModel.addToQueueListIds(selectedPlaylistTracks)
+                                    playerViewModel.addToQueueListIds(selectedPlaylistEntries,
+                                        SelectSource.PLAYLIST)
                                 else if (currentRoute == "nowPlaying")
-                                    playerViewModel.addToQueueListIds(selectedQueueTracks)
+                                    playerViewModel.addToQueueListIds(selectedQueueTracks,
+                                        SelectSource.QUEUE)
                                 else
                                     playerViewModel.addToQueueListIds(selection.selectedTrackIds.toList()) },
                             onRemoveFromQueue = { playerViewModel.removeFromQueue(selectedQueueUUIDs.toSet()) },
