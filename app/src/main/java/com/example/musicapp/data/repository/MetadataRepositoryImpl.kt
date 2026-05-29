@@ -403,7 +403,7 @@ class OfflineMetadataRepository(
     ) {
         val existing = albumRepository.getAlbumByMbid(album.releaseGroup?.id ?: album.id)
         if (existing == null) {
-            val trackInfos = trackRepository.getTracksByIds(tracksToMove.toSet())
+            val trackInfos = trackRepository.getTracksByIds(tracksToMove)
             val totalDuration = trackInfos.sumOf { it.duration }
             val current = Album(
                 title = album.title,
@@ -481,7 +481,7 @@ class OfflineMetadataRepository(
     ) {
         val newArtist = artistRepository.getArtistByName(artist.normalizeForMatching())
         if (newArtist.isNotEmpty() && newArtist.size == 1) {
-            val trackInfos = trackRepository.getTracksByIds(tracksToMove.toSet())
+            val trackInfos = trackRepository.getTracksByIds(tracksToMove)
             val totalDuration = trackInfos.sumOf { it.duration }
 
             val newAlbum = Album(

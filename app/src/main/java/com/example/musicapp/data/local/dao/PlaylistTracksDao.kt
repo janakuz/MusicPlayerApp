@@ -292,4 +292,8 @@ interface PlaylistTracksDao {
     )
     fun getTracksForPlaylistByArtistDesc(playlistId: Int): Flow<List<PlaylistTrack>>
 
+
+    @Query("SELECT * FROM playlist_tracks WHERE id=:entryId")
+    suspend fun getEntry(entryId: Int): PlaylistTracks?
+
 }

@@ -28,7 +28,7 @@ class TrackDeletionViewModel @Inject constructor(
 
     fun prepareDeletion(tracks: List<Int>) {
         viewModelScope.launch {
-            val fullTracks = trackRepository.getTracksByIds(tracks.toSet())
+            val fullTracks = trackRepository.getTracksByIds(tracks)
             val uris = fullTracks.map { it.fileUri }
             _pendingDeleteUris.value = uris
         }

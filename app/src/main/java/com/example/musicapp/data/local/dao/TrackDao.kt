@@ -9,6 +9,7 @@ import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
 
@@ -152,7 +153,22 @@ interface TrackDao {
         ORDER BY t.trackNumber ASC
         """
     )
-    suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo>
+    suspend fun getTracksByIds(trackIds: List<Int>): List<TrackInfo>
+
+    @Query(
+        """
+        SELECT pt.id as entryId, pt.position, pt.addedAt, pt.playlistId, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
+        FROM tracks t
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        JOIN playlist_tracks pt on t.id=pt.trackId
+        WHERE pt.id in (:entryIds)
+        ORDER BY pt.position ASC
+        """
+    )
+    suspend fun getPlaylistTracksByIds(entryIds: List<Int>): List<PlaylistTrack>
+
 
     @Query(
         """

@@ -5,6 +5,7 @@ import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.viewmodels.SelectSource
 import kotlinx.coroutines.flow.Flow
 
 class TrackRepositoryImpl(private val trackDao: TrackDao) : TrackRepository {
@@ -53,8 +54,16 @@ class TrackRepositoryImpl(private val trackDao: TrackDao) : TrackRepository {
         return trackDao.getTrackByUri(uri)
     }
 
-    override suspend fun getTracksByIds(trackIds: Set<Int>): List<TrackInfo> {
-        return trackDao.getTracksByIds(trackIds)
+    override suspend fun getTracksByIds(trackIds: List<Int>, source: SelectSource): List<TrackInfo> {
+        when (source) {
+            SelectSource.ALBUM -> return trackDao.getTracksByIds(trackIds)
+            SelectSource.PLAYLIST -> return trackDao.getPlaylistTracksByIds(trackIds).map { it.trackInfo }
+            SelectSource.QUEUE -> {
+                val tracks = trackDao.getTracksByIds(trackIds)
+                val trackMap = tracks.associateBy { it.trackId }
+                return trackIds.mapNotNull { id -> trackMap[id] }
+            }
+        }
     }
 
 
