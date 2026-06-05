@@ -1,6 +1,7 @@
 package com.example.musicapp.data.local.database
 
 import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -240,6 +241,36 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
     }
 }
 
+val MIGRATION_14_15 = object : Migration(14,15){
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS `index_album_artists_artistId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_album_artists_artistId_albumId` ON `album_artists` (`artistId`, `albumId`)")
+
+        db.execSQL("DROP INDEX IF EXISTS `index_track_moods_trackId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_track_moods_trackId_moodId` ON `track_moods` (`trackId`, `moodId`)")
+
+        db.execSQL("DROP INDEX IF EXISTS `index_album_genres_albumId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_album_genres_albumId_genreId` ON `album_genres` (`albumId`, `genreId`)")
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `artist_genres` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `genreId` INTEGER NOT NULL, 
+                `artistId` INTEGER NOT NULL, 
+                FOREIGN KEY(`genreId`) REFERENCES `genres`(`id`) ON DELETE CASCADE, 
+                FOREIGN KEY(`artistId`) REFERENCES `artists`(`id`) ON DELETE CASCADE
+            )
+        """
+        )
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_artist_genres_genreId` ON `artist_genres` (`genreId`)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_artist_genres_artistId_genreId` ON `artist_genres` (`artistId`, `genreId`)")
+
+
+    }
+}
+
 
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
@@ -251,5 +282,6 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_10_11,
     MIGRATION_11_12,
     MIGRATION_12_13,
-    MIGRATION_13_14
+    MIGRATION_13_14,
+    MIGRATION_14_15
 )

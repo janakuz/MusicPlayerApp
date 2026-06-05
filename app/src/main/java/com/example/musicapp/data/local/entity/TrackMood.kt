@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("trackId"), Index("moodId")]
+    indices = [Index(value=["trackId", "moodId"], unique = true), Index("moodId")]
 )
 data class TrackMood(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

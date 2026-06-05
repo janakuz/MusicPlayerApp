@@ -8,6 +8,7 @@ import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.AlbumGenreDao
 import com.example.musicapp.data.local.dao.ArtistDao
+import com.example.musicapp.data.local.dao.ArtistGenreDao
 import com.example.musicapp.data.local.dao.GenreDao
 import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
@@ -19,6 +20,7 @@ import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.AlbumGenre
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.ArtistGenre
 import com.example.musicapp.data.local.entity.Genre
 import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Playlist
@@ -40,8 +42,9 @@ import com.example.musicapp.data.local.entity.TrackMood
         TrackMood::class,
         Playlist::class,
         PlaylistTracks::class,
+        ArtistGenre::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -56,24 +59,25 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trackMoodDao(): TrackMoodDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun playlistTracksDao(): PlaylistTracksDao
+    abstract fun ArtistGenreDao(): ArtistGenreDao
 
 
-    companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "music_app_db"
-                )
-                    .fallbackToDestructiveMigration(true)
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
+//    companion object {
+////        @Volatile
+////        private var INSTANCE: AppDatabase? = null
+//
+////        fun getDatabase(context: Context): AppDatabase {
+////            return INSTANCE ?: synchronized(this) {
+////                val instance = Room.databaseBuilder(
+////                    context.applicationContext,
+////                    AppDatabase::class.java,
+////                    "music_app_db"
+////                )
+////                    .fallbackToDestructiveMigration(true)
+////                    .build()
+////                INSTANCE = instance
+////                instance
+////            }
+////        }
+//    }
 }

@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("artistId"), Index("genreId")]
+    indices = [Index(value=["artistId", "genreId"], unique = true), Index("genreId")]
 )
 data class ArtistGenre(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
