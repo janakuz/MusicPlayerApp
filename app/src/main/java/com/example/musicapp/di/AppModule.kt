@@ -338,21 +338,6 @@ object AppModule {
         return AlbumArtistRepositoryImpl(albumArtistDao, trackDao)
     }
 
-    @Provides
-    @Singleton
-    fun provideMetadataRepository(
-        albumRepository: AlbumRepository,
-        artistRepository: ArtistRepository,
-        trackRepository: TrackRepository,
-        albumArtistRepository: AlbumArtistRepository
-    ): MetadataRepository {
-        return OfflineMetadataRepository(
-            albumRepository,
-            artistRepository,
-            trackRepository,
-            albumArtistRepository
-        )
-    }
 
 
     @Provides
@@ -511,6 +496,27 @@ object AppModule {
         return PlaylistTracksRepositoryImpl(
             playlistTracksDao,
             playlistRepository
+        )
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideMetadataRepository(
+        albumRepository: AlbumRepository,
+        artistRepository: ArtistRepository,
+        trackRepository: TrackRepository,
+        albumArtistRepository: AlbumArtistRepository,
+        albumGenreRepository: AlbumGenreRepository,
+        artistGenreRepository: ArtistGenreRepository
+    ): MetadataRepository {
+        return OfflineMetadataRepository(
+            albumRepository,
+            artistRepository,
+            trackRepository,
+            albumArtistRepository,
+            albumGenreRepository,
+            artistGenreRepository
         )
     }
 

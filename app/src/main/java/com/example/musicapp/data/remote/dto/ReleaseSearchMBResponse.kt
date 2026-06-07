@@ -30,8 +30,9 @@ data class Release(
     val asin: String?,
     @SerializedName("track-count")
     val trackCount: Int?,
-    val media: List<Media>?
-)
+    val media: List<Media>?,
+    val tags: List<Tag>?,
+    )
 
 data class TextRepresentation(
     val language: String?,
