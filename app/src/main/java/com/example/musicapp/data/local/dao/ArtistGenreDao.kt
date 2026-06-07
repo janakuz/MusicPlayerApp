@@ -5,7 +5,9 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.ArtistGenre
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ArtistGenreDao {
@@ -34,5 +36,16 @@ interface ArtistGenreDao {
                 "WHERE ag.artistId=:artistId"
     )
     suspend fun getArtistGenres(artistId: Int): List<String>
+
+
+    @Query(
+        """
+            SELECT a.*
+            FROM artists a
+            JOIN artist_genres ag on a.id=ag.artistId
+            WHERE ag.genreId=:genreId
+        """
+    )
+    fun getGenreArtists(genreId: Int): Flow<List<Artist>>
 
 }

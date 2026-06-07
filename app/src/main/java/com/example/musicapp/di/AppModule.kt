@@ -349,15 +349,15 @@ object AppModule {
     @Singleton
     fun provideGenreDao(db: AppDatabase): GenreDao = db.genreDao()
 
-    @Provides
-    @Singleton
-    fun provideGenreRepository(genreDao: GenreDao): GenreRepository {
-        return GenreRepositoryImpl(genreDao)
-    }
 
     @Provides
     @Singleton
     fun provideAlbumGenreDao(db: AppDatabase): AlbumGenreDao = db.albumGenreDao()
+
+    @Provides
+    @Singleton
+    fun provideArtistGenreDao(db: AppDatabase): ArtistGenreDao = db.artistGenreDao()
+
 
     @Provides
     @Singleton
@@ -393,9 +393,6 @@ object AppModule {
     }
 
 
-    @Provides
-    @Singleton
-    fun provideArtistGenreDao(db: AppDatabase): ArtistGenreDao = db.artistGenreDao()
 
     @Provides
     @Singleton
@@ -406,6 +403,11 @@ object AppModule {
         return ArtistGenreRepositoryImpl(artistDao, genreDao)
     }
 
+    @Provides
+    @Singleton
+    fun provideGenreRepository(genreDao: GenreDao, albumGenreDao: AlbumGenreDao, artistGenreDao: ArtistGenreDao): GenreRepository {
+        return GenreRepositoryImpl(genreDao, albumGenreDao, artistGenreDao)
+    }
 
 
     @Provides

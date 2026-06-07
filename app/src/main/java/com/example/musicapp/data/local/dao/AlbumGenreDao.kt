@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.example.musicapp.data.local.entity.AlbumGenre
+import com.example.musicapp.data.local.model.AlbumInfo
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlbumGenreDao {
@@ -33,5 +35,19 @@ interface AlbumGenreDao {
                 "WHERE ag.albumId=:albumId"
     )
     suspend fun getAlbumGenres(albumId: Int): List<String>
+
+
+    @Query(
+        """
+            SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks
+            FROM albums al
+            JOIN album_artists aa ON al.id=aa.albumId
+            JOIN artists ar on ar.id=aa.artistId
+            JOIN album_genres ag on al.id=ag.albumId
+            WHERE ag.genreId=:genreId
+            GROUP BY al.id
+            """
+    )
+    fun getGenreAlbums(genreId: Int): Flow<List<AlbumInfo>>
 }
 
