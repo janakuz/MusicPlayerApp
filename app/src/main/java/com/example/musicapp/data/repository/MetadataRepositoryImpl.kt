@@ -228,7 +228,7 @@ class OfflineMetadataRepository(
         artistName: String,
         currentArtist: Artist
     ): Artist {
-        if (artist.name.normalizeForMatching() == artistName) {
+        if (artist.name.normalizeForMatching() == artistName.normalizeForMatching()) {
             delay(1000)
             val discogsArtist = artistRepository.getArtistDiscogsInfo(artist.id)
             val discogsId = discogsArtist?.id.toString()
