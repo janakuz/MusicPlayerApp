@@ -12,6 +12,10 @@ interface AlbumGenreDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(link: AlbumGenre)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(genres: List<AlbumGenre>)
+
+
     @Query("DELETE FROM album_genres WHERE albumId = :albumId")
     suspend fun deleteByAlbumId(albumId: Int)
 

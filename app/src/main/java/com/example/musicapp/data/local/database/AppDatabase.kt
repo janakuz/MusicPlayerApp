@@ -59,7 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trackMoodDao(): TrackMoodDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun playlistTracksDao(): PlaylistTracksDao
-    abstract fun ArtistGenreDao(): ArtistGenreDao
+    abstract fun artistGenreDao(): ArtistGenreDao
 
 
 //    companion object {

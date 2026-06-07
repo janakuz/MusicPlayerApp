@@ -15,6 +15,7 @@ import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.AlbumGenreDao
 import com.example.musicapp.data.local.dao.ArtistDao
+import com.example.musicapp.data.local.dao.ArtistGenreDao
 import com.example.musicapp.data.local.dao.GenreDao
 import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
@@ -34,6 +35,8 @@ import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumGenreRepositoryImpl
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.AlbumRepositoryImpl
+import com.example.musicapp.data.repository.ArtistGenreRepository
+import com.example.musicapp.data.repository.ArtistGenreRepositoryImpl
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.ArtistRepositoryImpl
 import com.example.musicapp.data.repository.DynamicThemeRepository
@@ -403,6 +406,21 @@ object AppModule {
     ): TrackMoodRepository {
         return TrackMoodRepositoryImpl(trackMoodDao, moodDao)
     }
+
+
+    @Provides
+    @Singleton
+    fun provideArtistGenreDao(db: AppDatabase): ArtistGenreDao = db.artistGenreDao()
+
+    @Provides
+    @Singleton
+    fun provideArtistGenreRepository(
+        artistDao: ArtistGenreDao,
+        genreDao: GenreDao
+    ): ArtistGenreRepository {
+        return ArtistGenreRepositoryImpl(artistDao, genreDao)
+    }
+
 
 
     @Provides
