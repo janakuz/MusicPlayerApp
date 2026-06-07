@@ -70,7 +70,7 @@ class AlbumRepositoryImpl(
     override suspend fun getByTitle(title: String, year: String?): Album? {
         return if (year != null) {
             albumDao.getAlbumByTitleAndYear(title.normalizeForMatching(), year)
-                ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
+//                ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
         } else {
             albumDao.getAlbumByTitle(title.normalizeForMatching())
         }

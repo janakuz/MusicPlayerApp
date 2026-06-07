@@ -12,7 +12,7 @@ interface DiscogsApiService {
     @GET("artists/{artistId}")
     suspend fun getArtist(@Path("artistId") artistId: String): ArtistDicogsResponse
 
-    @GET("albums/{releaseId}")
+    @GET("releases/{releaseId}")
     suspend fun getAlbum(@Path("releaseId") albumId: String): AlbumDiscogsResponse
 
     @GET("/database/search")

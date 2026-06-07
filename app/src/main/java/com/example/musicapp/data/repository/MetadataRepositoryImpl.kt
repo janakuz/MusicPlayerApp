@@ -686,7 +686,7 @@ class OfflineMetadataRepository(
             } else if (albumResponse.discogsResponse != null) {
                 delay(1000)
                 val discogsAlbum =
-                    albumRepository.getAlbumDiscogs(albumResponse.discogsResponse.results[0].resource_url)
+                    albumRepository.getAlbumDiscogs(albumResponse.discogsResponse.results[0].resource_url.split("/").last())
                 if (discogsAlbum != null && discogsAlbum.artists.isNotEmpty()) {
                     for (artist in discogsAlbum.artists) {
                         if (currentArtist.discogsId == null) {

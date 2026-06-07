@@ -228,6 +228,7 @@ class LocalLibraryScanner @Inject constructor(
         var done = 0
         val total = entries.size
         val linkedPairs = mutableSetOf<String>()
+        val linkedPairsAlbums = HashMap<String, Int>()
 
         val BATCH_SIZE = 100
 
@@ -240,6 +241,7 @@ class LocalLibraryScanner @Inject constructor(
                     val trackTitle = entry.title ?: "Unknown"
                     val trackUri = entry.fileUri
                     val genreString = entry.genres
+                    val filePath = entry.filePath
 
                     val genres = genreString?.split("""\s*[;,/]\s*""".toRegex()).orEmpty().filter { it.isNotEmpty() }
 
@@ -256,12 +258,16 @@ class LocalLibraryScanner @Inject constructor(
                             artistName,
                             artistName.normalizeForMatching()
                         )
-                        var albumId: Int? = null
-                        albumId = albumRepository.getByTitle(albumTitle, releaseYear)?.id
-                        Log.d("scan local mid", "$albumId")
+
+                        val folderPath = filePath.split("/").dropLast(1).joinToString("/")
+
+
+                        var albumId: Int? = linkedPairsAlbums.get(folderPath)
+//                        albumId = albumRepository.getByTitle(albumTitle, releaseYear)?.id
+//                        Log.d("scan local mid", "$albumId")
 
                         if (albumId == null) {
-                            val albumArt = findAlbumArt(context, entry.filePath)
+                            val albumArt = findAlbumArt(context, filePath)
 
                             val newAlbum = Album(
                                 title = albumTitle,
@@ -276,6 +282,7 @@ class LocalLibraryScanner @Inject constructor(
                             )
 
                             albumId = albumRepository.insertWithReturn(newAlbum).toInt()
+                            linkedPairsAlbums.put(folderPath, albumId)
 
                             if (genres.isNotEmpty())
                                 albumGenreRepository.insertAlbumGenres(albumId, genres)
@@ -306,7 +313,7 @@ class LocalLibraryScanner @Inject constructor(
                             trackNumber = normalizeTrackNumber(entry.trackNumber),
                             lastPlayed = null,
                             fileUri = trackUri,
-                            filePath = entry.filePath,
+                            filePath = filePath,
                             valence = null,
                             energy = null,
                             key = null,
