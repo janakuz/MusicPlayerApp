@@ -29,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,7 +49,8 @@ import kotlin.math.roundToInt
 @Composable
 fun FilterDrawerContent(
     draft: LibraryFilter,
-    potentialCount: Int,
+    potentialAlbumCount: Int,
+    potentialArtistCount: Int,
     filterDefaults: FilterDefaults,
     labelSuggestions: List<String>,
     onDraftChange: (LibraryFilter) -> Unit,
@@ -59,6 +59,7 @@ fun FilterDrawerContent(
     interaction: MutableInteractionSource,
     genreSuggestions: List<String>,
     onGenreQueryChange: (String) -> Unit,
+    onTabChange: (String) -> Unit,
 ) {
     val dummyFocusRequester = remember { FocusRequester() }
 
@@ -76,6 +77,7 @@ fun FilterDrawerContent(
                     selected = index == selectedTabIndex,
                     onClick = {
                         selectedTabIndex = index
+                        onTabChange(tabs[index].name)
                     }
                 )
             }
@@ -83,8 +85,42 @@ fun FilterDrawerContent(
 
         when {
 
-            (selectedTabIndex == tabs.indexOf(HomeScreen.Artists)) -> LazyColumn {
-                item{Text("TODO")}
+            (selectedTabIndex == tabs.indexOf(HomeScreen.Artists)) -> LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight(0.7f)
+                    .focusRequester(dummyFocusRequester)
+                    .focusable()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        dummyFocusRequester.requestFocus()
+                    }
+            ) {
+                item {
+                    GenrePicker(
+                        genres = draft.selectedGenres.toList(),
+                        suggestions = genreSuggestions,
+                        onGenreQueryChange = { query -> onGenreQueryChange(query) },
+                        onGenresChange = { newGenres ->
+                            onDraftChange(draft.copy(selectedGenres = newGenres.toSet()))
+                            onGenreQueryChange("")
+                        },
+                        label = "Genre",
+                        titleCase = true,
+                        isFiltering = true
+                    )
+                }
+
+                item {
+                    Button(
+                        onClick = onApply,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Show $potentialArtistCount Results")
+                    }
+                }
+
             }
 
             (selectedTabIndex == tabs.indexOf(HomeScreen.Albums)) -> LazyColumn(
@@ -161,7 +197,7 @@ fun FilterDrawerContent(
                         onClick = onApply,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Show $potentialCount Results")
+                        Text("Show $potentialAlbumCount Results")
                     }
                 }
 

@@ -34,7 +34,6 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -42,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -87,7 +85,6 @@ import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.SettingsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
-import com.example.musicapp.ui.viewmodels.GenreDetailViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.PlaylistViewModel
 import com.example.musicapp.ui.viewmodels.SelectSource
@@ -166,8 +163,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val draftFilter by filterViewModel.draftFilter.collectAsState()
-    val filterCount by filterViewModel.potentialMatches.collectAsState()
-    val filterResults by filterViewModel.filteredAlbums.collectAsState()
+    val filterAlbumCount by filterViewModel.potentialAlbumMatches.collectAsState()
+    val filterAlbumResults by filterViewModel.filteredAlbums.collectAsState()
+    val filterArtistCount by filterViewModel.potentialArtistMatches.collectAsState()
+    val filterArtistResults by filterViewModel.filteredArtists.collectAsState()
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
@@ -624,9 +623,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     )
                 }
 
-                composable("filter_results") {
+                composable(
+                    route = "filter_results",
+                    ) {
                     SearchContent(
-                        results = SearchResult(albums = filterResults),
+                        results = SearchResult(albums = filterAlbumResults, artists = filterArtistResults),
                         onArtistClick = { id -> navController.navigate("artist/$id") },
                         onAlbumClick = { id -> navController.navigate("album/$id") },
                         onTrackClick = { tracks, track ->
@@ -793,7 +794,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 ) {
                     FilterDrawerContent(
                         draft = draftFilter,
-                        potentialCount = filterCount,
+                        potentialAlbumCount = filterAlbumCount,
                         filterDefaults = filterDefaults,
                         labelSuggestions = labelSuggestions,
                         onDraftChange = { filter -> filterViewModel.updateDraft(filter) },
@@ -803,10 +804,15 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             filterViewModel.applyFilters()
                             showFilterSheet = false
                             navController.navigate("filter_results")
-                            filterViewModel.resetAll()
+                            filterViewModel.resetDraft()
                         },
                         genreSuggestions = genreSuggestions,
-                        onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) }
+                        onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) },
+                        potentialArtistCount = filterArtistCount,
+                        onTabChange = { tab ->
+                            filterViewModel.resetAll()
+                            filterViewModel.updateType(tab)
+                        }
                     )
                 }
 

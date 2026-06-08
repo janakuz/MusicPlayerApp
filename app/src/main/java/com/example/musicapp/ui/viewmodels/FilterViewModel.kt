@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.viewmodels
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.repository.FilterRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -26,6 +28,7 @@ import javax.inject.Inject
 class FilterViewModel @Inject constructor(
     private val filterRepository: FilterRepository,
     private val genreRepository: GenreRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
 
@@ -43,6 +46,8 @@ class FilterViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FilterDefaults())
 
+
+    private val _libraryType = MutableStateFlow<String>("artists")
 
     private val _activeFilter = MutableStateFlow<LibraryFilter>(LibraryFilter())
 
@@ -94,18 +99,48 @@ class FilterViewModel @Inject constructor(
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val filteredAlbums = _activeFilter.flatMapLatest { filter ->
-        val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
-        val newFilter = filter.copy(dateRanges = fullRanges)
-        filterRepository.getFilteredAlbums(newFilter)
+    val filteredArtists = combine(_activeFilter, _libraryType) { filter, type ->
+        Pair(filter, type)
+    }.flatMapLatest { (filter, type) ->
+        if (_libraryType.value != "artists") flowOf(emptyList())
+        else filterRepository.getFilteredArtists(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val potentialMatches = _draftFilter.flatMapLatest { filter ->
-        val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
-        val newFilter = filter.copy(dateRanges = fullRanges)
-        filterRepository.getFilteredAlbums(newFilter)
+    val filteredAlbums = combine(_activeFilter, _libraryType) { filter, type ->
+        Pair(filter, type)
+    }.flatMapLatest { (filter, type) ->
+        if (_libraryType.value != "albums") flowOf(emptyList())
+        else {
+            val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
+            val newFilter = filter.copy(dateRanges = fullRanges)
+            filterRepository.getFilteredAlbums(newFilter)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val potentialAlbumMatches = combine(_draftFilter, _libraryType) { filter, type ->
+        Pair(filter, type)
+    }.flatMapLatest { (filter, type) ->
+        if (_libraryType.value != "albums") flowOf(emptyList())
+        else {
+            val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
+            val newFilter = filter.copy(dateRanges = fullRanges)
+            filterRepository.getFilteredAlbums(newFilter)
+        }
+    }
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val potentialArtistMatches = combine(_draftFilter, _libraryType) { filter, type ->
+        Pair(filter, type)
+    }.flatMapLatest { (filter, type) ->
+        if (_libraryType.value != "artists") flowOf(emptyList())
+        else filterRepository.getFilteredArtists(filter)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -126,6 +161,11 @@ class FilterViewModel @Inject constructor(
         }
     }
 
+
+    fun updateType(type: String){
+        _libraryType.value = type.lowercase()
+    }
+
     fun applyFilters() {
         _activeFilter.value = _draftFilter.value
     }
@@ -144,6 +184,11 @@ class FilterViewModel @Inject constructor(
 
 
     fun resetAll(){
+        _draftFilter.value = LibraryFilter()
+        _activeFilter.value = LibraryFilter()
+    }
+
+    fun resetDraft(){
         _draftFilter.value = LibraryFilter()
     }
 
