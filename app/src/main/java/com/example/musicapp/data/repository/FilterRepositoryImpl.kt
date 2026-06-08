@@ -3,6 +3,7 @@ package com.example.musicapp.data.repository
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.util.normalizeGenre
 import kotlinx.coroutines.flow.Flow
 
 class FilterRepositoryImpl(
@@ -29,13 +30,22 @@ class FilterRepositoryImpl(
             conditions.add("al.label in ($labels)")
         }
 
+        if (filter.selectedGenres.isNotEmpty()) {
+            val genres = filter.selectedGenres.map { it.normalizeGenre() }.joinToString(",") { "?" }
+            bindArgs.addAll(filter.selectedGenres)
+            conditions.add("g.name in ($genres)")
+        }
+
+
 
         val baseQuery =
             "SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, " +
                     "ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks " +
                     "FROM albums al " +
                     "JOIN album_artists aa ON al.id=aa.albumId " +
-                    "JOIN artists ar on ar.id=aa.artistId "
+                    "JOIN artists ar ON ar.id=aa.artistId " +
+                    "JOIN album_genres ag ON ag.albumId=al.id " +
+                    "JOIN genres g ON ag.genreId=g.id "
         val joiner = if (filter.logic == FilterLogic.AND) " AND " else " OR "
         val sql = baseQuery + if (conditions.isNotEmpty()) {
             " WHERE ${conditions.joinToString(joiner)}"

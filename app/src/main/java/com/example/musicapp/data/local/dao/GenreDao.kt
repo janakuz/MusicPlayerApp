@@ -23,8 +23,8 @@ interface GenreDao {
 
     @Query("""SELECT g.*, COUNT(DISTINCT arg.artistId) as countArtists, COUNT(DISTINCT ag.albumId) as countAlbums 
             FROM genres g 
-            JOIN album_genres ag ON ag.genreId=g.id 
-            JOIN artist_genres arg ON arg.genreId=g.id 
+            LEFT JOIN album_genres ag ON ag.genreId=g.id 
+            LEFT JOIN artist_genres arg ON arg.genreId=g.id 
             GROUP BY g.id
             """
     )

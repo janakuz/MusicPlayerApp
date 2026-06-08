@@ -171,6 +171,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
+    val genreSuggestions by filterViewModel.genreSuggestions.collectAsState()
 
 
 
@@ -802,7 +803,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             filterViewModel.applyFilters()
                             showFilterSheet = false
                             navController.navigate("filter_results")
-                        }
+                            filterViewModel.resetAll()
+                        },
+                        genreSuggestions = genreSuggestions,
+                        onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) }
                     )
                 }
 

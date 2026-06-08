@@ -21,7 +21,8 @@ data class LibraryFilter(
     val activeRange: IntRange = 1950..2026,
     val dateRanges: List<IntRange> = emptyList(),
     val selectedLabels: Set<String> = emptySet(),
-    val durationRanges: List<LongRange> = emptyList()
+    val durationRanges: List<LongRange> = emptyList(),
+    val selectedGenres: Set<String> = emptySet()
 )
 
 enum class FilterLogic { AND, OR }

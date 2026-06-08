@@ -3,6 +3,7 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.repository.FilterRepository
+import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.LibraryFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,19 +24,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FilterViewModel @Inject constructor(
-    private val filterRepository: FilterRepository
+    private val filterRepository: FilterRepository,
+    private val genreRepository: GenreRepository,
 ) : ViewModel() {
 
 
     val filterDefaults = combine(
         filterRepository.getMinYear(),
         filterRepository.getMaxYear(),
-        filterRepository.getAllLabels()
-    ) { min, max, labels ->
+        filterRepository.getAllLabels(),
+        genreRepository.getAll()
+    ) { min, max, labels, genres ->
         FilterDefaults(
             minYear = min,
             maxYear = max,
-            recordLabels = labels
+            recordLabels = labels,
+            genres = genres.map { it.genre.name }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FilterDefaults())
 
@@ -47,6 +51,8 @@ class FilterViewModel @Inject constructor(
 
     private val _labelQuery = MutableStateFlow("")
 
+    private val _genreQuery = MutableStateFlow("")
+
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val labelSuggestions: StateFlow<List<String>> = _labelQuery
@@ -57,6 +63,27 @@ class FilterViewModel @Inject constructor(
                 filterRepository.getAllLabels()
             } else {
                 filterRepository.findLabel(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val genreSuggestions: StateFlow<List<String>> = _genreQuery
+        .debounce(250)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.length < 2) {
+                genreRepository.getAll().map { genreInfoList ->
+                    genreInfoList.map { it.genre.name }
+                }
+            }
+            else {
+                genreRepository.findGenre(query)
             }
         }
         .stateIn(
@@ -111,6 +138,14 @@ class FilterViewModel @Inject constructor(
         _labelQuery.value = newQuery
     }
 
+    fun onGenreQueryChange(newQuery: String) {
+        _genreQuery.value = newQuery
+    }
+
+
+    fun resetAll(){
+        _draftFilter.value = LibraryFilter()
+    }
 
     fun reset() {
         _draftFilter.value = _activeFilter.value
@@ -120,5 +155,6 @@ class FilterViewModel @Inject constructor(
 data class FilterDefaults(
     val minYear: Int = 1950,
     val maxYear: Int = 2026,
-    val recordLabels: List<String> = emptyList()
+    val recordLabels: List<String> = emptyList(),
+    val genres: List<String> = emptyList()
 )
