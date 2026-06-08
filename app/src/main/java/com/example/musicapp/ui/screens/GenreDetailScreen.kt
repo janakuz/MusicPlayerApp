@@ -14,7 +14,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.data.local.entity.Genre
 import com.example.musicapp.data.local.model.GridItem
@@ -75,7 +77,10 @@ fun GenreHeader(name: String) {
     ) {
         Text(
             text = name.toTitleCase(),
-            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineLarge.copy(
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-0.5).sp),
             modifier = Modifier.padding(start = 16.dp, bottom = 20.dp)
         )
 
