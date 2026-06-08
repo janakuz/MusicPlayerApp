@@ -39,13 +39,15 @@ fun GenresScreen(
     val genresViewModel: GenresViewModel = hiltViewModel()
     val genresList by genresViewModel.genresWithCounts.collectAsState()
 
+    val visibleGenres = genresList.filter { it.countArtists > 0 || it.countAlbums > 0 }
+
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),
         contentPadding = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(genresList) { item ->
+        items(visibleGenres) { item ->
             GenreCard(
             genreName = item.genre.name,
             artistCount = item.countArtists,
