@@ -90,4 +90,8 @@ class TrackRepositoryImpl(private val trackDao: TrackDao) : TrackRepository {
     override suspend fun deleteByUri(uris: List<String>) {
         trackDao.deleteByUri(uris)
     }
+
+    override suspend fun getAll(): List<Track> {
+        return trackDao.getAllGrouped()
+    }
 }

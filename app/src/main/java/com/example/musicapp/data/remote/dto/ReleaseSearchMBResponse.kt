@@ -48,7 +48,8 @@ data class ArtistSummary(
     val id: String,
     val name: String,
     @SerializedName("sort-name")
-    val sortName: String
+    val sortName: String,
+    val tags: List<Tag>? = null
 )
 
 data class ReleaseGroup(

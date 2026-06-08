@@ -178,6 +178,16 @@ interface TrackDao {
     )
     fun getAllTracksFull(): Flow<List<Track>>
 
+
+    @Query(
+        """
+        SELECT * 
+        FROM tracks
+        GROUP BY albumId
+        """
+    )
+    suspend fun getAllGrouped(): List<Track>
+
     @Query("SELECT * FROM tracks WHERE fileUri=:uri")
     suspend fun getTrackByUri(uri: String): Track?
 

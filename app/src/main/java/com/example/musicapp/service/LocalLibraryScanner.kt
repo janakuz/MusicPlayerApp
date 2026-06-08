@@ -27,7 +27,6 @@ class LocalLibraryScanner @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
     private val albumGenreRepository: AlbumGenreRepository,
-    private val artistGenreRepository: ArtistGenreRepository,
     private val albumArtistRepository: AlbumArtistRepository,
     private val trackRepository: TrackRepository,
     private val database: AppDatabase
@@ -218,6 +217,36 @@ class LocalLibraryScanner @Inject constructor(
             }
         }
         return list
+    }
+
+    suspend fun backfillLocalGenres(
+        context: Context,
+        onProgressUpdate: ((Float) -> Unit)?
+    ){
+        val dbTracks = trackRepository.getAll()
+        val audioEntries = queryMediaStore(context = context).associateBy { it.fileUri }
+        var done = 0
+        val total = dbTracks.size
+
+        for (track in dbTracks){
+            val albumId = track.albumId
+            val genreString = audioEntries.get(track.fileUri)?.genres
+
+            val genres = genreString?.split("""\s*[;,/]\s*""".toRegex()).orEmpty().filter { it.isNotEmpty() }
+
+            if (genres.isNotEmpty()){
+                albumGenreRepository.insertAlbumGenres(albumId, genres)
+            }
+
+            done++
+
+            if (onProgressUpdate != null && (done % 5 == 0 || done == total - 1)) {
+                val percent = (done.toFloat() / total) * 100
+                onProgressUpdate(percent)
+            }
+
+        }
+
     }
 
     private suspend fun buildTracks(

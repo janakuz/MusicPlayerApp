@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface MetadataRepository {
 
+    suspend fun backfillGenres(): Flow<ScanProgress>
+
     suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress>
 
     suspend fun updateAlbum(

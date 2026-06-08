@@ -2,6 +2,7 @@ package com.example.musicapp.data.remote.service
 
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchResponse
+import com.example.musicapp.data.remote.dto.ReleaseGroupMB
 import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -14,6 +15,13 @@ interface MusicbrainzApiService {
         @Query("query") query: String,
         @Query("fmt") format: String = "json"
     ): ReleaseSearchResponse
+
+    @GET("release-group/{mbId}")
+    suspend fun findReleaseGroup(
+        @Path("mbId") mbId: String,
+        @Query("inc") query: String,
+        @Query("fmt") format: String = "json"
+    ): ReleaseGroupMB
 
     @GET("artist/{mbid}")
     suspend fun getArtist(

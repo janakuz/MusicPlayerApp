@@ -45,4 +45,6 @@ interface TrackRepository {
     suspend fun getAllUris(): List<String>
 
     suspend fun deleteByUri(uris: List<String>)
+
+    suspend fun getAll(): List<Track>
 }

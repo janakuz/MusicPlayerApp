@@ -140,6 +140,7 @@ class OfflineMetadataRepository(
                         discogsResponse.results[i].label?.get(0) else ""
                 val newReleaseDate = releaseDate ?: discogsResponse.results[i].year
                 val newAlbum = album.copy(
+                    discogsId = discogsResponse.results[i].resource_url.split("/").last(),
                     image = newAlbumArt,
                     label = labelName,
                     releaseDate = newReleaseDate,
@@ -677,6 +678,34 @@ class OfflineMetadataRepository(
         }
 
         return AlbumArtistUpdate(albumToMove, updatedArtist)
+    }
+
+    override suspend fun backfillGenres(): Flow<ScanProgress> = flow {
+        val allAlbums = albumRepository.getAll()
+
+        for (album in allAlbums){
+            val mbId = album.mbId
+            if (mbId != null){
+                val releaseGroupInfo = albumRepository.findReleaseGroupMB(mbId)
+                val genres = MusicBrainzTagFilter.filterTags(releaseGroupInfo?.tags.orEmpty()).map { it.name }
+                if (genres.isNotEmpty())
+                    albumGenreRepository.insertAlbumGenres(album.id, genres)
+
+                for (artist in releaseGroupInfo?.artistCredit.orEmpty()){
+                    val artistMbId = artist.artist.id
+                    val dbArtist = artistRepository.getArtistByMbid(artistMbId)
+                    if (dbArtist != null){
+                        val artistGenres = MusicBrainzTagFilter.filterTags(artist.artist.tags.orEmpty()).map { it.name }
+                        if (artistGenres.isNotEmpty())
+                            artistGenreRepository.insertArtistGenres(dbArtist.id, artistGenres)
+                        val albumGenres = albumGenreRepository.getAlbumGenres(album.id)
+                        if (albumGenres.isNotEmpty())
+                            artistGenreRepository.insertArtistGenres(dbArtist.id, albumGenres)
+                    }
+                }
+                delay(1000)
+            }
+        }
     }
 
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
