@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.Genre
 import com.example.musicapp.data.local.model.GenreInfo
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface GenreRepository {
@@ -10,7 +11,7 @@ interface GenreRepository {
 
     fun findGenre(query: String): Flow<List<String>>
 
-    fun getAll(): Flow<List<GenreInfo>>
+    fun getAll(sortBy: SortOption): Flow<List<GenreInfo>>
 
     fun getGenreArtistsAndAlbums(genreId: Int): Flow<SearchResult>
 

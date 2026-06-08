@@ -29,17 +29,28 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.viewmodels.GenresViewModel
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.musicapp.ui.components.SortOption
 
 @Composable
 fun GenresScreen(
-    onGenreClick: (Int) -> Unit
-) {
+    onGenreClick: (Int) -> Unit,
+    sortRequest: SortOption?,
+
+    ) {
     val genresViewModel: GenresViewModel = hiltViewModel()
     val genresList by genresViewModel.genresWithCounts.collectAsState()
 
     val visibleGenres = genresList.filter { it.countArtists > 0 || it.countAlbums > 0 }
+
+    LaunchedEffect(sortRequest) {
+        sortRequest?.let {
+            genresViewModel.setSort(it)
+        }
+    }
+
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),

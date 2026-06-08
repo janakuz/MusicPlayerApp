@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.LibraryFilter
+import com.example.musicapp.ui.components.SortField
+import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -36,7 +38,7 @@ class FilterViewModel @Inject constructor(
         filterRepository.getMinYear(),
         filterRepository.getMaxYear(),
         filterRepository.getAllLabels(),
-        genreRepository.getAll()
+        genreRepository.getAll(SortOption(SortField.NAME,true))
     ) { min, max, labels, genres ->
         FilterDefaults(
             minYear = min,
@@ -83,7 +85,7 @@ class FilterViewModel @Inject constructor(
         .distinctUntilChanged()
         .flatMapLatest { query ->
             if (query.length < 2) {
-                genreRepository.getAll().map { genreInfoList ->
+                genreRepository.getAll(SortOption(SortField.NAME,true)).map { genreInfoList ->
                     genreInfoList.map { it.genre.name }
                 }
             }

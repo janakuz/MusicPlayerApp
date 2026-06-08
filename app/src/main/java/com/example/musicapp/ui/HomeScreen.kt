@@ -136,6 +136,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     var trackSort by remember { mutableStateOf<SortOption?>(null) }
     var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
     var playlistsSort by remember { mutableStateOf<SortOption?>(null) }
+    var genresSort by remember { mutableStateOf<SortOption?>(null) }
+
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
 
@@ -321,6 +323,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     HomeScreen.Tracks.name -> trackSort = sort
                                     "artist/{artistId}" -> artistDetailSort = sort
                                     HomeScreen.Playlists.name -> playlistsSort = sort
+                                    HomeScreen.Genres.name -> genresSort = sort
                                 }
                             },
                             onImport = {
@@ -479,7 +482,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
 
                 composable(route = HomeScreen.Genres.name) {
-                    GenresScreen(onGenreClick = { id -> navController.navigate("genre/$id") })
+                    GenresScreen(
+                        onGenreClick = { id -> navController.navigate("genre/$id") },
+                        sortRequest = genresSort)
                 }
 
                 composable("artist/{artistId}") {

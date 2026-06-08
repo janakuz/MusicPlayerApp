@@ -26,9 +26,18 @@ interface GenreDao {
             LEFT JOIN album_genres ag ON ag.genreId=g.id 
             LEFT JOIN artist_genres arg ON arg.genreId=g.id 
             GROUP BY g.id
+            ORDER BY
+                CASE WHEN :sortBy = 'name' AND :ascending = true THEN LOWER(g.name) END ASC,
+                CASE WHEN :sortBy = 'name' AND :ascending = false THEN LOWER(g.name) END DESC,
+                CASE WHEN :sortBy = 'total' AND :ascending = true THEN countArtists+countAlbums END ASC,
+                CASE WHEN :sortBy = 'total' AND :ascending = false THEN countArtists+countAlbums END DESC,
+                CASE WHEN :sortBy = 'artistCount' AND :ascending = true THEN countArtists END ASC,
+                CASE WHEN :sortBy = 'artistCount' AND :ascending = false THEN countArtists END DESC,
+                CASE WHEN :sortBy = 'albumCount' AND :ascending = true THEN countAlbums END ASC,
+                CASE WHEN :sortBy = 'albumCount' AND :ascending = false THEN countAlbums END DESC
             """
     )
-    fun getAllGenres(): Flow<List<GenreInfo>>
+    fun getAllGenres(sortBy: String, ascending: Boolean): Flow<List<GenreInfo>>
 
     @Query("SELECT name FROM genres WHERE id=:genreId")
     fun getGenreName(genreId: Int): Flow<String>
