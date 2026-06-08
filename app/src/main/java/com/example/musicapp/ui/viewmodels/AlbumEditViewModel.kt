@@ -246,7 +246,9 @@ class AlbumEditViewModel @Inject constructor(
                 label = _uiState.value.draftLabel
             )
             albumRepository.update(newAlbum)
-            albumGenreRepository.updateAlbumGenres(albumId, _uiState.value.draftGenres)
+            if (initialGenres != _uiState.value.draftGenres) {
+                albumGenreRepository.updateAlbumGenres(albumId, _uiState.value.draftGenres)
+            }
 
             if (initialTitle != _uiState.value.title) {
                 try {

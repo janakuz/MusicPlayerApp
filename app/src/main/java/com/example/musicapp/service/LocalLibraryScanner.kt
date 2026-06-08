@@ -12,7 +12,9 @@ import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.repository.AlbumArtistRepository
+import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.ArtistGenreRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.util.normalizeForMatching
@@ -24,6 +26,7 @@ import javax.inject.Inject
 class LocalLibraryScanner @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
+    private val albumGenreRepository: AlbumGenreRepository,
     private val albumArtistRepository: AlbumArtistRepository,
     private val trackRepository: TrackRepository,
     private val database: AppDatabase
@@ -151,7 +154,8 @@ class LocalLibraryScanner @Inject constructor(
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.TRACK,
             MediaStore.Audio.Media.DATA,
-            MediaStore.Audio.Media.YEAR
+            MediaStore.Audio.Media.YEAR,
+            MediaStore.Audio.Media.GENRE
         )
 
         var foundCount = 0
@@ -172,6 +176,7 @@ class LocalLibraryScanner @Inject constructor(
                 val trackCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
                 val dataCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
                 val yearCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+                val genreCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)
 
                 while (cursor.moveToNext()) {
                     foundCount++
@@ -186,6 +191,7 @@ class LocalLibraryScanner @Inject constructor(
                     val trackNum = cursor.getInt(trackCol).takeIf { it > 0 }
                     val filePath = cursor.getString(dataCol)
                     val year = cursor.getString(yearCol)
+                    val genreString = cursor.getString(genreCol)
 
                     val rawId = cursor.getLong(idCol)
                     val castedId = rawId.toInt()
@@ -199,8 +205,8 @@ class LocalLibraryScanner @Inject constructor(
                         duration = duration ?: 0L,
                         trackNumber = trackNum ?: 0,
                         albumArt = filePath,
-                        releaseDate = year
-
+                        releaseDate = year,
+                        genres = genreString
                     )
                 }
             }
@@ -213,6 +219,36 @@ class LocalLibraryScanner @Inject constructor(
         return list
     }
 
+    suspend fun backfillLocalGenres(
+        context: Context,
+        onProgressUpdate: ((Float) -> Unit)?
+    ){
+        val dbTracks = trackRepository.getAll()
+        val audioEntries = queryMediaStore(context = context).associateBy { it.fileUri }
+        var done = 0
+        val total = dbTracks.size
+
+        for (track in dbTracks){
+            val albumId = track.albumId
+            val genreString = audioEntries.get(track.fileUri)?.genres
+
+            val genres = genreString?.split("""\s*[;,/]\s*""".toRegex()).orEmpty().filter { it.isNotEmpty() }
+
+            if (genres.isNotEmpty()){
+                albumGenreRepository.insertAlbumGenres(albumId, genres)
+            }
+
+            done++
+
+            if (onProgressUpdate != null && (done % 5 == 0 || done == total - 1)) {
+                val percent = (done.toFloat() / total) * 100
+                onProgressUpdate(percent)
+            }
+
+        }
+
+    }
+
     private suspend fun buildTracks(
         context: Context,
         entries: List<RawAudioEntry>,
@@ -221,6 +257,7 @@ class LocalLibraryScanner @Inject constructor(
         var done = 0
         val total = entries.size
         val linkedPairs = mutableSetOf<String>()
+        val linkedPairsAlbums = HashMap<String, Int>()
 
         val BATCH_SIZE = 100
 
@@ -232,6 +269,10 @@ class LocalLibraryScanner @Inject constructor(
                     val releaseYear = entry.releaseDate?.take(4)
                     val trackTitle = entry.title ?: "Unknown"
                     val trackUri = entry.fileUri
+                    val genreString = entry.genres
+                    val filePath = entry.filePath
+
+                    val genres = genreString?.split("""\s*[;,/]\s*""".toRegex()).orEmpty().filter { it.isNotEmpty() }
 
 
                     val existing = trackRepository.getTrackByUri(trackUri)
@@ -246,12 +287,16 @@ class LocalLibraryScanner @Inject constructor(
                             artistName,
                             artistName.normalizeForMatching()
                         )
-                        var albumId: Int? = null
-                        albumId = albumRepository.getByTitle(albumTitle, releaseYear)?.id
-                        Log.d("scan local mid", "$albumId")
+
+                        val folderPath = filePath.split("/").dropLast(1).joinToString("/")
+
+
+                        var albumId: Int? = linkedPairsAlbums.get(folderPath)
+//                        albumId = albumRepository.getByTitle(albumTitle, releaseYear)?.id
+//                        Log.d("scan local mid", "$albumId")
 
                         if (albumId == null) {
-                            val albumArt = findAlbumArt(context, entry.filePath)
+                            val albumArt = findAlbumArt(context, filePath)
 
                             val newAlbum = Album(
                                 title = albumTitle,
@@ -266,6 +311,10 @@ class LocalLibraryScanner @Inject constructor(
                             )
 
                             albumId = albumRepository.insertWithReturn(newAlbum).toInt()
+                            linkedPairsAlbums.put(folderPath, albumId)
+
+                            if (genres.isNotEmpty())
+                                albumGenreRepository.insertAlbumGenres(albumId, genres)
                         }
 
 
@@ -293,7 +342,7 @@ class LocalLibraryScanner @Inject constructor(
                             trackNumber = normalizeTrackNumber(entry.trackNumber),
                             lastPlayed = null,
                             fileUri = trackUri,
-                            filePath = entry.filePath,
+                            filePath = filePath,
                             valence = null,
                             energy = null,
                             key = null,
@@ -350,5 +399,6 @@ data class RawAudioEntry(
     val duration: Long?,
     val trackNumber: Int?,
     val albumArt: String?,
-    val releaseDate: String?
+    val releaseDate: String?,
+    val genres: String?,
 )

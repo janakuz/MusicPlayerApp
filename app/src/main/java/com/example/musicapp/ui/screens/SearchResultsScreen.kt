@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -115,12 +116,17 @@ fun SearchContent(
     onPlayNextTrack: (TrackInfo) -> Unit,
     onAddToQueueTrack: (TrackInfo) -> Unit,
     onEditTrack: (TrackInfo) -> Unit,
-    padding: PaddingValues
+    padding: PaddingValues,
+    header: (@Composable () -> Unit)? = null,
 ) {
     LazyColumn(
         modifier = Modifier.padding(padding),
 //        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+
+        if (header != null) {
+            item{header()}
+        }
 
         if (results.artists.isNotEmpty()) {
             item { SearchSectionHeader("Artists") }

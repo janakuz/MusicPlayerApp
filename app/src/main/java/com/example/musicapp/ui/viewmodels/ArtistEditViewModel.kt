@@ -7,14 +7,22 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.DiscogsImage
+import com.example.musicapp.data.repository.ArtistGenreRepository
 import com.example.musicapp.data.repository.ArtistRepository
+import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -26,6 +34,8 @@ import javax.inject.Inject
 class ArtistEditViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
     private val metadataRepository: MetadataRepository,
+    private val genreRepository: GenreRepository,
+    private val artistGenreRepository: ArtistGenreRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -38,18 +48,41 @@ class ArtistEditViewModel @Inject constructor(
     private val _workflowState = MutableStateFlow<NameEditUiState>(NameEditUiState.Idle)
     val workflowState = _workflowState.asStateFlow()
 
+    private val _genreQuery = MutableStateFlow("")
+
+
     private var initialName: String? = null
     private var initialBio: String? = ""
     private var initialImageUrl: String? = ""
+    private var initialGenres: List<String> = emptyList()
+
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges =
-            state.draftBio != initialBio || state.draftImageUrl != initialImageUrl || state.name != initialName
+            state.draftBio != initialBio || state.draftImageUrl != initialImageUrl || state.name != initialName || state.draftGenres != initialGenres
         Log.d("bio", initialBio + " " + state.draftBio)
         Log.d("image", "init:" + initialImageUrl + " " + "draft:" + state.draftImageUrl)
         Log.d("name", initialName + " " + state.name)
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val genreSuggestions: StateFlow<List<String>> = _genreQuery
+        .debounce(250)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.length < 2) {
+                flowOf(emptyList())
+            } else {
+                genreRepository.findGenre(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
 
     init {
         loadArtistData()
@@ -58,15 +91,19 @@ class ArtistEditViewModel @Inject constructor(
     private fun loadArtistData() {
         viewModelScope.launch {
             val artist = artistRepository.getArtist(artistId).first()
+            val genres = artistGenreRepository.getArtistGenres(artistId)
+
             initialName = artist.name
             initialBio = artist.bio
             initialImageUrl = artist.image ?: ""
+            initialGenres = genres
             _uiState.update {
                 it.copy(
                     name = artist.name,
                     draftBio = artist.bio ?: "",
-                    draftImageUrl = artist.image ?: ""
-                )
+                    draftImageUrl = artist.image ?: "",
+                    draftGenres = genres,
+                    )
             }
 
 
@@ -118,6 +155,10 @@ class ArtistEditViewModel @Inject constructor(
                 image = _uiState.value.draftImageUrl
             )
             artistRepository.update(newArtist)
+            if (initialGenres != _uiState.value.draftGenres){
+                artistGenreRepository.updateArtistGenres(artistId, _uiState.value.draftGenres)
+            }
+
             if (initialName != _uiState.value.name) {
                 try {
                     _workflowState.value = NameEditUiState.Saving
@@ -175,6 +216,16 @@ class ArtistEditViewModel @Inject constructor(
         }
     }
 
+    fun onGenresChange(newGenres: List<String>) {
+        _uiState.update { it.copy(draftGenres = newGenres.distinct()) }
+        _genreQuery.value = ""
+    }
+
+    fun onGenreQueryChange(newQuery: String) {
+        _genreQuery.value = newQuery
+    }
+
+
     fun resetName() {
         _uiState.update {
             it.copy(
@@ -201,6 +252,7 @@ data class ArtistEditUiState(
     val draftBio: String = "",
     val draftImageUrl: String = "",
     val discogsImages: List<DiscogsImage> = emptyList(),
+    val draftGenres: List<String> = emptyList(),
     val lastFmBio: String = "",
     val discogsBio: String = "",
     val isSaving: Boolean = false

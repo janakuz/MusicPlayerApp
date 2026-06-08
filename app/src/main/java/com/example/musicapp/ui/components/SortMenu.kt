@@ -33,7 +33,10 @@ enum class SortField {
     DURATION,
     TRACK_NUM,
     DATE_CREATED,
-    DATE_UPDATED
+    DATE_UPDATED,
+    TOTAL_COUNT,
+    ARTIST_COUNT,
+    ALBUM_COUNT
 }
 
 enum class MenuPage { MAIN, SORT }
@@ -62,6 +65,10 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         LibraryScreen.PLAYLISTS -> listOf(
             SortField.NAME, SortField.DURATION, SortField.TRACK_NUM,
             SortField.DATE_CREATED, SortField.DATE_UPDATED
+        )
+
+        LibraryScreen.GENRES -> listOf(
+            SortField.NAME, SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
         )
 
         else -> emptyList()

@@ -69,6 +69,20 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
+    fun backfillLocalGenres(context: Context){
+        viewModelScope.launch {
+            scanner.backfillLocalGenres(
+                context = context,
+                onProgressUpdate = { progress ->
+                    _uiState.update { it.copy(scanProgress = progress) }})
+
+            _uiState.update { it.copy(isScanning = false, isEnriching = true) }
+
+            workerManagerRepository.startWorkerGenres()
+
+        }
+    }
+
     fun observeEnrichment() {
         workerManagerRepository.getEnrichmentProgress()
             .onEach { info ->

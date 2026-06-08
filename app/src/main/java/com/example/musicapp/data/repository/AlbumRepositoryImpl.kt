@@ -7,6 +7,7 @@ import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
+import com.example.musicapp.data.remote.dto.ReleaseGroupMB
 import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
@@ -70,7 +71,7 @@ class AlbumRepositoryImpl(
     override suspend fun getByTitle(title: String, year: String?): Album? {
         return if (year != null) {
             albumDao.getAlbumByTitleAndYear(title.normalizeForMatching(), year)
-                ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
+//                ?: albumDao.getAlbumByTitle(title.normalizeForMatching())
         } else {
             albumDao.getAlbumByTitle(title.normalizeForMatching())
         }
@@ -85,6 +86,16 @@ class AlbumRepositoryImpl(
             null
         }
     }
+
+    override suspend fun findReleaseGroupMB(mbId: String): ReleaseGroupMB? {
+        return try {
+            musicbrainzApiService.findReleaseGroup(mbId, "artist-credits+tags")
+        } catch (e: Exception) {
+            Log.e("album search", e.message.toString())
+            null
+        }
+    }
+
 
     override suspend fun findAlbumDiscogs(
         artist: String,

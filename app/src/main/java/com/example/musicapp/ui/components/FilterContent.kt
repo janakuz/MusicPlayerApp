@@ -23,6 +23,8 @@ import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,87 +36,173 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.musicapp.data.repository.FilterLogic
 import com.example.musicapp.data.repository.LibraryFilter
+import com.example.musicapp.ui.HomeScreen
 import com.example.musicapp.ui.screens.GenrePicker
 import com.example.musicapp.ui.viewmodels.FilterDefaults
 import kotlin.math.roundToInt
 
+
 @Composable
 fun FilterDrawerContent(
     draft: LibraryFilter,
-    potentialCount: Int,
+    potentialAlbumCount: Int,
+    potentialArtistCount: Int,
     filterDefaults: FilterDefaults,
     labelSuggestions: List<String>,
     onDraftChange: (LibraryFilter) -> Unit,
     onApply: () -> Unit,
     onLabelQueryChange: (String) -> Unit,
     interaction: MutableInteractionSource,
+    genreSuggestions: List<String>,
+    onGenreQueryChange: (String) -> Unit,
+    onTabChange: (String) -> Unit,
 ) {
     val dummyFocusRequester = remember { FocusRequester() }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxHeight(0.7f)
-            .focusRequester(dummyFocusRequester)
-            .focusable()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
-                dummyFocusRequester.requestFocus()
-            }
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Match All")
-                Switch(
-                    checked = draft.logic == FilterLogic.OR,
-                    onCheckedChange = {
-                        val newDraft =
-                            draft.copy(logic = if (draft.logic == FilterLogic.OR) FilterLogic.AND else FilterLogic.OR)
-                        onDraftChange(newDraft)
-                    },
-                    modifier = Modifier.padding(horizontal = 16.dp)
+    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums)
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    Column() {
+
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+        ) {
+            tabs.forEachIndexed { index, screen ->
+                Tab(
+                    text = { Text(stringResource(screen.title)) },
+                    selected = index == selectedTabIndex,
+                    onClick = {
+                        selectedTabIndex = index
+                        onTabChange(tabs[index].name)
+                    }
                 )
-                Text("Match Any")
             }
         }
 
-        item {
-            GenrePicker(
-                genres = draft.selectedLabels.toList(),
-                suggestions = labelSuggestions,
-                onGenreQueryChange = { query -> onLabelQueryChange(query) },
-                onGenresChange = { newLabels ->
-                    onDraftChange(draft.copy(selectedLabels = newLabels.toSet()))
-                    onLabelQueryChange("")
-                },
-                label = "Label",
-                titleCase = false
-            )
-        }
+        when {
 
-        item {
-            DateRangeSection(
-                draft,
-                filterDefaults,
-                interaction,
-                onDraftChange
-            )
-        }
-
-
-        item {
-            Button(
-                onClick = onApply,
-                modifier = Modifier.fillMaxWidth()
+            (selectedTabIndex == tabs.indexOf(HomeScreen.Artists)) -> LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight(0.7f)
+                    .focusRequester(dummyFocusRequester)
+                    .focusable()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        dummyFocusRequester.requestFocus()
+                    }
             ) {
-                Text("Show $potentialCount Results")
+                item {
+                    GenrePicker(
+                        genres = draft.selectedGenres.toList(),
+                        suggestions = genreSuggestions,
+                        onGenreQueryChange = { query -> onGenreQueryChange(query) },
+                        onGenresChange = { newGenres ->
+                            onDraftChange(draft.copy(selectedGenres = newGenres.toSet()))
+                            onGenreQueryChange("")
+                        },
+                        label = "Genre",
+                        titleCase = true,
+                        isFiltering = true
+                    )
+                }
+
+                item {
+                    Button(
+                        onClick = onApply,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Show $potentialArtistCount Results")
+                    }
+                }
+
+            }
+
+            (selectedTabIndex == tabs.indexOf(HomeScreen.Albums)) -> LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight(0.7f)
+                    .focusRequester(dummyFocusRequester)
+                    .focusable()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        dummyFocusRequester.requestFocus()
+                    }
+            ) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Match All")
+                        Switch(
+                            checked = draft.logic == FilterLogic.OR,
+                            onCheckedChange = {
+                                val newDraft =
+                                    draft.copy(logic = if (draft.logic == FilterLogic.OR) FilterLogic.AND else FilterLogic.OR)
+                                onDraftChange(newDraft)
+                            },
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Text("Match Any")
+                    }
+                }
+
+                item {
+                    GenrePicker(
+                        genres = draft.selectedLabels.toList(),
+                        suggestions = labelSuggestions,
+                        onGenreQueryChange = { query -> onLabelQueryChange(query) },
+                        onGenresChange = { newLabels ->
+                            onDraftChange(draft.copy(selectedLabels = newLabels.toSet()))
+                            onLabelQueryChange("")
+                        },
+                        label = "Label",
+                        titleCase = false, isFiltering = true
+                    )
+                }
+
+                item {
+                    DateRangeSection(
+                        draft,
+                        filterDefaults,
+                        interaction,
+                        onDraftChange
+                    )
+                }
+
+                item {
+                    GenrePicker(
+                        genres = draft.selectedGenres.toList(),
+                        suggestions = genreSuggestions,
+                        onGenreQueryChange = { query -> onGenreQueryChange(query) },
+                        onGenresChange = { newGenres ->
+                            onDraftChange(draft.copy(selectedGenres = newGenres.toSet()))
+                            onGenreQueryChange("")
+                        },
+                        label = "Genre",
+                        titleCase = true,
+                        isFiltering = true
+                    )
+                }
+
+
+
+
+                item {
+                    Button(
+                        onClick = onApply,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Show $potentialAlbumCount Results")
+                    }
+                }
+
             }
         }
-
     }
 
 }

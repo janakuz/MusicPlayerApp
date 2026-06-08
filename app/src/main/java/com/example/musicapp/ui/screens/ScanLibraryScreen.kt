@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.screens
 
 import android.Manifest
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,7 +52,6 @@ fun ScanLibraryScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         Icon(
             imageVector = Icons.Rounded.LibraryMusic,
             contentDescription = null,

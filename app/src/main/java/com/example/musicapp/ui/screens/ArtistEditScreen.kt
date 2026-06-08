@@ -255,6 +255,7 @@ fun ArtistEditScreen(
     val nameEditWorkflowState by artistEditViewModel.workflowState.collectAsState()
     val images = artistEditUiState.discogsImages.map { it.resourceUrl }
     val canSave by artistEditViewModel.canSave.collectAsState()
+    val suggestions by artistEditViewModel.genreSuggestions.collectAsState()
 
     var showDiscardDialog by remember { mutableStateOf(false) }
 
@@ -331,6 +332,17 @@ fun ArtistEditScreen(
                         )
                     )
                 }
+
+                item {
+                    GenrePicker(
+                        genres = artistEditUiState.draftGenres,
+                        onGenresChange = { list -> artistEditViewModel.onGenresChange(list) },
+                        suggestions = suggestions,
+                        onGenreQueryChange = { query -> artistEditViewModel.onGenreQueryChange(query) },
+                        label = "Genre"
+                    )
+                }
+
 
                 item {
                     ArtistBioEditor(

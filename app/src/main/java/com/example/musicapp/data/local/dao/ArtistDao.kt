@@ -5,8 +5,12 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
+import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.AlbumInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -94,4 +98,9 @@ interface ArtistDao {
                 "ORDER BY searchKey ASC"
     )
     fun searchArtists(query: String): Flow<List<Artist>>
+
+
+    @RawQuery(observedEntities = [Artist::class])
+    fun getFilteredArtists(query: SupportSQLiteQuery): Flow<List<Artist>>
+
 }

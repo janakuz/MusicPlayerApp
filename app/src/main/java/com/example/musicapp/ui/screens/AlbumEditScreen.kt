@@ -180,6 +180,7 @@ fun GenrePicker(
     onGenresChange: (List<String>) -> Unit,
     label: String,
     titleCase: Boolean = true,
+    isFiltering: Boolean = false,
 ) {
     var textFieldValue by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
@@ -276,7 +277,7 @@ fun GenrePicker(
                     DropdownMenuItem(
                         text = { if (titleCase) Text(suggestion.toTitleCase()) else Text(suggestion) },
                         onClick = {
-                            if (textFieldValue.isNotBlank() || titleCase == false) {
+                            if (textFieldValue.isNotBlank() || isFiltering) {
                                 onGenresChange(genres + suggestion.trim())
                                 textFieldValue = ""
 

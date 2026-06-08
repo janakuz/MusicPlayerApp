@@ -9,21 +9,44 @@ import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.ArtistSummary
 import com.example.musicapp.data.remote.dto.DiscogsAlbumArtist
 import com.example.musicapp.data.remote.dto.Release
+import com.example.musicapp.data.remote.dto.Tag
 import com.example.musicapp.util.isSimilar
 import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlin.collections.orEmpty
 import kotlin.math.min
 
 class OfflineMetadataRepository(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val trackRepository: TrackRepository,
-    private val albumArtistRepository: AlbumArtistRepository
+    private val albumArtistRepository: AlbumArtistRepository,
+    private val albumGenreRepository: AlbumGenreRepository,
+    private val artistGenreRepository: ArtistGenreRepository,
 ) : MetadataRepository {
 
+
+    object MusicBrainzTagFilter {
+
+        private val blacklistedKeywords = setOf(
+            "seen live", "live", "vinyl", "bootleg", "cd", "album", "lp", "reissue",
+            "usa", "uk", "california", "los angeles", "american", "british", "english",
+            "90s", "80s", "70s", "1990s", "1980s", "favorite", "favourite", "soundtrack"
+        )
+
+        fun filterTags(incomingTags: List<Tag>): List<Tag> {
+            return incomingTags
+                .map { it.copy(name = it.name.lowercase().trim()) }
+                .filter { tag ->
+                    !blacklistedKeywords.contains(tag.name)}
+        }
+    }
+
+
+    private val artistGenresMB = HashMap<String, List<String>>()
 
     private suspend fun getAlbumMB(
         mbAlbum: Release,
@@ -51,6 +74,11 @@ class OfflineMetadataRepository(
             isEnriched = true,
             enrichmentAttempted = true
         )
+
+        val genres = MusicBrainzTagFilter.filterTags(mbAlbum.tags.orEmpty()).map { it.name }
+        if (genres.isNotEmpty())
+            albumGenreRepository.insertAlbumGenres(newAlbum.id, genres)
+
         return newAlbum
     }
 
@@ -112,12 +140,18 @@ class OfflineMetadataRepository(
                         discogsResponse.results[i].label?.get(0) else ""
                 val newReleaseDate = releaseDate ?: discogsResponse.results[i].year
                 val newAlbum = album.copy(
+                    discogsId = discogsResponse.results[i].resource_url.split("/").last(),
                     image = newAlbumArt,
                     label = labelName,
                     releaseDate = newReleaseDate,
                     isEnriched = true,
                     enrichmentAttempted = true
                 )
+
+                val genres = discogsResponse.results[i].style.orEmpty()
+                if (genres.isNotEmpty())
+                    albumGenreRepository.insertAlbumGenres(newAlbum.id, genres)
+
                 return AlbumMetadataResult(mbAlbumSearch, discogsResponse, newAlbum)
             }
 
@@ -137,6 +171,8 @@ class OfflineMetadataRepository(
             val mbArtist = artistRepository.getArtistMusicbrainzInfo(artistCredit.id)
             val existingArtist = artistRepository.getArtistByMbid(mbArtist.id)
 
+            val genres = MusicBrainzTagFilter.filterTags(mbArtist.tags.orEmpty()).map { it.name }
+            Log.d("genres", genres.joinToString())
             if (existingArtist == null) {
                 var artistImage = ""
                 var discogsId = ""
@@ -172,8 +208,17 @@ class OfflineMetadataRepository(
                         enrichmentAttempted = true,
                         isEnriched = true
                     )
+
+                if (genres.isNotEmpty())
+                    artistGenresMB.put(mbArtist.id, genres)
+                Log.d("genres", artistGenresMB.entries.joinToString())
+
                 return newArtist
             }
+
+            if (genres.isNotEmpty())
+                artistGenreRepository.insertArtistGenres(existingArtist.id, genres)
+
             return existingArtist
         }
         return currentArtist
@@ -184,7 +229,7 @@ class OfflineMetadataRepository(
         artistName: String,
         currentArtist: Artist
     ): Artist {
-        if (artist.name.normalizeForMatching() == artistName) {
+        if (artist.name.normalizeForMatching() == artistName.normalizeForMatching()) {
             delay(1000)
             val discogsArtist = artistRepository.getArtistDiscogsInfo(artist.id)
             val discogsId = discogsArtist?.id.toString()
@@ -635,6 +680,34 @@ class OfflineMetadataRepository(
         return AlbumArtistUpdate(albumToMove, updatedArtist)
     }
 
+    override suspend fun backfillGenres(): Flow<ScanProgress> = flow {
+        val allAlbums = albumRepository.getAll()
+
+        for (album in allAlbums){
+            val mbId = album.mbId
+            if (mbId != null){
+                val releaseGroupInfo = albumRepository.findReleaseGroupMB(mbId)
+                val genres = MusicBrainzTagFilter.filterTags(releaseGroupInfo?.tags.orEmpty()).map { it.name }
+                if (genres.isNotEmpty())
+                    albumGenreRepository.insertAlbumGenres(album.id, genres)
+
+                for (artist in releaseGroupInfo?.artistCredit.orEmpty()){
+                    val artistMbId = artist.artist.id
+                    val dbArtist = artistRepository.getArtistByMbid(artistMbId)
+                    if (dbArtist != null){
+                        val artistGenres = MusicBrainzTagFilter.filterTags(artist.artist.tags.orEmpty()).map { it.name }
+                        if (artistGenres.isNotEmpty())
+                            artistGenreRepository.insertArtistGenres(dbArtist.id, artistGenres)
+                        val albumGenres = albumGenreRepository.getAlbumGenres(album.id)
+                        if (albumGenres.isNotEmpty())
+                            artistGenreRepository.insertArtistGenres(dbArtist.id, albumGenres)
+                    }
+                }
+                delay(1000)
+            }
+        }
+    }
+
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
         val currentAlbumArtists =
             if (isManual) albumArtistRepository.getAllUnenriched() else albumArtistRepository.getAllUnattempted()
@@ -669,8 +742,7 @@ class OfflineMetadataRepository(
                     if (currentArtist.mbId == null) {
                         val updatedArtist =
                             getArtistDataMusicBrainz(artist, artistName, currentArtist)
-                        if (currentArtist.discogsId != null && currentArtist.discogsId != updatedArtist.discogsId) toInsert =
-                            true
+                        if (currentArtist.discogsId != null && currentArtist.discogsId != updatedArtist.discogsId) toInsert = true
                         if (updatedArtist != currentArtist) {
                             currentArtist = updatedArtist
                             toUpdate = true
@@ -686,7 +758,7 @@ class OfflineMetadataRepository(
             } else if (albumResponse.discogsResponse != null) {
                 delay(1000)
                 val discogsAlbum =
-                    albumRepository.getAlbumDiscogs(albumResponse.discogsResponse.results[0].resource_url)
+                    albumRepository.getAlbumDiscogs(albumResponse.discogsResponse.results[0].resource_url.split("/").last())
                 if (discogsAlbum != null && discogsAlbum.artists.isNotEmpty()) {
                     for (artist in discogsAlbum.artists) {
                         if (currentArtist.discogsId == null) {
@@ -715,10 +787,26 @@ class OfflineMetadataRepository(
             }
             if (toUpdate && !toInsert) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
+
+                val genres = albumGenreRepository.getAlbumGenres(albumArtist.albumId)
+                if (genres.isNotEmpty())
+                    artistGenreRepository.insertArtistGenres(currentArtist.id, genres)
+
+                if (currentArtist.mbId != null)
+                    artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
                 artistRepository.update(currentArtist)
             } else if (toInsert) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
                 val inserted = artistRepository.insertWithReturn(currentArtist).toInt()
+
+                val genres = albumGenreRepository.getAlbumGenres(albumArtist.albumId)
+                if (genres.isNotEmpty())
+                    artistGenreRepository.insertArtistGenres(inserted, genres)
+
+                if (currentArtist.mbId != null)
+                    artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+
+
                 albumArtistRepository.updateAlbumArtist(
                     albumArtist.albumId,
                     albumArtist.artistId,
@@ -726,6 +814,11 @@ class OfflineMetadataRepository(
                 )
             } else if (currentArtist.enrichmentAttempted == false) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
+
+                val genres = albumGenreRepository.getAlbumGenres(albumArtist.albumId)
+                if (genres.isNotEmpty())
+                    artistGenreRepository.insertArtistGenres(currentArtist.id, genres)
+
                 artistRepository.update(currentArtist)
             }
             Log.d("scan", "after artist $artistName")
