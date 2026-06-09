@@ -44,7 +44,7 @@ import com.example.musicapp.data.local.entity.TrackMood
         PlaylistTracks::class,
         ArtistGenre::class,
     ],
-    version = 15,
+    version = 17,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

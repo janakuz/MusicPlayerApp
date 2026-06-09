@@ -26,6 +26,10 @@ class ArtistRepositoryImpl(
         return artistDao.getAllArtists()
     }
 
+    override suspend fun getAll(): List<Artist> {
+        return artistDao.getAll()
+    }
+
     override fun getAllArtistsDesc(): Flow<List<Artist>> {
         return artistDao.getAllArtistsDesc()
     }

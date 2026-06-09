@@ -10,6 +10,8 @@ interface ArtistRepository {
 
     fun getAllArtists(): Flow<List<Artist>>
 
+    suspend fun getAll(): List<Artist>
+
     fun getAllArtistsDesc(): Flow<List<Artist>>
 
     fun getAllArtistsSorted(ascending: Boolean): Flow<List<Artist>>

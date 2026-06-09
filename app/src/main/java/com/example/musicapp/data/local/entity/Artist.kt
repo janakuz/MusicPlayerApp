@@ -21,5 +21,13 @@ data class Artist(
     @ColumnInfo(defaultValue = "0")
     val isEnriched: Boolean = false,
     @ColumnInfo(defaultValue = "0")
-    val enrichmentAttempted: Boolean = false
-)//TODO: Add country, maybe lifespan?
+    val enrichmentAttempted: Boolean = false,
+    val country: String? = null,
+    val countryCode: String? = null,
+    val homeCity: String? = null,
+    val currentCity: String? = null,
+    val activeStartYear: String? = null,
+    val activeEndYear: String? = null,
+    @ColumnInfo(defaultValue = "0")
+    val isDefunct: Boolean = false
+)

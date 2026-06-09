@@ -197,7 +197,13 @@ class OfflineMetadataRepository(
                         discogsId = discogsId,
                         mbId = mbArtist.id,
                         enrichmentAttempted = true,
-                        isEnriched = true
+                        isEnriched = true,
+                        countryCode = mbArtist.country,
+                        country = mbArtist.area?.name,
+                        homeCity = mbArtist.beginArea?.name,
+                        activeStartYear = mbArtist.lifeSpan?.begin,
+                        activeEndYear = mbArtist.lifeSpan?.end,
+                        isDefunct = mbArtist.lifeSpan?.ended == true
                     )
                     else Artist(
                         image = artistImage,
@@ -206,7 +212,13 @@ class OfflineMetadataRepository(
                         name = artistName,
                         searchKey = artistName.normalizeForMatching(),
                         enrichmentAttempted = true,
-                        isEnriched = true
+                        isEnriched = true,
+                        countryCode = mbArtist.country,
+                        country = mbArtist.area?.name,
+                        homeCity = mbArtist.beginArea?.name,
+                        activeStartYear = mbArtist.lifeSpan?.begin,
+                        activeEndYear = mbArtist.lifeSpan?.end,
+                        isDefunct = mbArtist.lifeSpan?.ended == true
                     )
 
                 if (genres.isNotEmpty())
@@ -708,6 +720,37 @@ class OfflineMetadataRepository(
         }
     }
 
+    override suspend fun backfillCoutriesAndActivity(): Flow<ScanProgress> = flow {
+        val allArtists = artistRepository.getAll()
+        var current = 0
+        val total = allArtists.size
+
+        for (artist in allArtists){
+            if (artist.mbId != null){
+                val mbArtist = artistRepository.getArtistMusicbrainzInfo(artist.mbId)
+                val updatedArtist = artist.copy(
+                    countryCode = mbArtist.country,
+                    country = mbArtist.area?.name,
+                    homeCity = mbArtist.beginArea?.name,
+                    activeStartYear = mbArtist.lifeSpan?.begin,
+                    activeEndYear = mbArtist.lifeSpan?.end,
+                    isDefunct = mbArtist.lifeSpan?.ended == true
+                )
+                artistRepository.update(updatedArtist)
+                delay(1000)
+            }
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = artist.name
+            )
+
+            emit(progress)
+
+            current++
+        }
+    }
+
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
         val currentAlbumArtists =
             if (isManual) albumArtistRepository.getAllUnenriched() else albumArtistRepository.getAllUnattempted()
@@ -804,7 +847,7 @@ class OfflineMetadataRepository(
                     artistGenreRepository.insertArtistGenres(inserted, genres)
 
                 if (currentArtist.mbId != null)
-                    artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+                    artistGenreRepository.insertArtistGenres(inserted, artistGenresMB.get(currentArtist.mbId).orEmpty())
 
 
                 albumArtistRepository.updateAlbumArtist(

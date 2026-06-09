@@ -1,5 +1,6 @@
 package com.example.musicapp.data.local.dao
 
+import androidx.compose.ui.graphics.Matrix
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -20,6 +21,9 @@ interface ArtistDao {
 
     @Query("SELECT * FROM artists ORDER BY name DESC")
     fun getAllArtistsDesc(): Flow<List<Artist>>
+
+    @Query("SELECT * FROM artists")
+    suspend fun getAll(): List<Artist>
 
     @Query(
         "SELECT * FROM artists ORDER BY " +
