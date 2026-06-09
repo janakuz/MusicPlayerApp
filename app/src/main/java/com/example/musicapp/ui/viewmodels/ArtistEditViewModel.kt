@@ -11,6 +11,7 @@ import com.example.musicapp.data.repository.ArtistGenreRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.MetadataRepository
+import com.example.musicapp.util.getFlagEmoji
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,11 +57,21 @@ class ArtistEditViewModel @Inject constructor(
     private var initialBio: String? = ""
     private var initialImageUrl: String? = ""
     private var initialGenres: List<String> = emptyList()
+    private var initialIsDefunct: Boolean? = false
+    private var initialHomeCity: String? = ""
+    private var initialCurrentCity: String? = ""
+    private var initialCountry: String? = ""
+    private var initialCountryCode: String? = ""
+    private var initialStartYear: String? = ""
+    private var initialEndYear: String? = ""
 
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges =
             state.draftBio != initialBio || state.draftImageUrl != initialImageUrl || state.name != initialName || state.draftGenres != initialGenres
+                    || state.draftCountry != initialCountry  || state.draftCountryCode != initialCountryCode
+                    || state.draftHomeCity != initialHomeCity || state.draftCurrentCity != initialCurrentCity
+                    || state.draftActiveStartYear != initialStartYear || state.draftActiveEndYear != initialEndYear || state.draftIsDefunct != initialIsDefunct
         Log.d("bio", initialBio + " " + state.draftBio)
         Log.d("image", "init:" + initialImageUrl + " " + "draft:" + state.draftImageUrl)
         Log.d("name", initialName + " " + state.name)
@@ -97,12 +109,28 @@ class ArtistEditViewModel @Inject constructor(
             initialBio = artist.bio
             initialImageUrl = artist.image ?: ""
             initialGenres = genres
+            initialIsDefunct = artist.isDefunct
+            initialHomeCity = artist.homeCity ?: ""
+            initialCurrentCity = artist.currentCity ?: ""
+            initialCountry = artist.country ?: ""
+            initialCountryCode = artist.countryCode ?: ""
+            initialStartYear = artist.activeStartYear ?: ""
+            initialEndYear = artist.activeEndYear ?: ""
+
+
             _uiState.update {
                 it.copy(
                     name = artist.name,
                     draftBio = artist.bio ?: "",
                     draftImageUrl = artist.image ?: "",
                     draftGenres = genres,
+                    draftIsDefunct = artist.isDefunct,
+                    draftCountry = artist.country ?: "",
+                    draftHomeCity = artist.homeCity ?: "",
+                    draftCurrentCity = artist.currentCity ?: "",
+                    draftCountryCode = artist.countryCode ?: "",
+                    draftActiveStartYear = artist.activeStartYear ?: "",
+                    draftActiveEndYear = artist.activeEndYear ?: "",
                     )
             }
 
@@ -114,12 +142,43 @@ class ArtistEditViewModel @Inject constructor(
 
     }
 
+    fun onCountryChange(countryCode: String) {
+        val fullName = CountryProvider.allCountries.find { it.code == countryCode }?.name.orEmpty()
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                draftCountryCode = countryCode,
+                draftCountry = fullName
+            )
+        }
+    }
+
     fun onNameChange(newName: String) {
         _uiState.update { it.copy(name = newName) }
     }
 
     fun onBioChange(newBio: String) {
         _uiState.update { it.copy(draftBio = newBio) }
+    }
+
+    fun onHomeCityChange(newCity: String) {
+        _uiState.update { it.copy(draftHomeCity = newCity) }
+    }
+
+    fun onCurrentCityChange(newCity: String) {
+        _uiState.update { it.copy(draftCurrentCity = newCity) }
+    }
+
+    fun onActiveStartYearChange(newStart: String) {
+        _uiState.update { it.copy(draftActiveStartYear = newStart) }
+    }
+
+    fun onActiveEndYearChange(newEnd: String) {
+        _uiState.update { it.copy(draftActiveEndYear = newEnd) }
+    }
+
+    fun onDefunctStatusChange(newStatus: Boolean) {
+        _uiState.update { it.copy(draftIsDefunct = newStatus) }
     }
 
 
@@ -152,7 +211,14 @@ class ArtistEditViewModel @Inject constructor(
 
             val newArtist = currentArtist.copy(
                 bio = _uiState.value.draftBio,
-                image = _uiState.value.draftImageUrl
+                image = _uiState.value.draftImageUrl,
+                homeCity = _uiState.value.draftHomeCity,
+                currentCity = _uiState.value.draftCurrentCity,
+                country = _uiState.value.draftCountry,
+                countryCode = _uiState.value.draftCountryCode,
+                isDefunct = _uiState.value.draftIsDefunct,
+                activeStartYear = _uiState.value.draftActiveStartYear,
+                activeEndYear = _uiState.value.draftActiveEndYear
             )
             artistRepository.update(newArtist)
             if (initialGenres != _uiState.value.draftGenres){
@@ -253,6 +319,13 @@ data class ArtistEditUiState(
     val draftImageUrl: String = "",
     val discogsImages: List<DiscogsImage> = emptyList(),
     val draftGenres: List<String> = emptyList(),
+    val draftCountry: String = "",
+    val draftCountryCode: String = "",
+    val draftHomeCity: String = "",
+    val draftCurrentCity: String = "",
+    val draftActiveStartYear: String = "",
+    val draftActiveEndYear: String = "",
+    val draftIsDefunct: Boolean = false,
     val lastFmBio: String = "",
     val discogsBio: String = "",
     val isSaving: Boolean = false
@@ -264,4 +337,25 @@ sealed class NameEditUiState {
     data class DisambiguationNeeded(val matches: List<ArtistSearchInfo>) : NameEditUiState()
     object Saved : NameEditUiState()
     data class Error(val message: String) : NameEditUiState() // Show toast
+}
+
+data class CountryData(
+    val code: String,
+    val name: String,
+    val flag: String
+)
+
+object CountryProvider {
+    val allCountries: List<CountryData> by lazy {
+        Locale.getISOCountries().map { code ->
+            val locale = Locale.Builder()
+                .setRegion(code)
+                .build();
+            CountryData(
+                code = code,
+                name = locale.displayCountry,
+                flag = getFlagEmoji(code)
+            )
+        }.sortedBy { it.name }
+    }
 }

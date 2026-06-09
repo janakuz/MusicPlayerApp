@@ -12,7 +12,7 @@ fun getFlagEmoji(countryCode: String?): String {
 }
 
 fun Artist.getLifespanDisplay(): String {
-    if (activeStartYear == null && activeEndYear == null) return ""
+    if (activeStartYear.isNullOrEmpty() && activeEndYear.isNullOrEmpty()) return ""
     val start = activeStartYear?.take(4) ?: "Unknown"
     return when {
         isDefunct -> "$start–${activeEndYear?.take(4) ?: "Present"}"
@@ -22,7 +22,7 @@ fun Artist.getLifespanDisplay(): String {
 
 fun Artist.getCountryDisplay(): String {
     var countryDisplay = getFlagEmoji(countryCode)
-    if (homeCity != null){
+    if (!homeCity.isNullOrEmpty()){
         countryDisplay += " ${homeCity},"
     }
     countryDisplay += " ${country ?: ""}"

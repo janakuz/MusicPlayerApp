@@ -26,14 +26,20 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -58,6 +64,7 @@ import coil.compose.AsyncImage
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
+import com.example.musicapp.ui.viewmodels.CountryProvider
 import com.example.musicapp.ui.viewmodels.NameEditUiState
 import kotlin.math.absoluteValue
 
@@ -132,6 +139,76 @@ fun ArtistImagePicker(
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 8.dp)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CountryPicker(
+    selectedCountryCode: String?,
+    onCountrySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val currentSelectionDisplay = remember(selectedCountryCode) {
+        CountryProvider.allCountries.find { it.code == selectedCountryCode }?.let {
+            "${it.flag}  ${it.name}"
+        } ?: ""
+    }
+
+    var searchQuery by remember(currentSelectionDisplay) {
+        mutableStateOf(currentSelectionDisplay)
+    }
+
+    val filteredCountries = remember(searchQuery) {
+        CountryProvider.allCountries.filter { country ->
+            country.name.contains(searchQuery, ignoreCase = true) ||
+                    country.code.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true),
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                expanded = true
+            },
+            label = { Text("Country of Origin") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            singleLine = true
+        )
+
+        if (filteredCountries.isNotEmpty()) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = {
+                    expanded = false
+                    searchQuery = currentSelectionDisplay
+                }
+            ) {
+                filteredCountries.forEach { country ->
+                    DropdownMenuItem(
+                        text = { Text("${country.flag}   ${country.name}") },
+                        onClick = {
+                            searchQuery = "${country.flag}  ${country.name}"
+                            onCountrySelected(country.code)
+                            expanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -343,6 +420,77 @@ fun ArtistEditScreen(
                     )
                 }
 
+                item {
+                    CountryPicker(
+                        selectedCountryCode = artistEditUiState.draftCountryCode,
+                        onCountrySelected = { code -> artistEditViewModel.onCountryChange(code) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = artistEditUiState.draftHomeCity.orEmpty(),
+                            onValueChange = { artistEditViewModel.onHomeCityChange(it) },
+                            label = { Text("Home City") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = artistEditUiState.draftCurrentCity.orEmpty(),
+                            onValueChange = { artistEditViewModel.onCurrentCityChange(it) },
+                            label = { Text("Current City") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                item {
+                    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = artistEditUiState.draftActiveStartYear.orEmpty(),
+                                onValueChange = { artistEditViewModel.onActiveStartYearChange(it) },
+                                label = { Text("Year Formed") },
+                                placeholder = { Text("YYYY") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = artistEditUiState.draftActiveEndYear.orEmpty(),
+                                onValueChange = { artistEditViewModel.onActiveEndYearChange(it) },
+                                label = { Text("Year Disbanded") },
+                                placeholder = { Text("YYYY") },
+                                enabled = artistEditUiState.draftIsDefunct,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (artistEditUiState.draftIsDefunct) "❌ Band is Defunct" else "⚡ Band is Active",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Switch(
+                                checked = artistEditUiState.draftIsDefunct,
+                                onCheckedChange = { isChecked -> artistEditViewModel.onDefunctStatusChange(isChecked) }
+                            )
+                        }
+                    }
+                }
 
                 item {
                     ArtistBioEditor(
