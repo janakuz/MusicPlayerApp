@@ -10,6 +10,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.workDataOf
+import com.example.musicapp.service.ArtistMetadataWorker
 import com.example.musicapp.service.GenresWorker
 import com.example.musicapp.service.MetadataWorker
 import kotlinx.coroutines.flow.Flow
@@ -50,6 +51,30 @@ class WorkerManagerRepositoryImpl(private val workManager: WorkManager) :
         val policy = ExistingWorkPolicy.KEEP
 
         val request = OneTimeWorkRequestBuilder<GenresWorker>()
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                WorkRequest.Companion.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .setInputData(workDataOf("IS_MANUAL_SCAN" to true))
+            .build()
+        workManager.enqueueUniqueWork(
+            "MetadataSync",
+            policy,
+            request
+        )
+    }
+
+    override fun startWorkerArtistMetadata() {
+        val policy = ExistingWorkPolicy.KEEP
+
+        val request = OneTimeWorkRequestBuilder<ArtistMetadataWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(
                 Constraints.Builder()
