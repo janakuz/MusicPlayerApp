@@ -145,7 +145,7 @@ fun ArtistImagePicker(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CountryPicker(
-    selectedCountryCode: String?,
+    selectedCountryCode: String? = null,
     onCountrySelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {

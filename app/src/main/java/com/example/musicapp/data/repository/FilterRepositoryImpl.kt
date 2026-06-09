@@ -42,6 +42,12 @@ class FilterRepositoryImpl(
             conditions.add("g.name in ($genres)")
         }
 
+        if (filter.selectedCountries.isNotEmpty()) {
+            val countries = filter.selectedCountries.joinToString(",") { "?" }
+            bindArgs.addAll(filter.selectedCountries)
+            conditions.add("ar.countryCode in ($countries)")
+        }
+
 
         val baseQuery =
             when (type) {
