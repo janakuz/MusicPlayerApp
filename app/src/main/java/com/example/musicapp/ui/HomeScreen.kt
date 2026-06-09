@@ -73,6 +73,8 @@ import com.example.musicapp.ui.screens.AllArtistsScreen
 import com.example.musicapp.ui.screens.AllTracksScreen
 import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.ArtistView
+import com.example.musicapp.ui.screens.CountriesScreen
+import com.example.musicapp.ui.screens.CountryDetailScreen
 import com.example.musicapp.ui.screens.GenreDetailScreen
 import com.example.musicapp.ui.screens.GenresScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
@@ -102,11 +104,12 @@ enum class HomeScreen(@StringRes val title: Int) {
     NowPLaying(title = R.string.app_name),
     Scan(title = R.string.scan),
     Settings(title = R.string.settings),
-    Genres(title=R.string.genres)
+    Genres(title=R.string.genres),
+    Countries(title = R.string.countries)
 }
 
 enum class LibraryScreen {
-    ARTISTS, ALBUMS, TRACKS, ALBUM_DETAIL, PLAYLISTS, GENRES, OTHER
+    ARTISTS, ALBUMS, TRACKS, ALBUM_DETAIL, PLAYLISTS, GENRES, COUNTRIES, OTHER
 }
 
 fun routeToLibraryScreen(route: String?): LibraryScreen =
@@ -117,6 +120,7 @@ fun routeToLibraryScreen(route: String?): LibraryScreen =
         route?.startsWith("artist/{artistId}") == true -> LibraryScreen.ALBUM_DETAIL
         route?.startsWith(HomeScreen.Playlists.name) == true -> LibraryScreen.PLAYLISTS
         route?.startsWith(HomeScreen.Genres.name) == true -> LibraryScreen.GENRES
+        route?.startsWith(HomeScreen.Countries.name) == true -> LibraryScreen.COUNTRIES
         else -> LibraryScreen.OTHER
     }
 
@@ -127,7 +131,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
-    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Genres)
+    val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Genres,
+        HomeScreen.Countries)
     val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists, HomeScreen.Settings)
 //    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -137,6 +142,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
     var playlistsSort by remember { mutableStateOf<SortOption?>(null) }
     var genresSort by remember { mutableStateOf<SortOption?>(null) }
+    var countriesSort by remember { mutableStateOf<SortOption?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -324,6 +330,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     "artist/{artistId}" -> artistDetailSort = sort
                                     HomeScreen.Playlists.name -> playlistsSort = sort
                                     HomeScreen.Genres.name -> genresSort = sort
+                                    HomeScreen.Countries.name -> countriesSort = sort
                                 }
                             },
                             onImport = {
@@ -487,6 +494,13 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         sortRequest = genresSort)
                 }
 
+                composable(route = HomeScreen.Countries.name) {
+                    CountriesScreen(
+                        onCountryClick = { code -> navController.navigate("country/$code")},
+                        sortRequest = countriesSort
+                    )
+                }
+
                 composable("artist/{artistId}") {
                     ArtistView(
                         onAlbumClick = { album ->
@@ -538,7 +552,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAlbumClick = { id -> navController.navigate("album/$id") },
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
                         onAddToPlaylistArtist = { album ->
-                            playlistViewModel.onAddToPlaylistAlbum(
+                            playlistViewModel.onAddToPlaylistArtist(
                                 album.id
                             )
                         },
@@ -554,6 +568,30 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") },
                         onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
                         )
+                }
+
+                composable("country/{code}") {
+                    CountryDetailScreen(
+                        onArtistClick = { id -> navController.navigate("artist/$id") },
+                        onAlbumClick = { id -> navController.navigate("album/$id") },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onAddToPlaylistArtist = { album ->
+                            playlistViewModel.onAddToPlaylistArtist(
+                                album.id
+                            )
+                        },
+                        onAddToPlaylistAlbum = { album ->
+                            playlistViewModel.onAddToPlaylistAlbum(
+                                album.id
+                            )
+                        },
+                        onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onPlayNextAlbum = { album -> playerViewModel.playNextAlbum(album.id) },
+                        onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onAddToQueueAlbum = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                        onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") },
+                        onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
+                    )
                 }
 
                 composable("album/edit/{albumId}/{source}") { backStackEntry ->
@@ -644,7 +682,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         padding = PaddingValues(0.dp),
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
                         onAddToPlaylistArtist = { album ->
-                            playlistViewModel.onAddToPlaylistAlbum(
+                            playlistViewModel.onAddToPlaylistArtist(
                                 album.id
                             )
                         },

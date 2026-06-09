@@ -12,6 +12,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.CountryInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -106,5 +107,8 @@ interface ArtistDao {
 
     @RawQuery(observedEntities = [Artist::class])
     fun getFilteredArtists(query: SupportSQLiteQuery): Flow<List<Artist>>
+
+
+
 
 }

@@ -9,6 +9,7 @@ import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.AlbumGenreDao
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.ArtistGenreDao
+import com.example.musicapp.data.local.dao.CountryDao
 import com.example.musicapp.data.local.dao.GenreDao
 import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
@@ -60,6 +61,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun playlistTracksDao(): PlaylistTracksDao
     abstract fun artistGenreDao(): ArtistGenreDao
+    abstract fun countryDao(): CountryDao
 
 
 //    companion object {

@@ -1,14 +1,17 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface ArtistRepository {
 
     fun getAllArtists(): Flow<List<Artist>>
+
 
     suspend fun getAll(): List<Artist>
 

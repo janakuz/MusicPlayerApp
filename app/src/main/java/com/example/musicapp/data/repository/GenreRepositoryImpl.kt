@@ -28,7 +28,6 @@ class GenreRepositoryImpl(
     }
 
     override fun getAll(sortBy: SortOption): Flow<List<GenreInfo>> {
-        Log.d("genre sort", sortBy.field.name)
         return when (sortBy.field) {
             SortField.NAME -> genreDao.getAllGenres("name", sortBy.ascending)
             SortField.TOTAL_COUNT -> genreDao.getAllGenres("total", sortBy.ascending)

@@ -16,6 +16,7 @@ import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.AlbumGenreDao
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.ArtistGenreDao
+import com.example.musicapp.data.local.dao.CountryDao
 import com.example.musicapp.data.local.dao.GenreDao
 import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
@@ -39,6 +40,8 @@ import com.example.musicapp.data.repository.ArtistGenreRepository
 import com.example.musicapp.data.repository.ArtistGenreRepositoryImpl
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.ArtistRepositoryImpl
+import com.example.musicapp.data.repository.CountryRepository
+import com.example.musicapp.data.repository.CountryRepositoryImpl
 import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.DynamicThemeRepositoryImpl
 import com.example.musicapp.data.repository.FilterRepository
@@ -499,6 +502,16 @@ object AppModule {
             playlistTracksDao,
             playlistRepository
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideCountryDao(db: AppDatabase): CountryDao = db.countryDao()
+
+    @Provides
+    @Singleton
+    fun provideCountryRepository(countryDao: CountryDao): CountryRepository {
+        return CountryRepositoryImpl(countryDao)
     }
 
 

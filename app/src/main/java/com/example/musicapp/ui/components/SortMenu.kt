@@ -71,6 +71,9 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
             SortField.NAME, SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
         )
 
+        LibraryScreen.COUNTRIES -> listOf(
+            SortField.NAME, SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
+        )
         else -> emptyList()
     }
 
