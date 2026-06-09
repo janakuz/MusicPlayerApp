@@ -56,11 +56,14 @@ import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState
+import com.example.musicapp.util.getCountryDisplay
+import com.example.musicapp.util.getLifespanDisplay
 
 @Composable
 fun ArtistDetailHeader(
     image: String,
     title: String,
+    artist: Artist,
 ) {
 
     Column(
@@ -107,8 +110,22 @@ fun ArtistDetailHeader(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground
         )
+        Spacer(modifier = Modifier.height(8.dp))
+
+
+
+        val subtitle = listOfNotNull(
+            artist.getCountryDisplay(),
+            artist.getLifespanDisplay().takeIf { it.isNotEmpty() }
+        ).joinToString(separator = "  •  ")
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
+
+
 
 
 @Composable
@@ -153,6 +170,7 @@ fun FullArtistHeader(artist: Artist) {
         ArtistDetailHeader(
             image = artist.image.toString(),
             title = artist.name,
+            artist = artist,
         )
         Spacer(modifier = Modifier.height(8.dp))
 
