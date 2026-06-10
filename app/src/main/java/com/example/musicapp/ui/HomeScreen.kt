@@ -179,6 +179,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
     val genreSuggestions by filterViewModel.genreSuggestions.collectAsState()
+    val filterType by filterViewModel.libraryType.collectAsState()
 
 
 
@@ -837,6 +838,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 ) {
                     FilterDrawerContent(
                         draft = draftFilter,
+                        filterType = filterType,
                         potentialAlbumCount = filterAlbumCount,
                         filterDefaults = filterDefaults,
                         labelSuggestions = labelSuggestions,

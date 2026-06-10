@@ -1,12 +1,12 @@
 package com.example.musicapp.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ContextualFlowRow
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -29,8 +29,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -51,19 +54,26 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.example.musicapp.data.repository.DefunctFilterStatus
 import com.example.musicapp.data.repository.FilterLogic
 import com.example.musicapp.data.repository.LibraryFilter
 import com.example.musicapp.ui.HomeScreen
-import com.example.musicapp.ui.screens.CountryPicker
 import com.example.musicapp.ui.screens.GenrePicker
 import com.example.musicapp.ui.viewmodels.CountryProvider
 import com.example.musicapp.ui.viewmodels.FilterDefaults
 import kotlin.math.roundToInt
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import kotlin.math.max
+import kotlin.math.min
 
 
 @Composable
 fun FilterDrawerContent(
     draft: LibraryFilter,
+    filterType: String,
     potentialAlbumCount: Int,
     potentialArtistCount: Int,
     filterDefaults: FilterDefaults,
@@ -79,12 +89,14 @@ fun FilterDrawerContent(
     val dummyFocusRequester = remember { FocusRequester() }
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums)
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val index = if (filterType == "artists") 0 else 1
+    var selectedTabIndex by remember(filterType) { mutableIntStateOf(index) }
 
     Column() {
 
         TabRow(
             selectedTabIndex = selectedTabIndex,
+            modifier = Modifier.fillMaxWidth()
         ) {
             tabs.forEachIndexed { index, screen ->
                 Tab(
@@ -113,7 +125,7 @@ fun FilterDrawerContent(
                     }
             ) {
                 item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                         Text("Match All")
                         Switch(
                             checked = draft.logic == FilterLogic.OR,
@@ -140,7 +152,7 @@ fun FilterDrawerContent(
                         },
                         label = "Genre",
                         titleCase = true,
-                        isFiltering = true
+                        isFiltering = true,
                     )
                 }
 
@@ -153,10 +165,87 @@ fun FilterDrawerContent(
                     )
                 }
 
+
+                item{
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)) {
+                        Text("Band Status", style = MaterialTheme.typography.titleMedium)
+
+                        MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            val options = DefunctFilterStatus.entries.toTypedArray()
+                            options.forEachIndexed { index, status ->
+                                val label = when(status) {
+                                    DefunctFilterStatus.ALL -> "All"
+                                    DefunctFilterStatus.ACTIVE -> "Active Only"
+                                    DefunctFilterStatus.DEFUNCT -> "Defunct Only"
+                                }
+                                SegmentedButton(
+                                    checked = status == draft.defunctStatus,
+                                    onCheckedChange = { onDraftChange(draft.copy(defunctStatus = status)) },
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size)
+                                ) {
+                                    Text(label)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    DateRangeSection(
+                        title = "Years Formed",
+                        savedRanges = draft.artistFormedRanges,
+                        activeRange = draft.activeArtistStartRange,
+                        minYear = filterDefaults.minYearArtists,
+                        maxYear = filterDefaults.maxYearArtists,
+                        interaction = interaction,
+                        onRangeCommitted = { newChipsList ->
+                            onDraftChange(
+                                draft.copy(
+                                    artistFormedRanges = newChipsList,
+                                    activeArtistStartRange = filterDefaults.minYearArtists..filterDefaults.maxYearArtists
+                                )
+                            )
+                        },
+                        onActiveRangeSliderChange = { draggedRange ->
+                            onDraftChange(draft.copy(activeArtistStartRange = draggedRange))
+                        }
+                    )
+                }
+
+                item{
+                    AnimatedVisibility(
+                        visible = draft.defunctStatus == DefunctFilterStatus.DEFUNCT,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        DateRangeSection(
+                            title = "Years Disbanded",
+                            savedRanges = draft.artistEndedRanges,
+                            activeRange = draft.activeArtistEndRange,
+                            minYear = filterDefaults.minYearArtists,
+                            maxYear = filterDefaults.maxYearArtists,
+                            interaction = interaction,
+                            onRangeCommitted = { newChipsList ->
+                                onDraftChange(
+                                    draft.copy(
+                                        artistEndedRanges = newChipsList,
+                                        activeArtistEndRange = filterDefaults.minYearArtists..filterDefaults.maxYearArtists
+                                    )
+                                )
+                            },
+                            onActiveRangeSliderChange = { draggedRange ->
+                                onDraftChange(draft.copy(activeArtistEndRange = draggedRange))
+                            }
+                        )
+
+                    }
+                }
+
+
                 item {
                     Button(
                         onClick = onApply,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
                     ) {
                         Text("Show $potentialArtistCount Results")
                     }
@@ -177,7 +266,7 @@ fun FilterDrawerContent(
                     }
             ) {
                 item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                         Text("Match All")
                         Switch(
                             checked = draft.logic == FilterLogic.OR,
@@ -208,10 +297,23 @@ fun FilterDrawerContent(
 
                 item {
                     DateRangeSection(
-                        draft,
-                        filterDefaults,
-                        interaction,
-                        onDraftChange
+                        title = "Release Years",
+                        savedRanges = draft.dateRanges,
+                        activeRange = draft.activeRange,
+                        minYear = filterDefaults.minYear,
+                        maxYear = filterDefaults.maxYear,
+                        interaction = interaction,
+                        onRangeCommitted = { newChipsList ->
+                            onDraftChange(
+                                draft.copy(
+                                    dateRanges = newChipsList,
+                                    activeRange = filterDefaults.minYear..filterDefaults.maxYear
+                                )
+                            )
+                        },
+                        onActiveRangeSliderChange = { draggedRange ->
+                            onDraftChange(draft.copy(activeRange = draggedRange))
+                        }
                     )
                 }
 
@@ -236,7 +338,7 @@ fun FilterDrawerContent(
                 item {
                     Button(
                         onClick = onApply,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
                     ) {
                         Text("Show $potentialAlbumCount Results")
                     }
@@ -251,19 +353,20 @@ fun FilterDrawerContent(
 
 @Composable
 fun DateRangeSection(
-    draft: LibraryFilter,
-    filterDefaults: FilterDefaults,
+    title: String,
+    savedRanges: List<IntRange>,
+    activeRange: IntRange,
+    minYear: Int,
+    maxYear: Int,
     interaction: MutableInteractionSource,
-    onDraftChange: (LibraryFilter) -> Unit
+    onRangeCommitted: (updatedRanges: List<IntRange>) -> Unit,
+    onActiveRangeSliderChange: (IntRange) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-    ) {
-        Text("Release Years")
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        FlowRow(modifier = Modifier.padding(vertical = 8.dp)) {
 
-        FlowRow {
-            draft.dateRanges.forEach { range ->
+            savedRanges.forEach { range ->
                 InputChip(
                     selected = true,
                     onClick = { /* Maybe edit? */ },
@@ -272,8 +375,8 @@ fun DateRangeSection(
                         Icon(
                             Icons.Default.Close, "Remove",
                             Modifier.clickable {
-                                val newList = draft.dateRanges.filter { it != range }
-                                onDraftChange(draft.copy(dateRanges = newList))
+                                val newList = savedRanges.filter { it != range }
+                                onRangeCommitted(newList)
                             }
                         )
                     }
@@ -281,16 +384,11 @@ fun DateRangeSection(
             }
         }
 
-        DateRangePicker(draft, filterDefaults, interaction, onDraftChange)
+        DateRangePicker(activeRange, minYear, maxYear, interaction, onActiveRangeSliderChange)
 
         IconButton(onClick = {
-            val updatedSaved = draft.dateRanges + listOf<IntRange>(draft.activeRange)
-            onDraftChange(
-                draft.copy(
-                    dateRanges = updatedSaved,
-                    activeRange = filterDefaults.minYear..filterDefaults.maxYear
-                )
-            )
+            val updatedSaved = savedRanges + listOf<IntRange>(activeRange)
+            onRangeCommitted(updatedSaved)
         }) {
             Icon(Icons.Default.Add, "Add another range")
         }
@@ -301,25 +399,26 @@ fun DateRangeSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePicker(
-    draft: LibraryFilter,
-    filterDefaults: FilterDefaults,
+    activeRange: IntRange,
+    minYear: Int,
+    maxYear: Int,
     interaction: MutableInteractionSource,
-    onDraftChange: (LibraryFilter) -> Unit
-) {
+    onRangeChange: (IntRange) -> Unit)
+{
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                text = "From: ${draft.activeRange.first}",
+                text = "From: ${activeRange.first}",
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
-                text = "To: ${draft.activeRange.last}",
+                text = "To: ${activeRange.last}",
                 style = MaterialTheme.typography.labelLarge
             )
         }
 
-        var lastStart by remember(draft.activeRange) { mutableIntStateOf(draft.activeRange.first) }
-        var lastEnd by remember(draft.activeRange) { mutableIntStateOf(draft.activeRange.last) }
+        var lastStart by remember(activeRange) { mutableIntStateOf(activeRange.first) }
+        var lastEnd by remember(activeRange) { mutableIntStateOf(activeRange.last) }
 
         RangeSlider(
             value = lastStart.toFloat()..lastEnd.toFloat(),
@@ -331,7 +430,7 @@ fun DateRangePicker(
                     lastStart = newStart
                     lastEnd = newEnd
 
-                    onDraftChange(draft.copy(activeRange = newStart..newEnd))
+                    onRangeChange(newStart..newEnd)
                 }
             },
             startInteractionSource = interaction,
@@ -342,8 +441,8 @@ fun DateRangePicker(
                         change.consume()
                     }
                 },
-            valueRange = filterDefaults.minYear.toFloat()..filterDefaults.maxYear.toFloat(),
-            steps = (filterDefaults.maxYear - filterDefaults.minYear) - 1
+            valueRange = minYear.toFloat()..maxYear.toFloat(),
+            steps = (maxYear - minYear) - 1
         )
     }
 }
@@ -387,7 +486,7 @@ fun MultiCountryPicker(
                 dummyFocusRequester.requestFocus()
             }
     ) {
-        Text("Countries", style = MaterialTheme.typography.labelMedium)
+        Text("Countries", style = MaterialTheme.typography.titleMedium)
 
         FlowRow(
             modifier = Modifier.padding(vertical = 8.dp),

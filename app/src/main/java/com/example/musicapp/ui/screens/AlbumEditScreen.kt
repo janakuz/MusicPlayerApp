@@ -202,7 +202,7 @@ fun GenrePicker(
                 dummyFocusRequester.requestFocus()
             }
     ) {
-        Text("${label}s", style = MaterialTheme.typography.labelMedium)
+        Text("${label}s", style = if (isFiltering) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium)
 
         FlowRow(
             modifier = Modifier.padding(vertical = 8.dp),

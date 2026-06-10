@@ -136,10 +136,10 @@ interface AlbumDao {
     @RawQuery(observedEntities = [Album::class])
     fun getFilteredAlbums(query: SupportSQLiteQuery): Flow<List<AlbumInfo>>
 
-    @Query("SELECT MIN(releaseDate) FROM albums WHERE releaseDate > 0")
+    @Query("SELECT MIN(CAST(SUBSTR(releaseDate, 1, 4) AS INTEGER)) FROM albums WHERE releaseDate > 0 AND releaseDate IS NOT NULL AND releaseDate != ''")
     fun getMinYear(): Flow<Int>
 
-    @Query("SELECT MAX(releaseDate) FROM albums WHERE releaseDate > 0")
+    @Query("SELECT MAX(CAST(SUBSTR(releaseDate, 1, 4) AS INTEGER)) FROM albums WHERE releaseDate > 0 AND releaseDate IS NOT NULL AND releaseDate != ''")
     fun getMaxYear(): Flow<Int>
 
     @Query("SELECT DISTINCT label FROM albums WHERE label IS NOT NULL AND label != '' ORDER BY label ASC")

@@ -48,6 +48,32 @@ class FilterRepositoryImpl(
             conditions.add("ar.countryCode in ($countries)")
         }
 
+        when (filter.defunctStatus) {
+            DefunctFilterStatus.ALL -> {}
+            DefunctFilterStatus.ACTIVE -> {conditions.add("ar.isDefunct = false")}
+            DefunctFilterStatus.DEFUNCT -> {conditions.add("ar.isDefunct = true")}
+        }
+
+
+        if (filter.artistFormedRanges.isNotEmpty()) {
+            val rangeClauses = filter.artistFormedRanges.map { range ->
+                bindArgs.add(range.first)
+                bindArgs.add(range.last)
+                "(ar.activeStartYear BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+
+        if (filter.artistEndedRanges.isNotEmpty()) {
+            val rangeClauses = filter.artistEndedRanges.map { range ->
+                bindArgs.add(range.first)
+                bindArgs.add(range.last)
+                "(ar.activeEndYear BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
 
         val baseQuery =
             when (type) {
@@ -95,6 +121,14 @@ class FilterRepositoryImpl(
 
     override fun getMaxYear(): Flow<Int> {
         return albumDao.getMaxYear()
+    }
+
+    override fun getMinYearArtists(): Flow<Int> {
+        return artistDao.getMinYear()
+    }
+
+    override fun getMaxYearArtists(): Flow<Int> {
+        return artistDao.getMaxYear()
     }
 
     override fun getAllLabels(): Flow<List<String>> {

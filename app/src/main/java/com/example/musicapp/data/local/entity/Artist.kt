@@ -31,3 +31,4 @@ data class Artist(
     @ColumnInfo(defaultValue = "0")
     val isDefunct: Boolean = false
 )
+//TODO: add option to use home city or current city. add subdivisions. map country from code.

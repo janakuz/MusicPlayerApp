@@ -108,7 +108,20 @@ interface ArtistDao {
     @RawQuery(observedEntities = [Artist::class])
     fun getFilteredArtists(query: SupportSQLiteQuery): Flow<List<Artist>>
 
+    @Query(" SELECT MIN(CAST(SUBSTR(activeStartYear, 1, 4) AS INTEGER)) FROM artists WHERE activeStartYear > 0 and activeStartYear IS NOT NULL")
+    fun getMinYear(): Flow<Int>
 
 
+    @Query("""
+    SELECT 
+        MAX(
+            CASE 
+                WHEN activeEndYear IS NULL THEN 2026 
+                ELSE CAST(SUBSTR(activeEndYear, 1, 4) AS INTEGER) 
+            END
+        )
+    FROM artists
+    """)
+    fun getMaxYear(): Flow<Int>
 
 }
