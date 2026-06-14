@@ -3,7 +3,7 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musicapp.data.repository.CountryRepository
+import com.example.musicapp.data.repository.AreaRepository
 import com.example.musicapp.data.repository.SearchResult
 import com.example.musicapp.util.getFlagEmoji
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CountryDetailViewModel@Inject constructor (
-    countryRepository: CountryRepository,
+    areaRepository: AreaRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel()  {
 
@@ -22,7 +22,7 @@ class CountryDetailViewModel@Inject constructor (
         ?: throw IllegalStateException("country code not found in SavedStateHandle")
 
 
-    val countryItems = countryRepository.getCountryArtistsAndAlbums(countryCode)
+    val countryItems = areaRepository.getCountryArtistsAndAlbums(countryCode)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchResult())
 
     val countryName = "${getFlagEmoji(countryCode)} ${Locale.Builder().setRegion(countryCode).build().displayCountry}"

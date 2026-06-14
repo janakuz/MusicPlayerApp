@@ -3,9 +3,7 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.model.CountryInfo
-import com.example.musicapp.data.local.model.GenreInfo
-import com.example.musicapp.data.repository.ArtistRepository
-import com.example.musicapp.data.repository.CountryRepository
+import com.example.musicapp.data.repository.AreaRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,14 +17,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CountriesDashboardViewModel @Inject constructor(
-    private val countryRepository: CountryRepository,
+    private val areaRepository: AreaRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
 
     )  : ViewModel(){
     @OptIn(ExperimentalCoroutinesApi::class)
     val countriesWithCounts: StateFlow<List<CountryInfo>> = userPreferencesRepository.countriesSortOption
         .flatMapLatest { option ->
-            countryRepository.getCountriesDashboardInfo(option)
+            areaRepository.getCountriesDashboardInfo(option)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

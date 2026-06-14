@@ -25,6 +25,7 @@ data class Artist(
     val country: String? = null,
     val countryCode: String? = null,
     val homeCity: String? = null,
+    val homeAreaGid: String? = null,
     val currentCity: String? = null,
     val activeStartYear: String? = null,
     val activeEndYear: String? = null,

@@ -4,7 +4,7 @@ import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
-interface CountryRepository {
+interface AreaRepository {
 
     fun getCountriesDashboardInfo(sortBy: SortOption): Flow<List<CountryInfo>>
 

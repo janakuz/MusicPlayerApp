@@ -8,7 +8,7 @@ import com.example.musicapp.data.local.model.CountryInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface CountryDao {
+interface AreaDao {
     @Query("""
     SELECT 
         a.countryCode AS countryCode,
