@@ -1,6 +1,7 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
@@ -20,6 +21,8 @@ interface ArtistRepository {
     fun getAllArtistsSorted(ascending: Boolean): Flow<List<Artist>>
 
     fun getArtist(id: Int): Flow<Artist>
+
+    fun getArtistWithArea(id: Int): Flow<ArtistWithArea>
 
     suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int
 

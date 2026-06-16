@@ -23,8 +23,6 @@ data class AreaHierarchy(
     val gid: String,
     val city: String?,
     @ColumnInfo(name = "city_name") val cityName: String?,
-    val municipality: String?,
-    @ColumnInfo(name = "municipality_name") val municipalityName: String?,
     val county: String?,
     @ColumnInfo(name = "county_name") val countyName: String?,
     val state: String?,

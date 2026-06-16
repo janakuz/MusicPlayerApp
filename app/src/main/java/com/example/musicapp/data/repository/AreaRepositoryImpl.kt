@@ -1,7 +1,9 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.dao.AreaDao
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.model.CountryInfo
+import com.example.musicapp.data.local.model.FullArea
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
@@ -28,5 +30,16 @@ class AreaRepositoryImpl(
                 artists, albums ->
             SearchResult(artists, albums)
         }
+    }
+
+    override fun findCity(city: String): Flow<List<AreaHierarchy>> {
+        val tokens = city.split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+
+        val widerArea = if (tokens.size > 1) tokens[1] else null
+        val specificArea = if (tokens.isNotEmpty()) tokens[0] else city
+
+        return areaDao.findCity(specificArea, widerArea)
     }
 }

@@ -49,7 +49,7 @@ fun ScanLibraryScreen(
     //TEMP BUTTON
 //    val context = LocalContext.current
 //    Button(
-//        onClick = { viewModel.backfillArtistMetadata(context) },
+//        onClick = { viewModel.backfillArtistArea(context) },
 //        modifier = Modifier.fillMaxWidth(),
 //        contentPadding = PaddingValues(vertical = 16.dp),
 //        shape = RoundedCornerShape(16.dp)

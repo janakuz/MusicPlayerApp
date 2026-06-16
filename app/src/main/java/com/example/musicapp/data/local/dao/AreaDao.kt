@@ -2,9 +2,11 @@ package com.example.musicapp.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.CountryInfo
+import com.example.musicapp.data.local.model.FullArea
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -52,5 +54,20 @@ interface AreaDao {
             """
     )
     fun getCountryAlbums(countryCode: String): Flow<List<AlbumInfo>>
+
+
+    @Query("""
+        SELECT *
+        FROM area_hierarchy 
+        WHERE city_name LIKE :city || '%' AND (:widerArea IS NULL OR
+        county_name LIKE :widerArea || '%' OR
+        state_name LIKE :widerArea || '%' OR
+        country_name LIKE :widerArea || '%'
+        ) OR 
+        :widerArea IS NULL AND  state_name LIKE :city || '%'
+
+--OR county_name LIKE :city || '%' OR state_name LIKE :city || '%'
+    """)
+    fun findCity(city: String, widerArea: String? = null): Flow<List<AreaHierarchy>>
 
 }

@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
@@ -47,6 +48,10 @@ class ArtistRepositoryImpl(
 
     override fun getArtist(id: Int): Flow<Artist> {
         return artistDao.getArtist(id)
+    }
+
+    override fun getArtistWithArea(id: Int): Flow<ArtistWithArea> {
+        return artistDao.getArtistWithArea(id)
     }
 
     override suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int {

@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import java.util.Locale
 import kotlin.collections.orEmpty
 import kotlin.math.min
 
@@ -199,8 +200,9 @@ class OfflineMetadataRepository(
                         enrichmentAttempted = true,
                         isEnriched = true,
                         countryCode = mbArtist.country,
-                        country = mbArtist.area?.name,
+                        country = Locale.Builder().setRegion(mbArtist.country).build().displayCountry,
                         homeCity = mbArtist.beginArea?.name,
+                        homeAreaGid = mbArtist.beginArea?.id,
                         activeStartYear = mbArtist.lifeSpan?.begin,
                         activeEndYear = mbArtist.lifeSpan?.end,
                         isDefunct = mbArtist.lifeSpan?.ended == true
@@ -214,8 +216,9 @@ class OfflineMetadataRepository(
                         enrichmentAttempted = true,
                         isEnriched = true,
                         countryCode = mbArtist.country,
-                        country = mbArtist.area?.name,
+                        country = Locale.Builder().setRegion(mbArtist.country).build().displayCountry,
                         homeCity = mbArtist.beginArea?.name,
+                        homeAreaGid = mbArtist.beginArea?.id,
                         activeStartYear = mbArtist.lifeSpan?.begin,
                         activeEndYear = mbArtist.lifeSpan?.end,
                         isDefunct = mbArtist.lifeSpan?.ended == true
@@ -735,6 +738,35 @@ class OfflineMetadataRepository(
                     activeStartYear = mbArtist.lifeSpan?.begin,
                     activeEndYear = mbArtist.lifeSpan?.end,
                     isDefunct = mbArtist.lifeSpan?.ended == true
+                )
+                artistRepository.update(updatedArtist)
+                delay(1000)
+            }
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = artist.name
+            )
+
+            emit(progress)
+
+            current++
+        }
+    }
+
+    override suspend fun backfillAreas(): Flow<ScanProgress> = flow {
+        val allArtists = artistRepository.getAll()
+        var current = 0
+        val total = allArtists.size
+
+        for (artist in allArtists){
+            if (artist.mbId != null){
+                val mbArtist = artistRepository.getArtistMusicbrainzInfo(artist.mbId)
+                val updatedArtist = artist.copy(
+                    countryCode = mbArtist.country,
+                    country = Locale.Builder().setRegion(mbArtist.country).build().displayCountry,
+                    homeCity = mbArtist.beginArea?.name,
+                    homeAreaGid = mbArtist.beginArea?.id
                 )
                 artistRepository.update(updatedArtist)
                 delay(1000)

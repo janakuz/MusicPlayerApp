@@ -68,4 +68,9 @@ private fun levenshtein(s1: String, s2: String): Int {
 }
 
 
+fun String?.isTrulyBlank(): Boolean {
+    if (this == null) return true
+    return this.isEmpty() || this.matches(Regex("^[\\s\\p{Z}\\x00-\\x1F\\x7F]*$"))
+}
+
 

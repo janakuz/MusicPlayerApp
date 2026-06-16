@@ -10,6 +10,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.workDataOf
+import com.example.musicapp.service.ArtistAreaWorker
 import com.example.musicapp.service.ArtistMetadataWorker
 import com.example.musicapp.service.GenresWorker
 import com.example.musicapp.service.MetadataWorker
@@ -95,6 +96,30 @@ class WorkerManagerRepositoryImpl(private val workManager: WorkManager) :
         )
     }
 
+
+    override fun startWorkerArtistArea() {
+        val policy = ExistingWorkPolicy.KEEP
+
+        val request = OneTimeWorkRequestBuilder<ArtistAreaWorker>()
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                WorkRequest.Companion.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .setInputData(workDataOf("IS_MANUAL_SCAN" to true))
+            .build()
+        workManager.enqueueUniqueWork(
+            "MetadataSync",
+            policy,
+            request
+        )
+    }
 
     override fun getEnrichmentProgress(): Flow<WorkInfo?> {
         return workManager

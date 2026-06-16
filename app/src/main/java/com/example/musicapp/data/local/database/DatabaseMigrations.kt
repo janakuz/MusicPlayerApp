@@ -289,7 +289,7 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
     }
 }
 
-class MIGRATION_17_18(private val context: Context) : Migration(17, 18) {
+val MIGRATION_17_18 = object : Migration(17, 18) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE artists ADD COLUMN homeAreaGid TEXT")
 
@@ -332,9 +332,14 @@ class MIGRATION_17_18(private val context: Context) : Migration(17, 18) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_l_area_area_entity1` ON `l_area_area` (`entity1`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_area_hierarchy_gid` ON `area_hierarchy` (`gid`)")
 
-//        populateMetadataFromAsset(context, db)
+    }
 
+}
 
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE area_hierarchy DROP COLUMN municipality")
+        db.execSQL("ALTER TABLE area_hierarchy DROP COLUMN municipality_name")
     }
 }
 
@@ -353,7 +358,8 @@ fun getAllMigrations(context: Context): Array<Migration> {
         MIGRATION_14_15,
         MIGRATION_15_16,
         MIGRATION_16_17,
-        MIGRATION_17_18(context)
+        MIGRATION_17_18,
+        MIGRATION_18_19
     )
 }
 
@@ -377,7 +383,7 @@ fun populateMetadataFromAsset(context: Context, db: SupportSQLiteDatabase) {
         db.execSQL("INSERT INTO area (id, gid, name, type) SELECT * FROM temp_db.area;")
         db.execSQL("INSERT INTO l_area_area (id, entity0, entity1) SELECT * FROM temp_db.l_area_area;")
 
-        db.execSQL("INSERT INTO area_hierarchy (gid, city, city_name, municipality, municipality_name, county, county_name, state, state_name, country, country_name) SELECT gid, city, city_name, municipality, municipality_name, county, county_name, state, state_name, country, country_name FROM temp_db.denormalized;")
+        db.execSQL("INSERT INTO area_hierarchy (gid, city, city_name, county, county_name, state, state_name, country, country_name) SELECT gid, city, city_name, county, county_name, state, state_name, country, country_name FROM temp_db.area_hierarchy;")
 
         db.execSQL("DETACH DATABASE temp_db;")
         db.execSQL("PRAGMA writable_schema = OFF;")

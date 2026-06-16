@@ -12,6 +12,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import kotlinx.coroutines.flow.Flow
 
@@ -53,6 +54,14 @@ interface ArtistDao {
 
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
+
+    @Query("SELECT a.*, ah.city_name as area_city, ah.county_name as area_county, " +
+            "ah.state_name as area_state, ah.country_name as area_country " +
+            "FROM artists a " +
+            "LEFT JOIN area_hierarchy ah ON a.homeAreaGid=ah.gid " +
+            "WHERE a.id=:id")
+    fun getArtistWithArea(id: Int): Flow<ArtistWithArea>
+
 
     @Query("SELECT * FROM artists where LOWER(searchKey)=LOWER(:name)")
     suspend fun getArtistByName(name: String): List<Artist>
