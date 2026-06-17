@@ -74,6 +74,12 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         LibraryScreen.COUNTRIES -> listOf(
             SortField.NAME, SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
         )
+
+
+        LibraryScreen.AREAS -> listOf(
+            SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
+        )
+
         else -> emptyList()
     }
 
@@ -85,26 +91,28 @@ fun SortMenu(
 ) {
 
     availableSortFields(screen).forEach { field ->
-        DropdownMenuItem(
-            text = {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        "Sort by ${
-                            field.name.lowercase().replace("_", " ")
-                                .replaceFirstChar { it.uppercase() }
-                        } "
-                    )
-                    Icon(
-                        Icons.Default.ArrowUpward,
-                        contentDescription = "ASC",
-                        modifier = Modifier.size(16.dp),
-                    )
+        if (screen != LibraryScreen.AREAS) {
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            "Sort by ${
+                                field.name.lowercase().replace("_", " ")
+                                    .replaceFirstChar { it.uppercase() }
+                            } "
+                        )
+                        Icon(
+                            Icons.Default.ArrowUpward,
+                            contentDescription = "ASC",
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                },
+                onClick = {
+                    onSortSelected(SortOption(field, ascending = true))
                 }
-            },
-            onClick = {
-                onSortSelected(SortOption(field, ascending = true))
-            }
-        )
+            )
+        }
         DropdownMenuItem(
             text = {
                 Row(verticalAlignment = Alignment.Bottom) {

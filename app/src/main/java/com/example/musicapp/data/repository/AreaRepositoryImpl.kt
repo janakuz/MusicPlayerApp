@@ -1,7 +1,9 @@
 package com.example.musicapp.data.repository
 
+import android.util.Log
 import com.example.musicapp.data.local.dao.AreaDao
 import com.example.musicapp.data.local.entity.AreaHierarchy
+import com.example.musicapp.data.local.model.AreaInfo
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.local.model.FullArea
 import com.example.musicapp.ui.components.SortField
@@ -41,5 +43,54 @@ class AreaRepositoryImpl(
         val specificArea = if (tokens.isNotEmpty()) tokens[0] else city
 
         return areaDao.findCity(specificArea, widerArea)
+    }
+
+    override fun getAreaDashboard(sortBy: SortOption, limit: Int): Flow<List<AreaInfo>> {
+        return when(sortBy.field) {
+            SortField.TOTAL_COUNT -> areaDao.getMostRepresentedAreas("total", limit)
+            SortField.ARTIST_COUNT -> areaDao.getMostRepresentedAreas("artistCount", limit)
+            SortField.ALBUM_COUNT -> areaDao.getMostRepresentedAreas("albumCount", limit)
+            else -> areaDao.getMostRepresentedAreas("total", limit)
+        }
+    }
+
+    override fun getArtistsFromArea(
+        gid: String,
+        countryCode: String,
+        type: AreaType
+    ): Flow<SearchResult> {
+        Log.d("area", type.name)
+        val artistsFlow =
+            when(type){
+                AreaType.CITY -> areaDao.getArtistsFromCity(gid)
+                AreaType.COUNTY -> areaDao.getArtistsFromCounty(gid)
+                AreaType.STATE -> areaDao.getArtistsFromState(gid)
+                AreaType.COUNTRY -> areaDao.getCountryArtists(countryCode)
+            }
+
+
+        val albumsFlow =
+            when(type){
+                AreaType.CITY -> areaDao.getCityAlbums(gid)
+                AreaType.COUNTY -> areaDao.getCountyAlbums(gid)
+                AreaType.STATE -> areaDao.getStateAlbums(gid)
+                AreaType.COUNTRY -> areaDao.getCountyAlbums(countryCode)
+            }
+
+        return combine(
+            artistsFlow,
+            albumsFlow
+        ) {
+                artists, albums ->
+            SearchResult(artists, albums)
+        }
+    }
+
+    override suspend fun getAreaName(gid: String): String {
+        return areaDao.getAreaName(gid)
+    }
+
+    override suspend fun getAreaHierarchy(gid: String): FullArea {
+        return areaDao.getAreaHierarchy(gid)
     }
 }

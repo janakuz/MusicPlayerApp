@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CountryDetailViewModel@Inject constructor (
-    areaRepository: AreaRepository,
+    private val areaRepository: AreaRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel()  {
 

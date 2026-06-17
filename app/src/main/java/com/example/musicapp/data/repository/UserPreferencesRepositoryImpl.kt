@@ -35,6 +35,8 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         val COUNTRIES_SORT_FIELD = stringPreferencesKey("countries_sort_field")
         val COUNTRIES_SORT_ASC = booleanPreferencesKey("countries_sort_ascending")
 
+        val AREA_SORT_FIELD = stringPreferencesKey("area_sort_field")
+
         val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
     }
 
@@ -90,6 +92,12 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         )
     }.distinctUntilChanged()
 
+    override val areaSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+        SortOption(
+            field = SortField.valueOf(prefs[AREA_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
+            ascending = false
+        )
+    }.distinctUntilChanged()
 
 
     override val skipSilenceToggle: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -144,6 +152,13 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
             prefs[COUNTRIES_SORT_ASC] = option.ascending
         }
     }
+
+    override suspend fun updateAreaSort(option: SortOption) {
+        dataStore.edit { prefs ->
+            prefs[AREA_SORT_FIELD] = option.field.name
+        }
+    }
+
 
     override suspend fun updateSkipSilence(enabled: Boolean) {
         dataStore.edit { prefs ->

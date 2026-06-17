@@ -74,8 +74,9 @@ fun CountryCard(
     code: String,
     artistCount: Int,
     albumCount: Int,
-    onClick: () -> Unit
-) {
+    onClick: () -> Unit,
+    flag: String? = null,
+    ) {
     val dynamicColor = remember(name) {
         val hash = name.hashCode()
         val r = (hash and 0xFF0000 shr 16) * 120 / 255
@@ -98,7 +99,7 @@ fun CountryCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "${getFlagEmoji(code)} ${name.toTitleCase()}",
+                text = "${flag ?: getFlagEmoji(code)} ${name.toTitleCase()}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                 color = Color.White,
                 maxLines = 1,

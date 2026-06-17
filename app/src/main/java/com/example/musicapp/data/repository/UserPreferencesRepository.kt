@@ -12,6 +12,7 @@ interface UserPreferencesRepository {
     val playlistsSortOption: Flow<SortOption>
     val genresSortOption: Flow<SortOption>
     val countriesSortOption: Flow<SortOption>
+    val areaSortOption: Flow<SortOption>
 
     val skipSilenceToggle: Flow<Boolean>
 
@@ -22,6 +23,7 @@ interface UserPreferencesRepository {
     suspend fun updatePlaylistsSort(option: SortOption)
     suspend fun updateGenresSort(option: SortOption)
     suspend fun updateCountrySort(option: SortOption)
+    suspend fun updateAreaSort(option: SortOption)
 
     suspend fun updateSkipSilence(enabled: Boolean)
 
