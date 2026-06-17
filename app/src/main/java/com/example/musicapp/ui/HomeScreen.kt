@@ -522,7 +522,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onLabelClick = { name ->
                             val safeName = URLEncoder.encode(name, StandardCharsets.UTF_8.name())
                             navController.navigate("label/$safeName")},
-                        sortRequest = countriesSort
+                        sortRequest = labelsSort
                     )
                 }
 
