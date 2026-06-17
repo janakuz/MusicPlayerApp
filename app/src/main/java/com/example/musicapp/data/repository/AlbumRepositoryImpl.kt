@@ -5,6 +5,7 @@ import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.LabelInfo
 import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
 import com.example.musicapp.data.remote.dto.ReleaseGroupMB
@@ -17,6 +18,7 @@ import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 class AlbumRepositoryImpl(
     private val albumDao: AlbumDao,
@@ -55,6 +57,26 @@ class AlbumRepositoryImpl(
 
     override fun getAlbum(id: Int): Flow<Album> =
         albumDao.getAlbum(id)
+
+    override fun getTopLabels(orderBy: SortOption): Flow<List<LabelInfo>> {
+        return when (orderBy.field){
+            SortField.TOTAL_COUNT -> albumDao.getMostRepresentedLabels("total")
+            SortField.ARTIST_COUNT -> albumDao.getMostRepresentedLabels("artistCount")
+            SortField.ALBUM_COUNT -> albumDao.getMostRepresentedLabels("albumCount")
+            else -> albumDao.getMostRepresentedLabels("total")
+        }
+    }
+
+    override fun getLabelItems(label: String): Flow<SearchResult> {
+        return combine(
+            albumDao.getLabelArtists(label),
+            albumDao.getLabelAlbums(label)
+        ) {
+                artists, albums ->
+            SearchResult(artists, albums)
+        }
+
+    }
 
     override suspend fun getAll(): List<Album> {
         return albumDao.getAll()

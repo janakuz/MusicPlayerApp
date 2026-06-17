@@ -19,5 +19,6 @@
     <string name="genres">Genres</string>
     <string name="countries">Countries</string>
     <string name="areas">Areas</string>
+    <string name="labels">Labels</string>
 
 </resources>

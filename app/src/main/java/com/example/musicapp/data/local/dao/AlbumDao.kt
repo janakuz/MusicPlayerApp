@@ -9,7 +9,10 @@ import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.GenreInfo
+import com.example.musicapp.data.local.model.LabelInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -147,4 +150,42 @@ interface AlbumDao {
 
     @Query("SELECT DISTINCT label FROM albums WHERE label LIKE '%' || :searchString || '%'")
     fun findLabel(searchString: String): Flow<List<String>>
+
+    @Query("""SELECT label, COUNT(DISTINCT aa.artistId) as artistCount, COUNT(DISTINCT aa.albumId) as albumCount 
+            FROM albums al 
+            LEFT JOIN album_artists aa ON aa.albumId=al.id 
+            WHERE label IS NOT NULL and label NOT IN ("", "[no label]")
+            GROUP BY label
+            ORDER BY
+                CASE WHEN :sortBy = 'total' THEN artistCount+albumCount END DESC,
+                CASE WHEN :sortBy = 'artistCount' THEN artistCount END DESC,
+                CASE WHEN :sortBy = 'albumCount' THEN albumCount END DESC
+            LIMIT :limit
+            """
+    )
+    fun getMostRepresentedLabels(sortBy: String, limit: Int = 20): Flow<List<LabelInfo>>
+
+    @Query(
+        """
+            SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks
+            FROM albums al
+            JOIN album_artists aa ON al.id=aa.albumId
+            JOIN artists ar on ar.id=aa.artistId
+            WHERE al.label=:label
+            GROUP BY al.id
+            """
+    )
+    fun getLabelAlbums(label: String): Flow<List<AlbumInfo>>
+
+    @Query(
+        """
+            SELECT ar.*
+            FROM albums al
+            JOIN album_artists aa ON al.id=aa.albumId
+            JOIN artists ar on ar.id=aa.artistId
+            WHERE al.label=:label
+            GROUP BY ar.id
+            """
+    )
+    fun getLabelArtists(label: String): Flow<List<Artist>>
 }

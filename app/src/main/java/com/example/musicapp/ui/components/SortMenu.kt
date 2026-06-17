@@ -80,6 +80,10 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
             SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
         )
 
+        LibraryScreen.LABELS -> listOf(
+            SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
+        )
+
         else -> emptyList()
     }
 
@@ -91,7 +95,7 @@ fun SortMenu(
 ) {
 
     availableSortFields(screen).forEach { field ->
-        if (screen != LibraryScreen.AREAS) {
+        if (screen != LibraryScreen.AREAS && screen != LibraryScreen.LABELS) {
             DropdownMenuItem(
                 text = {
                     Row(verticalAlignment = Alignment.Bottom) {

@@ -12,22 +12,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.components.SortOption
-import com.example.musicapp.ui.viewmodels.AreaDashboardViewModel
-import com.example.musicapp.util.getFlagEmoji
+import com.example.musicapp.ui.viewmodels.LabelsDashboardViewModel
 
 @Composable
-fun AreasScreen(
-    onAreaClick: (String, String, String) -> Unit,
+fun LabelsScreen(
+    onLabelClick: (String) -> Unit,
     sortRequest: SortOption?,
-) {
-    val areaDashboardViewModel: AreaDashboardViewModel = hiltViewModel()
-    val areasList by areaDashboardViewModel.areasWithCounts.collectAsState()
 
-    val visibleAreas = areasList.filter { it.artistCount > 0 || it.albumCount > 0 }
+    ) {
+    val labelsDashboardViewModel: LabelsDashboardViewModel = hiltViewModel()
+    val labelsList by labelsDashboardViewModel.labelsWithCounts.collectAsState()
+
+    val visibleLabels = labelsList.filter { it.artistCount > 0 || it.albumCount > 0 }
 
     LaunchedEffect(sortRequest) {
         sortRequest?.let {
-            areaDashboardViewModel.setSort(it)
+            labelsDashboardViewModel.setSort(it)
         }
     }
 
@@ -38,16 +38,12 @@ fun AreasScreen(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(visibleAreas) { item ->
-            val flag = getFlagEmoji(item.countryCode, item.stateName)
-
-            CountryCard(
-                name = item.areaName,
+        items(visibleLabels) { item ->
+            GenreCard(
+                genreName = item.label,
                 artistCount = item.artistCount,
                 albumCount = item.albumCount,
-                onClick = { onAreaClick(item.areaGid, item.countryCode, item.areaType) },
-                code = item.countryCode,
-                flag = flag
+                onClick = { onLabelClick(item.label) }
             ) }
     }
 }

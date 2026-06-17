@@ -3,6 +3,8 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.model.CountryInfo
+import com.example.musicapp.data.local.model.LabelInfo
+import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.AreaRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortOption
@@ -16,20 +18,20 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CountriesDashboardViewModel @Inject constructor(
-    private val areaRepository: AreaRepository,
+class LabelsDashboardViewModel @Inject constructor(
+    private val albumRepository: AlbumRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    )  : ViewModel(){
+)  : ViewModel(){
     @OptIn(ExperimentalCoroutinesApi::class)
-    val countriesWithCounts: StateFlow<List<CountryInfo>> = userPreferencesRepository.countriesSortOption
+    val labelsWithCounts: StateFlow<List<LabelInfo>> = userPreferencesRepository.labelSortOption
         .flatMapLatest { option ->
-            areaRepository.getCountriesDashboardInfo(option)
+            albumRepository.getTopLabels(option)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setSort(option: SortOption) {
         viewModelScope.launch {
-            userPreferencesRepository.updateCountrySort(option)
+            userPreferencesRepository.updateLabelSort(option)
         }
     }
 }

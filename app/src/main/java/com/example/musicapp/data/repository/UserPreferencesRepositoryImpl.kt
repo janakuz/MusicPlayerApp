@@ -37,6 +37,8 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
 
         val AREA_SORT_FIELD = stringPreferencesKey("area_sort_field")
 
+        val LABEL_SORT_FIELD = stringPreferencesKey("label_sort_field")
+
         val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
     }
 
@@ -99,10 +101,18 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         )
     }.distinctUntilChanged()
 
+    override val labelSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+        SortOption(
+            field = SortField.valueOf(prefs[LABEL_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
+            ascending = false
+        )
+    }.distinctUntilChanged()
+
 
     override val skipSilenceToggle: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[SKIP_SILENCE] ?: false
     }.distinctUntilChanged()
+
 
     override suspend fun updateArtistSort(option: SortOption) {
         dataStore.edit { prefs ->
@@ -156,6 +166,13 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
     override suspend fun updateAreaSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[AREA_SORT_FIELD] = option.field.name
+        }
+    }
+
+
+    override suspend fun updateLabelSort(option: SortOption) {
+        dataStore.edit { prefs ->
+            prefs[LABEL_SORT_FIELD] = option.field.name
         }
     }
 
