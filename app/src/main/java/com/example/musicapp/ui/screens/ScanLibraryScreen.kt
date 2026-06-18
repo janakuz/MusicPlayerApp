@@ -45,6 +45,27 @@ fun ScanLibraryScreen(
     val uiState by viewModel.uiState.collectAsState()
     val workflowState by viewModel.workflowState.collectAsState()
 
+
+    //TEMP BUTTON
+//    val context = LocalContext.current
+//    Button(
+//        onClick = { viewModel.backfillArtistArea(context) },
+//        modifier = Modifier.fillMaxWidth(),
+//        contentPadding = PaddingValues(vertical = 16.dp),
+//        shape = RoundedCornerShape(16.dp)
+//    ) {
+//        Text("Start Import")
+//    }
+//
+//    LinearProgressIndicator(
+//        progress = { uiState.enrichmentProgress },
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(8.dp)
+//            .clip(CircleShape)
+//    )
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()

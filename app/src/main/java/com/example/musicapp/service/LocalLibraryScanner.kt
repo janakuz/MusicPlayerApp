@@ -272,7 +272,7 @@ class LocalLibraryScanner @Inject constructor(
                     val genreString = entry.genres
                     val filePath = entry.filePath
 
-                    val genres = genreString?.split("""\s*[;,/]\s*""".toRegex()).orEmpty().filter { it.isNotEmpty() }
+                    val genres = genreString?.split("""\s*[;,]\s*""".toRegex()).orEmpty().filter { it.isNotEmpty() }
 
 
                     val existing = trackRepository.getTrackByUri(trackUri)

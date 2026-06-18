@@ -20,20 +20,28 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -48,18 +56,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.musicapp.data.local.entity.AreaHierarchy
+import com.example.musicapp.data.local.model.FullArea
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
+import com.example.musicapp.ui.viewmodels.CountryProvider
 import com.example.musicapp.ui.viewmodels.NameEditUiState
+import com.example.musicapp.util.toTitleCase
 import kotlin.math.absoluteValue
+import kotlin.text.trim
 
 
 @Composable
@@ -132,6 +149,76 @@ fun ArtistImagePicker(
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 8.dp)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CountryPicker(
+    selectedCountryCode: String? = null,
+    onCountrySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val currentSelectionDisplay = remember(selectedCountryCode) {
+        CountryProvider.allCountries.find { it.code == selectedCountryCode }?.let {
+            "${it.flag}  ${it.name}"
+        } ?: ""
+    }
+
+    var searchQuery by remember(currentSelectionDisplay) {
+        mutableStateOf(currentSelectionDisplay)
+    }
+
+    val filteredCountries = remember(searchQuery) {
+        CountryProvider.allCountries.filter { country ->
+            country.name.contains(searchQuery, ignoreCase = true) ||
+                    country.code.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true),
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                expanded = true
+            },
+            label = { Text("Country of Origin") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            singleLine = true
+        )
+
+        if (filteredCountries.isNotEmpty()) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = {
+                    expanded = false
+                    searchQuery = currentSelectionDisplay
+                }
+            ) {
+                filteredCountries.forEach { country ->
+                    DropdownMenuItem(
+                        text = { Text("${country.flag}   ${country.name}") },
+                        onClick = {
+                            searchQuery = "${country.flag}  ${country.name}"
+                            onCountrySelected(country.code)
+                            expanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -245,6 +332,92 @@ fun ArtistDisambiguationDialog(
     )
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CityPicker(
+    startValue: String,
+    suggestions: List<AreaHierarchy>,
+    onQueryChange: (String) -> Unit,
+    onSelected: (AreaHierarchy) -> Unit,
+    onSelectedNotFound: (String) -> Unit,
+    ){
+    var textFieldValue by remember { mutableStateOf(startValue) }
+    var expanded by remember { mutableStateOf(false) }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val dummyFocusRequester = remember { FocusRequester() }
+
+    var userHasInteracted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(startValue) {
+        if (!userHasInteracted)
+            textFieldValue = startValue
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && suggestions.isNotEmpty(),
+        onExpandedChange = {
+            expanded = it
+            if (expanded == false) {
+                keyboardController?.hide()
+                focusManager.clearFocus(force = true)
+            }
+        }
+    ) {
+        OutlinedTextField(
+            value = textFieldValue,
+            onValueChange = {
+                textFieldValue = it
+                onQueryChange(it)
+                expanded = true
+            },
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryEditable, true)
+                .fillMaxWidth(),
+            label = { Text("Home City") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                if (textFieldValue.isNotEmpty()){
+                    userHasInteracted = true
+                    onSelectedNotFound(textFieldValue.trim())
+                }
+                keyboardController?.hide() })
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded && suggestions.isNotEmpty(),
+            onDismissRequest = {
+                expanded = false
+                keyboardController?.hide()
+                focusManager.clearFocus()
+            }
+        ) {
+            suggestions.forEach { suggestion ->
+                var suggestionText = ""
+                suggestionText += if (!suggestion.cityName.isNullOrEmpty()) "${suggestion.cityName}, " else ""
+                suggestionText += if (!suggestion.countyName.isNullOrEmpty()) "${suggestion.countyName}, " else ""
+                suggestionText += if (!suggestion.stateName.isNullOrEmpty()) "${suggestion.stateName}, " else ""
+                suggestionText += if (!suggestion.countryName.isNullOrEmpty()) suggestion.countryName else ""
+                DropdownMenuItem(
+                    text = { Text(suggestionText) },
+                    onClick = {
+                        userHasInteracted = true
+                        if (textFieldValue.isNotBlank()) {
+                            textFieldValue = suggestionText
+                            onSelected(suggestion)
+                            expanded = false
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun ArtistEditScreen(
     onNavigateBack: () -> Unit,
@@ -256,6 +429,7 @@ fun ArtistEditScreen(
     val images = artistEditUiState.discogsImages.map { it.resourceUrl }
     val canSave by artistEditViewModel.canSave.collectAsState()
     val suggestions by artistEditViewModel.genreSuggestions.collectAsState()
+    val citySuggestions by artistEditViewModel.citySuggestions.collectAsState()
 
     var showDiscardDialog by remember { mutableStateOf(false) }
 
@@ -325,7 +499,7 @@ fun ArtistEditScreen(
                         onValueChange = { artistEditViewModel.onNameChange(it) },
                         label = { Text("Artist Name") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -343,6 +517,84 @@ fun ArtistEditScreen(
                     )
                 }
 
+                item {
+                    CountryPicker(
+                        selectedCountryCode = artistEditUiState.draftCountryCode,
+                        onCountrySelected = { code -> artistEditViewModel.onCountryChange(code) },
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CityPicker(
+                            startValue = artistEditUiState.draftHomeCity.orEmpty(),
+                            suggestions = citySuggestions,
+                            onQueryChange = { query -> artistEditViewModel.onCityQueryChange(query) },
+                            onSelected = {area -> artistEditViewModel.onSelectedArea(area)},
+                            onSelectedNotFound = {city -> artistEditViewModel.onSelectedNotFound(city)}
+                        )
+//                        OutlinedTextField(
+//                            value = artistEditUiState.draftHomeCity,
+//                            onValueChange = { artistEditViewModel.onHomeCityChange(it) },
+//                            label = { Text("Home City") },
+//                            modifier = Modifier.weight(1f)
+//                        )
+//                        OutlinedTextField(
+//                            value = artistEditUiState.draftCurrentCity,
+//                            onValueChange = { artistEditViewModel.onCurrentCityChange(it) },
+//                            label = { Text("Current City") },
+//                            modifier = Modifier.weight(1f)
+//                        )
+                    }
+                }
+
+                item {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = artistEditUiState.draftActiveStartYear.orEmpty(),
+                                onValueChange = { artistEditViewModel.onActiveStartYearChange(it) },
+                                label = { Text("Year Formed") },
+                                placeholder = { Text("YYYY") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = artistEditUiState.draftActiveEndYear.orEmpty(),
+                                onValueChange = { artistEditViewModel.onActiveEndYearChange(it) },
+                                label = { Text("Year Disbanded") },
+                                placeholder = { Text("YYYY") },
+                                enabled = artistEditUiState.draftIsDefunct,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (artistEditUiState.draftIsDefunct) "❌ Band is Defunct" else "⚡ Band is Active",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Switch(
+                                checked = artistEditUiState.draftIsDefunct,
+                                onCheckedChange = { isChecked -> artistEditViewModel.onDefunctStatusChange(isChecked) }
+                            )
+                        }
+                    }
+                }
 
                 item {
                     ArtistBioEditor(

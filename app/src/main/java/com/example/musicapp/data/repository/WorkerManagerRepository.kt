@@ -9,6 +9,9 @@ interface WorkerManagerRepository {
 
     fun startWorkerGenres()
 
+    fun startWorkerArtistMetadata()
+
+    fun startWorkerArtistArea()
 
     fun getEnrichmentProgress(): Flow<WorkInfo?>
 }

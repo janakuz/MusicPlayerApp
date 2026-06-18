@@ -4,12 +4,16 @@ import android.util.Log
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.ArtistWithArea
+import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
+import com.example.musicapp.ui.components.SortField
+import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -26,6 +30,11 @@ class ArtistRepositoryImpl(
         return artistDao.getAllArtists()
     }
 
+
+    override suspend fun getAll(): List<Artist> {
+        return artistDao.getAll()
+    }
+
     override fun getAllArtistsDesc(): Flow<List<Artist>> {
         return artistDao.getAllArtistsDesc()
     }
@@ -39,6 +48,10 @@ class ArtistRepositoryImpl(
 
     override fun getArtist(id: Int): Flow<Artist> {
         return artistDao.getArtist(id)
+    }
+
+    override fun getArtistWithArea(id: Int): Flow<ArtistWithArea> {
+        return artistDao.getArtistWithArea(id)
     }
 
     override suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int {

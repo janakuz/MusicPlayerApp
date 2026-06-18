@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.LabelInfo
 import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
 import com.example.musicapp.data.remote.dto.ReleaseGroupMB
@@ -26,6 +27,10 @@ interface AlbumRepository {
     fun getAllAlbums(orderBy: SortOption): Flow<List<Album>>
 
     fun getAlbum(id: Int): Flow<Album>
+
+    fun getTopLabels(orderBy: SortOption, limit: Int = 20): Flow<List<LabelInfo>>
+
+    fun getLabelItems(label: String): Flow<SearchResult>
 
     suspend fun getAll(): List<Album>
 

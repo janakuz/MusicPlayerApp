@@ -83,6 +83,21 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
+    fun backfillArtistMetadata(context: Context){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerArtistMetadata()
+
+        }
+    }
+
+    fun backfillArtistArea(context: Context){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerArtistArea()
+
+        }
+    }
+
+
     fun observeEnrichment() {
         workerManagerRepository.getEnrichmentProgress()
             .onEach { info ->

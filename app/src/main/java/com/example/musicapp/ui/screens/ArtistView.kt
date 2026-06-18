@@ -50,17 +50,21 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState
+import com.example.musicapp.util.getCountryDisplay
+import com.example.musicapp.util.getLifespanDisplay
 
 @Composable
 fun ArtistDetailHeader(
     image: String,
     title: String,
+    artist: ArtistWithArea,
 ) {
 
     Column(
@@ -107,8 +111,22 @@ fun ArtistDetailHeader(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground
         )
+        Spacer(modifier = Modifier.height(8.dp))
+
+
+
+        val subtitle = listOfNotNull(
+            artist.getCountryDisplay(),
+            artist.artist.getLifespanDisplay().takeIf { it.isNotEmpty() }
+        ).joinToString(separator = "  •  ")
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
+
+
 
 
 @Composable
@@ -146,17 +164,19 @@ fun ExpandableBio(bio: String) {
 }
 
 @Composable
-fun FullArtistHeader(artist: Artist) {
+fun FullArtistHeader(artist: ArtistWithArea) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val artistInfo = artist.artist
         ArtistDetailHeader(
-            image = artist.image.toString(),
-            title = artist.name,
+            image = artistInfo.image.toString(),
+            title = artistInfo.name,
+            artist = artist,
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        ExpandableBio(artist.bio.toString())
+        ExpandableBio(artistInfo.bio.toString())
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -292,10 +312,10 @@ fun ArtistView(
 
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ArtistPreview() {
-    MusicAppTheme {
-    }
-
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun ArtistPreview() {
+//    MusicAppTheme {
+//    }
+//
+//}

@@ -9,6 +9,10 @@ interface GenreRepository {
 
     suspend fun getOrCreateGenre(name: String): Int
 
+    suspend fun deleteGenre(genre: Genre)
+
+    suspend fun renameGenre(genre: Genre, newName: String)
+
     fun findGenre(query: String): Flow<List<String>>
 
     fun getAll(sortBy: SortOption): Flow<List<GenreInfo>>

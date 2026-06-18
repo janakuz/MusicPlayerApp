@@ -2,6 +2,7 @@ package com.example.musicapp.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.local.entity.Genre
 import com.example.musicapp.data.local.model.GenreInfo
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
@@ -31,6 +32,18 @@ class GenresViewModel @Inject constructor(
     fun setSort(option: SortOption) {
         viewModelScope.launch {
             userPreferencesRepository.updateGenresSort(option)
+        }
+    }
+
+    fun deleteGenre(genre: Genre){
+        viewModelScope.launch {
+            genreRepository.deleteGenre(genre)
+        }
+    }
+
+    fun renameGenre(genre: Genre, newName: String){
+        viewModelScope.launch {
+            genreRepository.renameGenre(genre, newName)
         }
     }
 }

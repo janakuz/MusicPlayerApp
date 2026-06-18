@@ -3,6 +3,10 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.local.entity.AreaHierarchy
+import com.example.musicapp.data.local.model.GenreInfo
+import com.example.musicapp.data.repository.AreaRepository
+import com.example.musicapp.data.repository.DefunctFilterStatus
 import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.LibraryFilter
@@ -18,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -30,19 +35,33 @@ import javax.inject.Inject
 class FilterViewModel @Inject constructor(
     private val filterRepository: FilterRepository,
     private val genreRepository: GenreRepository,
+    private val areaRepository: AreaRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
 
     val filterDefaults = combine(
+        listOf(
         filterRepository.getMinYear(),
         filterRepository.getMaxYear(),
+        filterRepository.getMinYearArtists(),
+        filterRepository.getMaxYearArtists(),
         filterRepository.getAllLabels(),
-        genreRepository.getAll(SortOption(SortField.NAME,true))
-    ) { min, max, labels, genres ->
+        genreRepository.getAll(SortOption(SortField.NAME,true)
+        )
+        )
+    ) { list ->
+        val min = list[0] as Int
+        val max = list[1] as Int
+        val minArtists = list[2] as Int
+        val maxArtists = list[3] as Int
+        val labels = list[4] as List<String>
+        val genres = list[5] as List<GenreInfo>
         FilterDefaults(
             minYear = min,
             maxYear = max,
+            minYearArtists = minArtists,
+            maxYearArtists = maxArtists,
             recordLabels = labels,
             genres = genres.map { it.genre.name }
         )
@@ -50,6 +69,7 @@ class FilterViewModel @Inject constructor(
 
 
     private val _libraryType = MutableStateFlow<String>("artists")
+    val libraryType = _libraryType.asStateFlow()
 
     private val _activeFilter = MutableStateFlow<LibraryFilter>(LibraryFilter())
 
@@ -59,6 +79,8 @@ class FilterViewModel @Inject constructor(
     private val _labelQuery = MutableStateFlow("")
 
     private val _genreQuery = MutableStateFlow("")
+
+    private val _areaQuery = MutableStateFlow("")
 
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -100,13 +122,58 @@ class FilterViewModel @Inject constructor(
         )
 
 
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val areaSuggestions: StateFlow<List<AreaHierarchy>> = _areaQuery
+        .debounce(250)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.length < 2)
+                flowOf(emptyList())
+            else
+                areaRepository.findCity(query)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredArtists = combine(_activeFilter, _libraryType) { filter, type ->
         Pair(filter, type)
     }.flatMapLatest { (filter, type) ->
         if (_libraryType.value != "artists") flowOf(emptyList())
-        else filterRepository.getFilteredArtists(filter)
+        else {
+            val fullStartRanges = filter.artistFormedRanges + listOf<IntRange>(filter.activeArtistStartRange)
+            var newFilter = filter.copy(artistFormedRanges = fullStartRanges)
+            if (_draftFilter.value.defunctStatus == DefunctFilterStatus.DEFUNCT) {
+                val fullEndRanges =
+                    filter.artistEndedRanges + listOf<IntRange>(filter.activeArtistEndRange)
+                newFilter = newFilter.copy(artistEndedRanges = fullEndRanges)
+            }
+            filterRepository.getFilteredArtists(newFilter)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val potentialArtistMatches = combine(_draftFilter, _libraryType) { filter, type ->
+        Pair(filter, type)
+    }.flatMapLatest { (filter, type) ->
+        if (_libraryType.value != "artists") flowOf(emptyList())
+        else {
+            val fullStartRanges = filter.artistFormedRanges + listOf<IntRange>(filter.activeArtistStartRange)
+            var newFilter = filter.copy(artistFormedRanges = fullStartRanges)
+            if (_draftFilter.value.defunctStatus == DefunctFilterStatus.DEFUNCT) {
+                val fullEndRanges =
+                    filter.artistEndedRanges + listOf<IntRange>(filter.activeArtistEndRange)
+                newFilter = newFilter.copy(artistEndedRanges = fullEndRanges)
+            }
+            filterRepository.getFilteredArtists(newFilter)
+        }
+    }
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -137,30 +204,28 @@ class FilterViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val potentialArtistMatches = combine(_draftFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
-        if (_libraryType.value != "artists") flowOf(emptyList())
-        else filterRepository.getFilteredArtists(filter)
-    }
-        .map { it.size }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
 
     init {
 
+        resetAll()
         viewModelScope.launch {
-            filterDefaults.collect { defaults ->
-                if (_draftFilter.value.activeRange == 1950..2026) {
-                    _draftFilter.update {
-                        it.copy(
-                            activeRange = defaults.minYear..defaults.maxYear
-                        )
-                    }
-                }
-            }
+            val realDefaults = filterDefaults.first { it.minYear != 1950 || it.maxYear != 2026 }
+            resetDefaultYears(realDefaults)
         }
+
+    }
+
+
+    fun resetDefaultYears(defaults: FilterDefaults){
+        _draftFilter.update { currentDraft ->
+            currentDraft.copy(
+                activeRange = defaults.minYear..defaults.maxYear,
+                activeArtistStartRange = defaults.minYearArtists..defaults.maxYearArtists,
+                activeArtistEndRange = defaults.minYearArtists..defaults.maxYearArtists
+            )
+        }
+
     }
 
 
@@ -184,14 +249,19 @@ class FilterViewModel @Inject constructor(
         _genreQuery.value = newQuery
     }
 
+    fun onAreaQueryChange(newQuery: String) {
+        _areaQuery.value = newQuery
+    }
 
     fun resetAll(){
         _draftFilter.value = LibraryFilter()
         _activeFilter.value = LibraryFilter()
+        resetDefaultYears(filterDefaults.value)
     }
 
     fun resetDraft(){
         _draftFilter.value = LibraryFilter()
+        resetDefaultYears(filterDefaults.value)
     }
 
     fun reset() {
@@ -202,6 +272,8 @@ class FilterViewModel @Inject constructor(
 data class FilterDefaults(
     val minYear: Int = 1950,
     val maxYear: Int = 2026,
+    val minYearArtists: Int = 1950,
+    val maxYearArtists: Int = 2026,
     val recordLabels: List<String> = emptyList(),
     val genres: List<String> = emptyList()
 )

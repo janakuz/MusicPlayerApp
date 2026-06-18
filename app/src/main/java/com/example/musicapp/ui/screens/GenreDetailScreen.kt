@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -83,6 +84,5 @@ fun GenreHeader(name: String) {
                 letterSpacing = (-0.5).sp),
             modifier = Modifier.padding(start = 16.dp, bottom = 20.dp)
         )
-
     }
 }
