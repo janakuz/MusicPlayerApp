@@ -23,6 +23,25 @@ class GenreRepositoryImpl(
         return existingGenre?.id ?: genreDao.insert(Genre(name = normalized)).toInt()
     }
 
+    override suspend fun deleteGenre(genre: Genre) {
+        genreDao.delete(genre)
+    }
+
+    override suspend fun renameGenre(
+        genre: Genre,
+        newName: String
+    ) {
+        val existing = genreDao.getGenreByName(newName.normalizeGenre())
+        if (existing != null){
+            genreDao.mergeGenres(genre.id, existing.id)
+            genreDao.delete(genre)
+        }
+        else {
+            val updated = genre.copy(name = newName.normalizeGenre())
+            genreDao.update(updated)
+        }
+    }
+
     override fun findGenre(query: String): Flow<List<String>> {
         return genreDao.findGenre(query.normalizeGenre())
     }

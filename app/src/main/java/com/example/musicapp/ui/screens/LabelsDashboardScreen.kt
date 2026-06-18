@@ -51,7 +51,7 @@ fun LabelsScreen(
                 genreName = item.label,
                 artistCount = item.artistCount,
                 albumCount = item.albumCount,
-                onClick = { onLabelClick(item.label) }
+                onClick = { onLabelClick(item.label) },
             ) }
         item(span = {
             GridItemSpan(maxLineSpan)

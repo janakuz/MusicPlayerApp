@@ -16,9 +16,8 @@ fun String.normalizeGenre(): String {
         .replace("-", " ")
         .replace(Regex("\\bthe\\b"), "")
         .replace(Regex("\\((.*?)\\)"), "")
-        .replace(Regex("[^a-z0-9\\s]"), "")
+        .replace(Regex("[^a-z0-9\\s/]"), "")
         .replace(Regex("\\s+"), " ")
-        .replace("ep", "")
         .trim()
 }
 
