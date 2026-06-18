@@ -180,6 +180,7 @@ fun GenrePicker(
     onGenresChange: (List<String>) -> Unit,
     label: String,
     titleCase: Boolean = true,
+    isFiltering: Boolean = false,
 ) {
     var textFieldValue by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
@@ -201,7 +202,7 @@ fun GenrePicker(
                 dummyFocusRequester.requestFocus()
             }
     ) {
-        Text("${label}s", style = MaterialTheme.typography.labelMedium)
+        Text("${label}s", style = if (isFiltering) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium)
 
         FlowRow(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -276,7 +277,7 @@ fun GenrePicker(
                     DropdownMenuItem(
                         text = { if (titleCase) Text(suggestion.toTitleCase()) else Text(suggestion) },
                         onClick = {
-                            if (textFieldValue.isNotBlank() || titleCase == false) {
+                            if (textFieldValue.isNotBlank() || isFiltering) {
                                 onGenresChange(genres + suggestion.trim())
                                 textFieldValue = ""
 
@@ -369,7 +370,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onTitleChange(it) },
                         label = { Text("Album Title") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -383,7 +384,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onArtistChange(it) },
                         label = { Text("Artist") },
                         enabled = !albumEditUiState.multipleArtists,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -398,7 +399,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onReleaseDateChange(it) },
                         label = { Text("Release Date") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -413,7 +414,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onLabelChange(it) },
                         label = { Text("Record Label") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant

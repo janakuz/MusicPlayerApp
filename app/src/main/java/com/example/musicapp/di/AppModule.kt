@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.work.WorkManager
 import coil.ImageLoader
 import coil.disk.DiskCache
@@ -15,6 +17,8 @@ import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.AlbumGenreDao
 import com.example.musicapp.data.local.dao.ArtistDao
+import com.example.musicapp.data.local.dao.ArtistGenreDao
+import com.example.musicapp.data.local.dao.AreaDao
 import com.example.musicapp.data.local.dao.GenreDao
 import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
@@ -22,8 +26,9 @@ import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
-import com.example.musicapp.data.local.database.ALL_MIGRATIONS
 import com.example.musicapp.data.local.database.AppDatabase
+import com.example.musicapp.data.local.database.getAllMigrations
+import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
@@ -34,8 +39,12 @@ import com.example.musicapp.data.repository.AlbumGenreRepository
 import com.example.musicapp.data.repository.AlbumGenreRepositoryImpl
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.AlbumRepositoryImpl
+import com.example.musicapp.data.repository.ArtistGenreRepository
+import com.example.musicapp.data.repository.ArtistGenreRepositoryImpl
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.ArtistRepositoryImpl
+import com.example.musicapp.data.repository.AreaRepository
+import com.example.musicapp.data.repository.AreaRepositoryImpl
 import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.DynamicThemeRepositoryImpl
 import com.example.musicapp.data.repository.FilterRepository
@@ -128,7 +137,21 @@ object AppModule {
             AppDatabase::class.java,
             "music_app_db"
         )
-            .addMigrations(*ALL_MIGRATIONS)
+            .addMigrations(*getAllMigrations(context))
+            .addCallback(object : RoomDatabase.Callback() {
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    super.onOpen(db)
+
+                    val cursor = db.query("SELECT COUNT(*) FROM area_hierarchy")
+                    cursor.moveToFirst()
+                    val count = cursor.getInt(0)
+                    cursor.close()
+
+                    if (count == 0) {
+                        populateMetadataFromAsset(context, db)
+                    }
+                }
+            })
             .build()
     }
 
@@ -335,21 +358,6 @@ object AppModule {
         return AlbumArtistRepositoryImpl(albumArtistDao, trackDao)
     }
 
-    @Provides
-    @Singleton
-    fun provideMetadataRepository(
-        albumRepository: AlbumRepository,
-        artistRepository: ArtistRepository,
-        trackRepository: TrackRepository,
-        albumArtistRepository: AlbumArtistRepository
-    ): MetadataRepository {
-        return OfflineMetadataRepository(
-            albumRepository,
-            artistRepository,
-            trackRepository,
-            albumArtistRepository
-        )
-    }
 
 
     @Provides
@@ -361,15 +369,15 @@ object AppModule {
     @Singleton
     fun provideGenreDao(db: AppDatabase): GenreDao = db.genreDao()
 
-    @Provides
-    @Singleton
-    fun provideGenreRepository(genreDao: GenreDao): GenreRepository {
-        return GenreRepositoryImpl(genreDao)
-    }
 
     @Provides
     @Singleton
     fun provideAlbumGenreDao(db: AppDatabase): AlbumGenreDao = db.albumGenreDao()
+
+    @Provides
+    @Singleton
+    fun provideArtistGenreDao(db: AppDatabase): ArtistGenreDao = db.artistGenreDao()
+
 
     @Provides
     @Singleton
@@ -405,6 +413,23 @@ object AppModule {
     }
 
 
+
+    @Provides
+    @Singleton
+    fun provideArtistGenreRepository(
+        artistDao: ArtistGenreDao,
+        genreDao: GenreDao
+    ): ArtistGenreRepository {
+        return ArtistGenreRepositoryImpl(artistDao, genreDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGenreRepository(genreDao: GenreDao, albumGenreDao: AlbumGenreDao, artistGenreDao: ArtistGenreDao): GenreRepository {
+        return GenreRepositoryImpl(genreDao, albumGenreDao, artistGenreDao)
+    }
+
+
     @Provides
     @Singleton
     fun provideSearchRepository(
@@ -417,8 +442,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFilterRepository(albumDao: AlbumDao): FilterRepository {
-        return FilterRepositoryImpl(albumDao)
+    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao): FilterRepository {
+        return FilterRepositoryImpl(albumDao, artistDao)
     }
 
     @Provides
@@ -493,6 +518,37 @@ object AppModule {
         return PlaylistTracksRepositoryImpl(
             playlistTracksDao,
             playlistRepository
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideAreaDao(db: AppDatabase): AreaDao = db.areaDao()
+
+    @Provides
+    @Singleton
+    fun provideAreaRepository(areaDao: AreaDao): AreaRepository {
+        return AreaRepositoryImpl(areaDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideMetadataRepository(
+        albumRepository: AlbumRepository,
+        artistRepository: ArtistRepository,
+        trackRepository: TrackRepository,
+        albumArtistRepository: AlbumArtistRepository,
+        albumGenreRepository: AlbumGenreRepository,
+        artistGenreRepository: ArtistGenreRepository
+    ): MetadataRepository {
+        return OfflineMetadataRepository(
+            albumRepository,
+            artistRepository,
+            trackRepository,
+            albumArtistRepository,
+            albumGenreRepository,
+            artistGenreRepository
         )
     }
 

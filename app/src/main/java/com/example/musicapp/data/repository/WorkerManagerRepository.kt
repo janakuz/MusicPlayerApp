@@ -7,5 +7,11 @@ interface WorkerManagerRepository {
 
     fun startWorker(manual: Boolean = false)
 
+    fun startWorkerGenres()
+
+    fun startWorkerArtistMetadata()
+
+    fun startWorkerArtistArea()
+
     fun getEnrichmentProgress(): Flow<WorkInfo?>
 }

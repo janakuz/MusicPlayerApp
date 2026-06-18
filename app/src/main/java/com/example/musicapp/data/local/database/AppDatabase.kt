@@ -1,13 +1,13 @@
 package com.example.musicapp.data.local.database
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.AlbumGenreDao
 import com.example.musicapp.data.local.dao.ArtistDao
+import com.example.musicapp.data.local.dao.ArtistGenreDao
+import com.example.musicapp.data.local.dao.AreaDao
 import com.example.musicapp.data.local.dao.GenreDao
 import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
@@ -18,7 +18,12 @@ import com.example.musicapp.data.local.dao.TrackMoodDao
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.AlbumGenre
+import com.example.musicapp.data.local.entity.AreaType
+import com.example.musicapp.data.local.entity.Area
+import com.example.musicapp.data.local.entity.AreaArea
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.ArtistGenre
 import com.example.musicapp.data.local.entity.Genre
 import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Playlist
@@ -40,8 +45,13 @@ import com.example.musicapp.data.local.entity.TrackMood
         TrackMood::class,
         Playlist::class,
         PlaylistTracks::class,
+        ArtistGenre::class,
+        Area::class,
+        AreaType::class,
+        AreaArea::class,
+        AreaHierarchy::class
     ],
-    version = 14,
+    version = 19,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -56,24 +66,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trackMoodDao(): TrackMoodDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun playlistTracksDao(): PlaylistTracksDao
+    abstract fun artistGenreDao(): ArtistGenreDao
+    abstract fun areaDao(): AreaDao
 
-
-    companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "music_app_db"
-                )
-                    .fallbackToDestructiveMigration(true)
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
 }

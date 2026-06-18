@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
@@ -69,7 +70,7 @@ class ArtistDetailViewModel @Inject constructor(
         Pair(id, sort)
     }.flatMapLatest { (id, sort) ->
         combine(
-            artistRepository.getArtist(id),
+            artistRepository.getArtistWithArea(id),
             albumArtistRepository.getAllAlbumsByArtistSorted(id, sort)
         ) { artist, albums ->
             ArtistDetailUiState(
@@ -126,7 +127,7 @@ class ArtistDetailViewModel @Inject constructor(
     fun refetchMetadata(id: Int) {
         viewModelScope.launch {
             val album = albumRepository.getAlbum(id).first()
-            var albumArtist = artistDetailUiState.value.artist
+            var albumArtist = artistDetailUiState.value.artist?.artist
             if (albumArtist == null) {
                 val artists = albumArtistRepository.getAllAlbumArtists(id)
                 albumArtist = artists.first { it.mbId != null }
@@ -180,7 +181,7 @@ class ArtistDetailViewModel @Inject constructor(
 }
 
 data class ArtistDetailUiState(
-    val artist: Artist? = null,
+    val artist: ArtistWithArea? = null,
     val albums: List<AlbumInfo> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null

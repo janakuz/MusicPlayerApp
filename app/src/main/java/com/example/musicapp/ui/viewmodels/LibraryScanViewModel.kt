@@ -69,6 +69,35 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
+    fun backfillLocalGenres(context: Context){
+        viewModelScope.launch {
+            scanner.backfillLocalGenres(
+                context = context,
+                onProgressUpdate = { progress ->
+                    _uiState.update { it.copy(scanProgress = progress) }})
+
+            _uiState.update { it.copy(isScanning = false, isEnriching = true) }
+
+            workerManagerRepository.startWorkerGenres()
+
+        }
+    }
+
+    fun backfillArtistMetadata(context: Context){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerArtistMetadata()
+
+        }
+    }
+
+    fun backfillArtistArea(context: Context){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerArtistArea()
+
+        }
+    }
+
+
     fun observeEnrichment() {
         workerManagerRepository.getEnrichmentProgress()
             .onEach { info ->

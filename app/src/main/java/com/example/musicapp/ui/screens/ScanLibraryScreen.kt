@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.screens
 
 import android.Manifest
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,6 +45,27 @@ fun ScanLibraryScreen(
     val uiState by viewModel.uiState.collectAsState()
     val workflowState by viewModel.workflowState.collectAsState()
 
+
+    //TEMP BUTTON
+//    val context = LocalContext.current
+//    Button(
+//        onClick = { viewModel.backfillArtistArea(context) },
+//        modifier = Modifier.fillMaxWidth(),
+//        contentPadding = PaddingValues(vertical = 16.dp),
+//        shape = RoundedCornerShape(16.dp)
+//    ) {
+//        Text("Start Import")
+//    }
+//
+//    LinearProgressIndicator(
+//        progress = { uiState.enrichmentProgress },
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(8.dp)
+//            .clip(CircleShape)
+//    )
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -51,7 +73,6 @@ fun ScanLibraryScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         Icon(
             imageVector = Icons.Rounded.LibraryMusic,
             contentDescription = null,

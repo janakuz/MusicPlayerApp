@@ -1,7 +1,9 @@
 package com.example.musicapp.data.local.database
 
 import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
+import android.content.Context
 
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -240,16 +242,156 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
     }
 }
 
+val MIGRATION_14_15 = object : Migration(14,15){
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS `index_album_artists_artistId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_album_artists_artistId_albumId` ON `album_artists` (`artistId`, `albumId`)")
 
-val ALL_MIGRATIONS = arrayOf(
-    MIGRATION_4_5,
-    MIGRATION_5_6,
-    MIGRATION_6_7,
-    MIGRATION_7_8,
-    MIGRATION_8_9,
-    MIGRATION_9_10,
-    MIGRATION_10_11,
-    MIGRATION_11_12,
-    MIGRATION_12_13,
-    MIGRATION_13_14
-)
+        db.execSQL("DROP INDEX IF EXISTS `index_track_moods_trackId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_track_moods_trackId_moodId` ON `track_moods` (`trackId`, `moodId`)")
+
+        db.execSQL("DROP INDEX IF EXISTS `index_album_genres_albumId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_album_genres_albumId_genreId` ON `album_genres` (`albumId`, `genreId`)")
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `artist_genres` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `genreId` INTEGER NOT NULL, 
+                `artistId` INTEGER NOT NULL, 
+                FOREIGN KEY(`genreId`) REFERENCES `genres`(`id`) ON DELETE CASCADE, 
+                FOREIGN KEY(`artistId`) REFERENCES `artists`(`id`) ON DELETE CASCADE
+            )
+        """
+        )
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_artist_genres_genreId` ON `artist_genres` (`genreId`)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_artist_genres_artistId_genreId` ON `artist_genres` (`artistId`, `genreId`)")
+
+
+    }
+}
+
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE artists ADD COLUMN country TEXT")
+        db.execSQL("ALTER TABLE artists ADD COLUMN homeCity TEXT")
+        db.execSQL("ALTER TABLE artists ADD COLUMN currentCity TEXT")
+        db.execSQL("ALTER TABLE artists ADD COLUMN activeStartYear TEXT")
+        db.execSQL("ALTER TABLE artists ADD COLUMN activeEndYear TEXT")
+        db.execSQL("ALTER TABLE artists ADD COLUMN isDefunct INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE artists ADD COLUMN countryCode TEXT")
+    }
+}
+
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE artists ADD COLUMN homeAreaGid TEXT")
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `area_type` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`name` TEXT NOT NULL, " +
+                "`child_order` INTEGER NOT NULL, " +
+                "`description` TEXT NOT NULL, " +
+                "`gid` TEXT NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `area` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`gid` TEXT NOT NULL, " +
+                "`name` TEXT, " +
+                "`type` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`type`) REFERENCES `area_type`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `l_area_area` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`entity0` INTEGER NOT NULL, " +
+                "`entity1` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`entity0`) REFERENCES `area`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                "FOREIGN KEY(`entity1`) REFERENCES `area`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `area_hierarchy` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`gid` TEXT NOT NULL, " +
+                "`city` TEXT, " +
+                "`city_name` TEXT, " +
+                "`municipality` TEXT, " +
+                "`municipality_name` TEXT, " +
+                "`county` TEXT, " +
+                "`county_name` TEXT, " +
+                "`state` TEXT, " +
+                "`state_name` TEXT, " +
+                "`country` TEXT, " +
+                "`country_name` TEXT, " +
+                "FOREIGN KEY(`gid`) REFERENCES `area`(`gid`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_area_gid` ON `area` (`gid`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_l_area_area_entity0` ON `l_area_area` (`entity0`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_l_area_area_entity1` ON `l_area_area` (`entity1`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_area_hierarchy_gid` ON `area_hierarchy` (`gid`)")
+
+    }
+
+}
+
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE area_hierarchy DROP COLUMN municipality")
+        db.execSQL("ALTER TABLE area_hierarchy DROP COLUMN municipality_name")
+    }
+}
+
+fun getAllMigrations(context: Context): Array<Migration> {
+    return arrayOf(
+        MIGRATION_4_5,
+        MIGRATION_5_6,
+        MIGRATION_6_7,
+        MIGRATION_7_8,
+        MIGRATION_8_9,
+        MIGRATION_9_10,
+        MIGRATION_10_11,
+        MIGRATION_11_12,
+        MIGRATION_12_13,
+        MIGRATION_13_14,
+        MIGRATION_14_15,
+        MIGRATION_15_16,
+        MIGRATION_16_17,
+        MIGRATION_17_18,
+        MIGRATION_18_19
+    )
+}
+
+fun populateMetadataFromAsset(context: Context, db: SupportSQLiteDatabase) {
+    val tempFile = context.getDatabasePath("area_metadata.db")
+
+    try {
+        context.assets.open("area_metadata.db").use { input ->
+            tempFile.outputStream().use { output -> input.copyTo(output) }
+        }
+
+        db.execSQL("PRAGMA writable_schema = ON;")
+        db.execSQL("ATTACH DATABASE '${tempFile.absolutePath}' AS temp_db;")
+
+        db.execSQL("DELETE FROM area")
+        db.execSQL("DELETE FROM area_type")
+        db.execSQL("DELETE FROM l_area_area")
+        db.execSQL("DELETE FROM area_hierarchy")
+
+        db.execSQL("INSERT INTO area_type (id, name, child_order, description, gid) SELECT * FROM temp_db.area_type;")
+        db.execSQL("INSERT INTO area (id, gid, name, type) SELECT * FROM temp_db.area;")
+        db.execSQL("INSERT INTO l_area_area (id, entity0, entity1) SELECT * FROM temp_db.l_area_area;")
+
+        db.execSQL("INSERT INTO area_hierarchy (gid, city, city_name, county, county_name, state, state_name, country, country_name) SELECT gid, city, city_name, county, county_name, state, state_name, country, country_name FROM temp_db.area_hierarchy;")
+
+        db.execSQL("DETACH DATABASE temp_db;")
+        db.execSQL("PRAGMA writable_schema = OFF;")
+
+        tempFile.delete()
+    }
+    catch (e: Exception) {
+        e.printStackTrace()
+        throw e
+    }
+}

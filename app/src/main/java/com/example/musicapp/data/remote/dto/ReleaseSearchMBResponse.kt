@@ -30,8 +30,9 @@ data class Release(
     val asin: String?,
     @SerializedName("track-count")
     val trackCount: Int?,
-    val media: List<Media>?
-)
+    val media: List<Media>?,
+    val tags: List<Tag>?,
+    )
 
 data class TextRepresentation(
     val language: String?,
@@ -47,7 +48,8 @@ data class ArtistSummary(
     val id: String,
     val name: String,
     @SerializedName("sort-name")
-    val sortName: String
+    val sortName: String,
+    val tags: List<Tag>? = null
 )
 
 data class ReleaseGroup(

@@ -16,5 +16,9 @@
     <string name="vhm">Veronica Hates Me</string>
     <string name="scan">Scan</string>
     <string name="settings">Settings</string>
+    <string name="genres">Genres</string>
+    <string name="countries">Countries</string>
+    <string name="areas">Areas</string>
+    <string name="labels">Labels</string>
 
 </resources>

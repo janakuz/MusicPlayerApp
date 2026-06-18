@@ -22,3 +22,7 @@ secrets.properties
 *.gif
 *.wav
 *.flac
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

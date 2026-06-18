@@ -86,4 +86,8 @@ class PlaylistTracksRepositoryImpl(
 
         playlistTracksDao.reorder(entries)
     }
+
+    override suspend fun getEntry(entryId: Int): PlaylistTracks? {
+        return playlistTracksDao.getEntry(entryId)
+    }
 }

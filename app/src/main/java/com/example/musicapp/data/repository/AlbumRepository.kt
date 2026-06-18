@@ -2,8 +2,10 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.LabelInfo
 import com.example.musicapp.data.remote.dto.AlbumDiscogsResponse
 import com.example.musicapp.data.remote.dto.DiscogsSearchResponse
+import com.example.musicapp.data.remote.dto.ReleaseGroupMB
 import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +28,10 @@ interface AlbumRepository {
 
     fun getAlbum(id: Int): Flow<Album>
 
+    fun getTopLabels(orderBy: SortOption, limit: Int = 20): Flow<List<LabelInfo>>
+
+    fun getLabelItems(label: String): Flow<SearchResult>
+
     suspend fun getAll(): List<Album>
 
     suspend fun getById(id: Int): Album
@@ -41,6 +47,9 @@ interface AlbumRepository {
         album: String,
         year: String?
     ): DiscogsSearchResponse?
+
+
+    suspend fun findReleaseGroupMB(mbId: String): ReleaseGroupMB?
 
     suspend fun getAlbumDiscogs(releaseId: String): AlbumDiscogsResponse?
 

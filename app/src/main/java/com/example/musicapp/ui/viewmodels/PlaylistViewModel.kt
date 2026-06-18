@@ -112,7 +112,7 @@ class PlaylistViewModel @Inject constructor(
 
             if (tracks.size > 1) _eventChannel.send("Added ${tracks.size} tracks to ${playlist.name}")
             else {
-                val trackInfo = trackRepository.getTracksByIds(tracks.toSet())
+                val trackInfo = trackRepository.getTracksByIds(tracks)
                 _eventChannel.send("Added ${trackInfo[0].title} to ${playlist.name}")
             }
             hideCreateDialog()

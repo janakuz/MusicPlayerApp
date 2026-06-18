@@ -16,9 +16,8 @@ fun String.normalizeGenre(): String {
         .replace("-", " ")
         .replace(Regex("\\bthe\\b"), "")
         .replace(Regex("\\((.*?)\\)"), "")
-        .replace(Regex("[^a-z0-9\\s]"), "")
+        .replace(Regex("[^a-z0-9\\s/]"), "")
         .replace(Regex("\\s+"), " ")
-        .replace("ep", "")
         .trim()
 }
 
@@ -66,4 +65,11 @@ private fun levenshtein(s1: String, s2: String): Int {
     }
     return prev[s2.length]
 }
+
+
+fun String?.isTrulyBlank(): Boolean {
+    if (this == null) return true
+    return this.isEmpty() || this.matches(Regex("^[\\s\\p{Z}\\x00-\\x1F\\x7F]*$"))
+}
+
 
