@@ -192,6 +192,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val sliderInteractionSource = remember { MutableInteractionSource() }
     val genreSuggestions by filterViewModel.genreSuggestions.collectAsState()
     val filterType by filterViewModel.libraryType.collectAsState()
+    val areaSuggestions by filterViewModel.areaSuggestions.collectAsState()
 
 
 
@@ -950,7 +951,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onTabChange = { tab ->
                             filterViewModel.resetAll()
                             filterViewModel.updateType(tab)
-                        }
+                        },
+                        areaSuggestions = areaSuggestions,
+                        onAreaQueryChange = { query -> filterViewModel.onAreaQueryChange(query) }
                     )
                 }
 

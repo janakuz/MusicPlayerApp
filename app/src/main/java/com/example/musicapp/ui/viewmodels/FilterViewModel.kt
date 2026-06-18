@@ -3,7 +3,9 @@ package com.example.musicapp.ui.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.model.GenreInfo
+import com.example.musicapp.data.repository.AreaRepository
 import com.example.musicapp.data.repository.DefunctFilterStatus
 import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.GenreRepository
@@ -33,6 +35,7 @@ import javax.inject.Inject
 class FilterViewModel @Inject constructor(
     private val filterRepository: FilterRepository,
     private val genreRepository: GenreRepository,
+    private val areaRepository: AreaRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -77,6 +80,8 @@ class FilterViewModel @Inject constructor(
 
     private val _genreQuery = MutableStateFlow("")
 
+    private val _areaQuery = MutableStateFlow("")
+
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val labelSuggestions: StateFlow<List<String>> = _labelQuery
@@ -109,6 +114,23 @@ class FilterViewModel @Inject constructor(
             else {
                 genreRepository.findGenre(query)
             }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val areaSuggestions: StateFlow<List<AreaHierarchy>> = _areaQuery
+        .debounce(250)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.length < 2)
+                flowOf(emptyList())
+            else
+                areaRepository.findCity(query)
         }
         .stateIn(
             scope = viewModelScope,
@@ -227,6 +249,9 @@ class FilterViewModel @Inject constructor(
         _genreQuery.value = newQuery
     }
 
+    fun onAreaQueryChange(newQuery: String) {
+        _areaQuery.value = newQuery
+    }
 
     fun resetAll(){
         _draftFilter.value = LibraryFilter()

@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,7 @@ data class LibraryFilter(
     val defunctStatus: DefunctFilterStatus = DefunctFilterStatus.ALL,
     val artistFormedRanges: List<IntRange> = emptyList(),
     val artistEndedRanges: List<IntRange> = emptyList(),
+    val selectedAreas: List<AreaHierarchy> = emptyList()
     )
 
 enum class FilterLogic { AND, OR }

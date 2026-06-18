@@ -66,6 +66,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import kotlin.math.max
 import kotlin.math.min
 
@@ -85,7 +87,9 @@ fun FilterDrawerContent(
     genreSuggestions: List<String>,
     onGenreQueryChange: (String) -> Unit,
     onTabChange: (String) -> Unit,
-) {
+    areaSuggestions: List<AreaHierarchy>,
+    onAreaQueryChange: (String) -> Unit,
+    ) {
     val dummyFocusRequester = remember { FocusRequester() }
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums)
@@ -162,6 +166,17 @@ fun FilterDrawerContent(
                             onDraftChange(draft.copy(selectedCountries = newCodes.toSet()))
                         },
                         selectedCountryCodes = draft.selectedCountries.toList()
+                    )
+                }
+
+                item {
+                    MultiAreaPicker(
+                        selectedAreas = draft.selectedAreas,
+                        suggestions = areaSuggestions,
+                        onQueryChange = onAreaQueryChange,
+                        onAreasChange = { newAreas ->
+                            onDraftChange(draft.copy(selectedAreas = newAreas))
+                        }
                     )
                 }
 
@@ -567,6 +582,140 @@ fun MultiCountryPicker(
                                 text = { Text("${country.flag}   ${country.name}") },
                                 onClick = {
                                     onCountriesChange(selectedCountryCodes + country.code)
+                                    textFieldValue = ""
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun MultiAreaPicker(
+    selectedAreas: List<AreaHierarchy>,
+    suggestions: List<AreaHierarchy>,
+    onQueryChange: (String) -> Unit,
+    onAreasChange: (List<AreaHierarchy>) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var textFieldValue by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val dummyFocusRequester = remember { FocusRequester() }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .focusRequester(dummyFocusRequester)
+            .focusable()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                dummyFocusRequester.requestFocus()
+            }
+    ) {
+        Text("Areas / Scenes", style = MaterialTheme.typography.titleMedium)
+
+        FlowRow(
+            modifier = Modifier.padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            selectedAreas.forEach { area ->
+                val chipText = remember(area) {
+                    listOfNotNull(
+                        area.cityName.takeIf { !it.isNullOrEmpty() },
+                        area.stateName.takeIf { !it.isNullOrEmpty() } ?: area.countryName.takeIf { !it.isNullOrEmpty() }
+                    ).joinToString(", ")
+                }
+
+                InputChip(
+                    selected = true,
+                    onClick = { onAreasChange(selectedAreas.filter { it != area }) },
+                    label = { Text(chipText) },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove area",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                )
+            }
+        }
+
+        ExposedDropdownMenuBox(
+            expanded = expanded && suggestions.isNotEmpty(),
+            onExpandedChange = {
+                expanded = it
+                if (!expanded) {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                }
+            }
+        ) {
+            OutlinedTextField(
+                value = textFieldValue,
+                onValueChange = {
+                    textFieldValue = it
+                    onQueryChange(it)
+                    expanded = true
+                },
+                modifier = Modifier
+                    .menuAnchor(MenuAnchorType.PrimaryEditable, true)
+                    .fillMaxWidth(),
+                label = { Text("Search Areas (City, State, Region...)") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    val topMatch = suggestions.firstOrNull()
+                    if (topMatch != null && !selectedAreas.any { it.gid == topMatch.gid }) {
+                        onAreasChange(selectedAreas + topMatch)
+                        textFieldValue = ""
+                    }
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                })
+            )
+
+            if (suggestions.isNotEmpty()) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = {
+                        expanded = false
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                ) {
+                    suggestions.forEach { suggestion ->
+                        val isAlreadySelected = selectedAreas.any { it.gid == suggestion.gid }
+
+                        if (!isAlreadySelected) {
+                            val suggestionText = remember(suggestion) {
+                                listOfNotNull(
+                                    suggestion.cityName.takeIf { !it.isNullOrEmpty() },
+                                    suggestion.countyName.takeIf { !it.isNullOrEmpty() },
+                                    suggestion.stateName.takeIf { !it.isNullOrEmpty() },
+                                    suggestion.countryName.takeIf { !it.isNullOrEmpty() }
+                                ).joinToString(", ")
+                            }
+
+                            DropdownMenuItem(
+                                text = { Text(suggestionText) },
+                                onClick = {
+                                    onAreasChange(selectedAreas + suggestion)
                                     textFieldValue = ""
                                     expanded = false
                                 }
