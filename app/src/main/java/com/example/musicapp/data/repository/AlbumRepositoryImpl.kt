@@ -58,12 +58,12 @@ class AlbumRepositoryImpl(
     override fun getAlbum(id: Int): Flow<Album> =
         albumDao.getAlbum(id)
 
-    override fun getTopLabels(orderBy: SortOption): Flow<List<LabelInfo>> {
+    override fun getTopLabels(orderBy: SortOption, limit: Int): Flow<List<LabelInfo>> {
         return when (orderBy.field){
-            SortField.TOTAL_COUNT -> albumDao.getMostRepresentedLabels("total")
-            SortField.ARTIST_COUNT -> albumDao.getMostRepresentedLabels("artistCount")
-            SortField.ALBUM_COUNT -> albumDao.getMostRepresentedLabels("albumCount")
-            else -> albumDao.getMostRepresentedLabels("total")
+            SortField.TOTAL_COUNT -> albumDao.getMostRepresentedLabels("total", limit)
+            SortField.ARTIST_COUNT -> albumDao.getMostRepresentedLabels("artistCount", limit)
+            SortField.ALBUM_COUNT -> albumDao.getMostRepresentedLabels("albumCount", limit)
+            else -> albumDao.getMostRepresentedLabels("total", limit)
         }
     }
 

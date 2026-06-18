@@ -28,7 +28,7 @@ interface AlbumRepository {
 
     fun getAlbum(id: Int): Flow<Album>
 
-    fun getTopLabels(orderBy: SortOption): Flow<List<LabelInfo>>
+    fun getTopLabels(orderBy: SortOption, limit: Int = 20): Flow<List<LabelInfo>>
 
     fun getLabelItems(label: String): Flow<SearchResult>
 

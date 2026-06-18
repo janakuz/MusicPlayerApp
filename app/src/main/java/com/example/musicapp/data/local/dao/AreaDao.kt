@@ -120,14 +120,14 @@ interface AreaDao {
     FROM artists a
     LEFT JOIN album_artists aa ON aa.artistId = a.id
     INNER JOIN unrolled_history h ON a.id = h.artistId
-    GROUP BY areaName
+    GROUP BY areaName, areaType, stateName, a.countryCode
     ORDER BY 
         CASE WHEN :sortBy = 'total' THEN artistCount+albumCount END DESC,
         CASE WHEN :sortBy = 'artistCount' THEN artistCount END DESC,
         CASE WHEN :sortBy = 'albumCount' THEN albumCount END DESC
     LIMIT :limit
 """)
-    fun getMostRepresentedAreas(sortBy: String, limit: Int = 30): Flow<List<AreaInfo>>
+    fun getMostRepresentedAreas(sortBy: String, limit: Int = 20): Flow<List<AreaInfo>>
 
 
     @Query("""
