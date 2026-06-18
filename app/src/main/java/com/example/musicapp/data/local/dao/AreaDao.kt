@@ -100,6 +100,12 @@ interface AreaDao {
         FROM artists a
         INNER JOIN area_hierarchy h ON a.homeAreaGid = h.gid
         WHERE h.country_name IS NOT NULL AND h.country_name != ''
+        
+        UNION ALL
+        
+        SELECT a.country as areaName, 'Country' as areaType, NULL as stateName, a.country as countryName, a.id as artistId, 'not found' as areaGid
+        FROM artists a
+        WHERE a.country IS NOT NULL and a.country != ''
     )
         
     SELECT 
@@ -121,7 +127,7 @@ interface AreaDao {
         CASE WHEN :sortBy = 'albumCount' THEN albumCount END DESC
     LIMIT :limit
 """)
-    fun getMostRepresentedAreas(sortBy: String, limit: Int = 20): Flow<List<AreaInfo>> //TODO add country from country code a.country as areaName ...
+    fun getMostRepresentedAreas(sortBy: String, limit: Int = 30): Flow<List<AreaInfo>>
 
 
     @Query("""
