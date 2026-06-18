@@ -499,7 +499,7 @@ fun ArtistEditScreen(
                         onValueChange = { artistEditViewModel.onNameChange(it) },
                         label = { Text("Artist Name") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -521,13 +521,13 @@ fun ArtistEditScreen(
                     CountryPicker(
                         selectedCountryCode = artistEditUiState.draftCountryCode,
                         onCountrySelected = { code -> artistEditViewModel.onCountryChange(code) },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
                     )
                 }
 
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         CityPicker(
@@ -553,7 +553,7 @@ fun ArtistEditScreen(
                 }
 
                 item {
-                    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)

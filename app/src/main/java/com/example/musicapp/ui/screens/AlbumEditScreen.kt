@@ -370,7 +370,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onTitleChange(it) },
                         label = { Text("Album Title") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -384,7 +384,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onArtistChange(it) },
                         label = { Text("Artist") },
                         enabled = !albumEditUiState.multipleArtists,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -399,7 +399,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onReleaseDateChange(it) },
                         label = { Text("Release Date") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -414,7 +414,7 @@ fun AlbumEditScreen(
                         onValueChange = { albumEditViewModel.onLabelChange(it) },
                         label = { Text("Record Label") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
