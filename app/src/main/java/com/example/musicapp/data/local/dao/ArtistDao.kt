@@ -55,8 +55,9 @@ interface ArtistDao {
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
 
-    @Query("SELECT a.*, ah.city_name as area_city, ah.county_name as area_county, " +
-            "ah.state_name as area_state, ah.country_name as area_country " +
+    @Query("SELECT a.*, ah.city as area_city, ah.city_name as area_city_name, ah.county as area_county, ah.county_name as area_county_name, " +
+            "ah.state as area_state, ah.state_name as area_state_name, ah.country as area_country, ah.country_name as area_country_name, " +
+            "COALESCE(ah.id, '') as area_id, COALESCE(ah.gid, '') as area_gid " +
             "FROM artists a " +
             "LEFT JOIN area_hierarchy ah ON a.homeAreaGid=ah.gid " +
             "WHERE a.id=:id")

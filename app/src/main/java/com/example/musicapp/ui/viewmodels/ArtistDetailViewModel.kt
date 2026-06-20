@@ -3,6 +3,7 @@ package com.example.musicapp.ui.viewmodels
 import android.app.PendingIntent
 import android.content.Context
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -14,6 +15,8 @@ import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
+import com.example.musicapp.data.repository.AreaRepository
+import com.example.musicapp.data.repository.AreaType
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.TrackRepository
@@ -29,9 +32,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,6 +50,7 @@ class ArtistDetailViewModel @Inject constructor(
     private val trackRepository: TrackRepository,
     private val metadataRepository: MetadataRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val areaRepository: AreaRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -61,6 +67,7 @@ class ArtistDetailViewModel @Inject constructor(
 
     private val _refetchState = MutableStateFlow<RefetchAlbumState>(RefetchAlbumState.Idle)
     val refetchState = _refetchState.asStateFlow()
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val artistDetailUiState: StateFlow<ArtistDetailUiState> = combine(
@@ -87,6 +94,75 @@ class ArtistDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = ArtistDetailUiState(isLoading = true)
         )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val countryArtistCount: StateFlow<Int> = artistDetailUiState.flatMapLatest { state ->
+        if (state.artist?.artist?.countryCode == null) flowOf(0)
+        else {
+            areaRepository.getCountryArtistsAndAlbums(state.artist.artist.countryCode)
+                .map { it.artists.size }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = 0
+    )
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val sameCityArtists: StateFlow<List<Artist>> = artistDetailUiState.flatMapLatest { state ->
+        if (state.artist?.area?.city != null)
+            areaRepository.getArtistsFromArea(
+                state.artist.area.city, state.artist.artist.countryCode ?: "", AreaType.CITY)
+                .map { it.filter { it.id != state.artist.artist.id } }
+        else flowOf(emptyList<Artist>())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val sameCountyArtists: StateFlow<List<Artist>> = artistDetailUiState.flatMapLatest { state ->
+        if (state.artist?.area?.county != null)
+            areaRepository.getArtistsFromArea(
+                state.artist.area.county, state.artist.artist.countryCode ?: "", AreaType.COUNTY)
+                .map { it.filter { it.id != state.artist.artist.id } }
+        else flowOf(emptyList<Artist>())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val sameStateArtists: StateFlow<List<Artist>> = artistDetailUiState.flatMapLatest { state ->
+        if (state.artist?.area?.state != null)
+            areaRepository.getArtistsFromArea(
+                state.artist.area.state, state.artist.artist.countryCode ?: "", AreaType.STATE)
+                .map { it.filter { it.id != state.artist.artist.id } }
+        else flowOf(emptyList<Artist>())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val sameCountryArtists: StateFlow<List<Artist>> = artistDetailUiState.flatMapLatest { state ->
+        Log.d("area", state.artist?.artist?.countryCode.toString())
+        if (state.artist?.artist?.countryCode != null)
+            areaRepository.getArtistsFromArea(
+                state.artist.area.country ?: "", state.artist.artist.countryCode, AreaType.COUNTRY)
+                .map { it.filter { it.id != state.artist.artist.id } }
+        else flowOf(emptyList<Artist>())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
+
+
 
     fun setSort(option: SortOption) {
         viewModelScope.launch {

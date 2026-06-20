@@ -557,7 +557,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
                         onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") },
                         sortRequest = artistDetailSort,
-                        onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
+                        onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
+                        onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") } ,
+                        onClickArtist = { artist -> navController.navigate("artist/${artist.id}") },
+                        onAddToPlaylistArtist = { artist -> playlistViewModel.onAddToPlaylistArtist(artist.id) }
                     )
                 }
 

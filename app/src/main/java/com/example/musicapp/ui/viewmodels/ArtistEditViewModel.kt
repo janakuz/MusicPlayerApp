@@ -142,7 +142,7 @@ class ArtistEditViewModel @Inject constructor(
             initialStartYear = artist.activeStartYear ?: ""
             initialEndYear = artist.activeEndYear ?: ""
 
-            Log.d("EDIT_DEBUG", "Init: $initialHomeCity")
+            Log.d("AREA_DEBUG", "Init: $initialHomeCity")
 
             Log.d("EDIT_DEBUG", "Draft: ${getLowestArea(artistWithArea.area) ?: artist.homeCity ?: ""}")
 
@@ -327,12 +327,12 @@ class ArtistEditViewModel @Inject constructor(
         _cityQuery.value = newQuery
     }
 
-    fun getLowestArea(area: FullArea) : String? {
+    fun getLowestArea(area: AreaHierarchy) : String? {
 
-        return  if (!area.city.isTrulyBlank()) area.city
-        else if (!area.county.isTrulyBlank()) area.county
-        else if (!area.state.isTrulyBlank()) area.state
-        else if (!area.country.isTrulyBlank()) area.country
+        return  if (!area.city.isTrulyBlank()) area.cityName
+        else if (!area.county.isTrulyBlank()) area.countyName
+        else if (!area.state.isTrulyBlank()) area.stateName
+        else if (!area.country.isTrulyBlank()) area.countryName
         else null
     }
 

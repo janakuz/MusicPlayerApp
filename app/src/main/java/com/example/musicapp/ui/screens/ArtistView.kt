@@ -10,13 +10,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,7 +45,6 @@ import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,16 +52,19 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.ui.components.DeleteConfirmationDialog
+import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.ui.components.SortOption
-import com.example.musicapp.ui.theme.MusicAppTheme
 import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState
 import com.example.musicapp.util.getCountryDisplay
 import com.example.musicapp.util.getLifespanDisplay
+import kotlin.collections.chunked
+
 
 @Composable
 fun ArtistDetailHeader(
@@ -184,12 +190,234 @@ fun FullArtistHeader(artist: ArtistWithArea) {
 }
 
 @Composable
+fun SimilarGrid(
+    artists: List<Artist>,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
+    onClick: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit
+){
+    val artistRows = artists.chunked(3)
+
+    artistRows.forEach { row ->
+        Row(
+            modifier = Modifier.padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            for (artist in row) {
+                Box(modifier = Modifier.weight(1f)) {
+                    ImageWithTextColumn(
+                        item = GridItem.ArtistItem(
+                            id = artist.id,
+                            displayName = artist.name,
+                            imageRes = artist.image ?: "",
+                            description = artist.bio ?: ""
+                        ),
+                        image = artist.image ?: "",
+                        text = artist.name,
+                        isAlbum = false,
+                        onPlayNext = onPlayNext,
+                        imageShape = CircleShape,
+                        imageModifier = Modifier.size(80.dp),
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        onAddToQueue = onAddToQueue,
+                        onEdit = onEdit,
+                        onClick = onClick,
+                        onAddToPlaylist = onAddToPlaylist
+                    )
+                }
+
+            }
+            val emptySlots = 3 - (row.size)
+            if (emptySlots < 3) {
+                repeat(emptySlots) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+
+        }
+    }
+}
+
+@Composable
+fun SceneExpansionSection(
+    area: AreaHierarchy,
+    countryCode: String?,
+    country: String?,
+    cityArtists: List<Artist>,
+    countyArtists: List<Artist>,
+    stateArtists: List<Artist>,
+    countryArtists: List<Artist>,
+    countryCount: Int,
+    modifier: Modifier = Modifier,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
+    onClick: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit
+
+) {
+    var expandedLevels by remember { mutableStateOf(emptySet<String>()) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "EXPLORE LOCAL SCENES",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold
+        )
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+
+
+        area.cityName?.let { name ->
+            val isExpanded = expandedLevels.contains("city")
+            Column {
+                Text(
+                    text = "More artists from $name",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            expandedLevels =
+                                if (isExpanded) expandedLevels - "city" else expandedLevels + "city"
+                        }
+                        .padding(vertical = 4.dp)
+                )
+
+                if (isExpanded) {
+                    Spacer(Modifier.height(8.dp))
+
+                    SimilarGrid(
+                        cityArtists,
+                        onPlayNext = onPlayNext,
+                        onAddToQueue = onAddToQueue,
+                        onAddToPlaylist = onAddToPlaylist,
+                        onClick = onClick,
+                        onEdit = onEdit)
+
+                }
+            }
+        }
+
+        area.countyName?.let { name ->
+            val isExpanded = expandedLevels.contains("county")
+            Column {
+                Text(
+                    text = "More artists from $name",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            expandedLevels =
+                                if (isExpanded) expandedLevels - "county" else expandedLevels + "county"
+                        }
+                        .padding(vertical = 4.dp)
+                )
+
+                if (isExpanded) {
+                    Spacer(Modifier.height(8.dp))
+
+                    SimilarGrid(
+                        countyArtists,
+                        onPlayNext = onPlayNext,
+                        onAddToQueue = onAddToQueue,
+                        onAddToPlaylist = onAddToPlaylist,
+                        onClick = onClick,
+                        onEdit = onEdit)
+
+                }
+            }
+        }
+
+
+        area.stateName?.let { name ->
+            val isExpanded = expandedLevels.contains("state")
+            Column {
+                Text(
+                    text = "More artists from $name",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            expandedLevels =
+                                if (isExpanded) expandedLevels - "state" else expandedLevels + "state"
+                        }
+                        .padding(vertical = 4.dp)
+                )
+
+                if (isExpanded) {
+                    Spacer(Modifier.height(8.dp))
+
+                    SimilarGrid(
+                        stateArtists,
+                        onPlayNext = onPlayNext,
+                        onAddToQueue = onAddToQueue,
+                        onAddToPlaylist = onAddToPlaylist,
+                        onClick = onClick,
+                        onEdit = onEdit)
+
+
+                }
+            }
+        }
+
+        if (countryCode != null && countryCount in 1..15) {
+            val isExpanded = expandedLevels.contains("country")
+            Column {
+                Text(
+                    text = "More artists from ${country}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            expandedLevels =
+                                if (isExpanded) expandedLevels - "country" else expandedLevels + "country"
+                        }
+                        .padding(vertical = 4.dp)
+                )
+
+                if (isExpanded) {
+                    Spacer(Modifier.height(8.dp))
+
+                    SimilarGrid(
+                        countryArtists,
+                        onPlayNext = onPlayNext,
+                        onAddToQueue = onAddToQueue,
+                        onAddToPlaylist = onAddToPlaylist,
+                        onClick = onClick,
+                        onEdit = onEdit)
+
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun ArtistView(
     modifier: Modifier = Modifier,
     onAlbumClick: ((GridItem) -> Unit)? = null,
     onPlayNext: (GridItem) -> Unit,
     onAddToQueue: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onClickArtist: (GridItem) -> Unit,
+    onAddToPlaylistArtist: (GridItem) -> Unit,
     sortRequest: SortOption?,
     onAddToPlaylist: (GridItem) -> Unit
 ) {
@@ -235,8 +463,14 @@ fun ArtistView(
     val artistDetailUiState by artistDetailViewModel.artistDetailUiState.collectAsState()
     val artist = artistDetailUiState.artist
     val albums = artistDetailUiState.albums
+    val countryArtistsCount by artistDetailViewModel.countryArtistCount.collectAsState()
 
     val refetchUiState by artistDetailViewModel.refetchState.collectAsState()
+    
+    val sameCityArtists by artistDetailViewModel.sameCityArtists.collectAsState()
+    val sameCountyArtists by artistDetailViewModel.sameCountyArtists.collectAsState()
+    val sameStateArtists by artistDetailViewModel.sameStateArtists.collectAsState()
+    val sameCountryArtists by artistDetailViewModel.sameCountryArtists.collectAsState()
 
 
     if (artist != null) {
@@ -250,10 +484,28 @@ fun ArtistView(
                 onAddToPlaylist = onAddToPlaylist,
                 onPlayNext = onPlayNext,
                 header = { FullArtistHeader(artist) },
+                footer = { SceneExpansionSection(
+                    artist.area,
+                    cityArtists = sameCityArtists,
+                    countyArtists = sameCountyArtists,
+                    stateArtists = sameStateArtists,
+                    countryArtists = sameCountryArtists,
+                    countryCount = countryArtistsCount,
+                    onPlayNext = onPlayNextArtist,
+                    onAddToQueue = onAddToQueueArtist,
+                    onAddToPlaylist = onAddToPlaylistArtist,
+                    onClick = onClickArtist,
+                    onEdit = onEditArtist,
+                    country = artist.artist.country,
+                    countryCode = artist.artist.countryCode
+                    ) },
                 onEdit = onEdit,
                 onDelete = { id, title -> pendingDeletion = DeleteEvent(id, title) },
-                onRefetch = { id -> artistDetailViewModel.refetchMetadata(id) }
+                onRefetch = { id -> artistDetailViewModel.refetchMetadata(id) },
             )
+
+
+
 
 
             when (refetchUiState) {
