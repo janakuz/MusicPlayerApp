@@ -4,6 +4,8 @@ import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
+import com.example.musicapp.data.remote.dto.ArtistInfoLastfm
+import com.example.musicapp.data.remote.dto.ArtistLastfmResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.ui.components.SortOption
@@ -35,6 +37,8 @@ interface ArtistRepository {
     suspend fun getArtistDiscogsInfo(discogsId: String): ArtistDicogsResponse?
 
     suspend fun getArtistBio(mbid: String?, name: String): String
+
+    suspend fun getArtistLastfmInfo(mbid: String?, name: String): ArtistInfoLastfm?
 
     suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo>
 

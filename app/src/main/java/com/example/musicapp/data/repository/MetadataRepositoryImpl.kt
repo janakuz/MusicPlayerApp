@@ -448,11 +448,22 @@ class OfflineMetadataRepository(
                 discogsId = new.discogsId,
                 image = new.image,
                 bio = new.bio,
+                countryCode = mbArtist.country,
+                country = Locale.Builder().setRegion(mbArtist.country).build().displayCountry,
+                homeCity = mbArtist.beginArea?.name,
+                homeAreaGid = mbArtist.beginArea?.id,
+                activeStartYear = mbArtist.lifeSpan?.begin,
+                activeEndYear = mbArtist.lifeSpan?.end,
+                isDefunct = mbArtist.lifeSpan?.ended == true,
                 enrichmentAttempted = true,
                 isEnriched = true
             )
 
             artistRepository.update(updated)
+
+            if (currentArtist.mbId != null)
+                artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+
         }
     }
 

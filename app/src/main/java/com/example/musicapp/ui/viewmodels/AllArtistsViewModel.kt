@@ -107,7 +107,7 @@ class AllArtistsViewModel @Inject constructor(
         viewModelScope.launch {
             val artist = artistRepository.getArtist(id).first()
             _refetchState.value = RefetchState.Saving
-            val searchResults = artistRepository.findArtistMB(artist.searchKey)
+            val searchResults = artistRepository.findArtistMB(artist.name)
             if (searchResults.isEmpty()) {
                 _refetchState.value = RefetchState.Error("No artist found")
             } else if (searchResults.size > 1) {

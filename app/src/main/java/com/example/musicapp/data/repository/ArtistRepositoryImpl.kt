@@ -7,6 +7,8 @@ import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
+import com.example.musicapp.data.remote.dto.ArtistInfoLastfm
+import com.example.musicapp.data.remote.dto.ArtistLastfmResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.service.DiscogsApiService
@@ -80,18 +82,38 @@ class ArtistRepositoryImpl(
     }
 
     override suspend fun getArtistBio(mbid: String?, name: String): String {
-        return try {
-            val response = lastfmApiService.getArtistInfo(mbid = mbid, artist = null)
-            response.artist.bio.content
-        } catch (e: Exception) {
-            try {
-                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
-                fallbackResponse.artist.bio.content
-            } catch (e: Exception) {
-                "No bio available."
-            }
-        }
+        val artistInfo = getArtistLastfmInfo(mbid, name)
+        return artistInfo?.bio?.content ?: "No bio available."
+//        return try {
+//            val response = lastfmApiService.getArtistInfo(mbid = mbid, artist = null)
+//            response.artist.bio.content
+//        } catch (e: Exception) {
+//            try {
+//                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+//                fallbackResponse.artist.bio.content
+//            } catch (e: Exception) {
+//                "No bio available."
+//            }
+//        }
 
+    }
+
+    override suspend fun getArtistLastfmInfo(
+        mbid: String?,
+        name: String
+    ): ArtistInfoLastfm? {
+        return try {
+            val response = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+            response.artist
+        } catch (e: Exception) {
+//            try {
+//                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+//                fallbackResponse.artist
+//            } catch (e: Exception) {
+                Log.e("Last fm info", e.message.toString())
+                null
+//            }
+        }
     }
 
     override suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo> {
