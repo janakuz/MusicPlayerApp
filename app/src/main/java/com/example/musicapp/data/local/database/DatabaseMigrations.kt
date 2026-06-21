@@ -343,6 +343,29 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
     }
 }
 
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `similar_artists` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `artist1Id` INTEGER NOT NULL, 
+                `artist2Id` INTEGER NOT NULL, 
+                `similarityScore` REAL NOT NULL, 
+                FOREIGN KEY(`artist1Id`) REFERENCES `artists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , 
+                FOREIGN KEY(`artist2Id`) REFERENCES `artists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+            )
+        """.trimIndent())
+
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_similar_artists_artist2Id` ON `similar_artists` (`artist2Id`)"
+        )
+
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_similar_artists_artist1Id_artist2Id` ON `similar_artists` (`artist1Id`, `artist2Id`)"
+        )
+    }
+}
+
 fun getAllMigrations(context: Context): Array<Migration> {
     return arrayOf(
         MIGRATION_4_5,
@@ -359,7 +382,8 @@ fun getAllMigrations(context: Context): Array<Migration> {
         MIGRATION_15_16,
         MIGRATION_16_17,
         MIGRATION_17_18,
-        MIGRATION_18_19
+        MIGRATION_18_19,
+        MIGRATION_19_20
     )
 }
 
