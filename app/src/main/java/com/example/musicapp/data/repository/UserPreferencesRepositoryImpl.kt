@@ -3,6 +3,7 @@ package com.example.musicapp.data.repository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.musicapp.ui.components.SortField
@@ -40,6 +41,7 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         val LABEL_SORT_FIELD = stringPreferencesKey("label_sort_field")
 
         val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
+        val MIN_SIMILARITY_SCORE = doublePreferencesKey("min_similarity_score")
     }
 
     override val artistSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
@@ -114,6 +116,11 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
     }.distinctUntilChanged()
 
 
+    override val minVisibleSimilarityScore: Flow<Double> = dataStore.data.map { prefs ->
+        prefs[MIN_SIMILARITY_SCORE] ?: 0.0
+    }.distinctUntilChanged()
+
+
     override suspend fun updateArtistSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[ARTIST_SORT_FIELD] = option.field.name
@@ -182,5 +189,12 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
             prefs[SKIP_SILENCE] = enabled
         }
     }
+
+    override suspend fun updateMinSimilarityScore(newValue: Double) {
+        dataStore.edit { prefs ->
+            prefs[MIN_SIMILARITY_SCORE] = newValue
+        }
+    }
+
 
 }

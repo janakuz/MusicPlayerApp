@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
@@ -93,6 +94,22 @@ class ArtistDetailViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = ArtistDetailUiState(isLoading = true)
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val similarArtists: StateFlow<List<Artist>> = combine(
+        userPreferencesRepository.minVisibleSimilarityScore,
+        flowOf(artistId)
+    ) { minScore, id ->
+        Pair(minScore, id)
+    }.flatMapLatest { (minScore, id) ->
+       artistRepository.getSimilarArtists(id, minScore)
+    }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)

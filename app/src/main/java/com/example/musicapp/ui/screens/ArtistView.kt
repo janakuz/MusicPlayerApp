@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.screens
 
 import android.app.Activity
+import android.widget.Space
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -63,6 +65,7 @@ import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState
 import com.example.musicapp.util.getCountryDisplay
 import com.example.musicapp.util.getLifespanDisplay
+import com.google.common.collect.ForwardingIterator
 import kotlin.collections.chunked
 
 
@@ -241,6 +244,48 @@ fun SimilarGrid(
 }
 
 @Composable
+fun SimilarSection(
+    similarArtists: List<Artist>,
+    modifier: Modifier = Modifier,
+    onPlayNext: (GridItem) -> Unit,
+    onAddToQueue: (GridItem) -> Unit,
+    onEdit: (GridItem) -> Unit,
+    onClick: (GridItem) -> Unit,
+    onAddToPlaylist: (GridItem) -> Unit
+    ) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+//            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "SIMILAR ARTISTS",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                modifier = modifier.padding(horizontal = 16.dp)
+
+            )
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+
+        SimilarGrid(
+            artists = similarArtists,
+            onPlayNext = onPlayNext,
+            onAddToQueue = onAddToQueue,
+            onEdit = onEdit,
+            onClick = onClick,
+            onAddToPlaylist = onAddToPlaylist
+        )
+    }
+}
+
+@Composable
 fun SceneExpansionSection(
     area: AreaHierarchy,
     countryCode: String?,
@@ -262,20 +307,23 @@ fun SceneExpansionSection(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .fillMaxWidth(),
+//            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "EXPLORE LOCAL SCENES",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold
-        )
-        HorizontalDivider(
-            thickness = 0.5.dp,
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "LOCAL SCENES",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                modifier = modifier.padding(horizontal = 16.dp)
+            )
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
 
 
         area.cityName?.let { name ->
@@ -291,7 +339,7 @@ fun SceneExpansionSection(
                             expandedLevels =
                                 if (isExpanded) expandedLevels - "city" else expandedLevels + "city"
                         }
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 4.dp, horizontal = 8.dp)
                 )
 
                 if (isExpanded) {
@@ -322,7 +370,7 @@ fun SceneExpansionSection(
                             expandedLevels =
                                 if (isExpanded) expandedLevels - "county" else expandedLevels + "county"
                         }
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 4.dp, horizontal = 8.dp)
                 )
 
                 if (isExpanded) {
@@ -354,7 +402,7 @@ fun SceneExpansionSection(
                             expandedLevels =
                                 if (isExpanded) expandedLevels - "state" else expandedLevels + "state"
                         }
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 4.dp, horizontal = 8.dp)
                 )
 
                 if (isExpanded) {
@@ -386,7 +434,7 @@ fun SceneExpansionSection(
                             expandedLevels =
                                 if (isExpanded) expandedLevels - "country" else expandedLevels + "country"
                         }
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 4.dp, horizontal = 8.dp)
                 )
 
                 if (isExpanded) {
@@ -465,8 +513,10 @@ fun ArtistView(
     val albums = artistDetailUiState.albums
     val countryArtistsCount by artistDetailViewModel.countryArtistCount.collectAsState()
 
+    val similarArtists by artistDetailViewModel.similarArtists.collectAsState()
+
     val refetchUiState by artistDetailViewModel.refetchState.collectAsState()
-    
+
     val sameCityArtists by artistDetailViewModel.sameCityArtists.collectAsState()
     val sameCountyArtists by artistDetailViewModel.sameCountyArtists.collectAsState()
     val sameStateArtists by artistDetailViewModel.sameStateArtists.collectAsState()
@@ -484,21 +534,35 @@ fun ArtistView(
                 onAddToPlaylist = onAddToPlaylist,
                 onPlayNext = onPlayNext,
                 header = { FullArtistHeader(artist) },
-                footer = { SceneExpansionSection(
-                    artist.area,
-                    cityArtists = sameCityArtists,
-                    countyArtists = sameCountyArtists,
-                    stateArtists = sameStateArtists,
-                    countryArtists = sameCountryArtists,
-                    countryCount = countryArtistsCount,
-                    onPlayNext = onPlayNextArtist,
-                    onAddToQueue = onAddToQueueArtist,
-                    onAddToPlaylist = onAddToPlaylistArtist,
-                    onClick = onClickArtist,
-                    onEdit = onEditArtist,
-                    country = artist.artist.country,
-                    countryCode = artist.artist.countryCode
-                    ) },
+                footer = {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        SimilarSection(
+                            similarArtists = similarArtists,
+                            onPlayNext = onPlayNextArtist,
+                            onAddToQueue = onAddToQueueArtist,
+                            onAddToPlaylist = onAddToPlaylistArtist,
+                            onClick = onClickArtist,
+                            onEdit = onEditArtist,
+                        )
+
+                        SceneExpansionSection(
+                            artist.area,
+                            cityArtists = sameCityArtists,
+                            countyArtists = sameCountyArtists,
+                            stateArtists = sameStateArtists,
+                            countryArtists = sameCountryArtists,
+                            countryCount = countryArtistsCount,
+                            onPlayNext = onPlayNextArtist,
+                            onAddToQueue = onAddToQueueArtist,
+                            onAddToPlaylist = onAddToPlaylistArtist,
+                            onClick = onClickArtist,
+                            onEdit = onEditArtist,
+                            country = artist.artist.country,
+                            countryCode = artist.artist.countryCode
+                        )
+                    }},
                 onEdit = onEdit,
                 onDelete = { id, title -> pendingDeletion = DeleteEvent(id, title) },
                 onRefetch = { id -> artistDetailViewModel.refetchMetadata(id) },

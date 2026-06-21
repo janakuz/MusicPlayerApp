@@ -49,14 +49,14 @@ fun ScanLibraryScreen(
     //TEMP BUTTON
 //    val context = LocalContext.current
 //    Button(
-//        onClick = { viewModel.backfillArtistArea(context) },
+//        onClick = { viewModel.backfillSimilar(context) },
 //        modifier = Modifier.fillMaxWidth(),
 //        contentPadding = PaddingValues(vertical = 16.dp),
 //        shape = RoundedCornerShape(16.dp)
 //    ) {
 //        Text("Start Import")
 //    }
-//
+
 //    LinearProgressIndicator(
 //        progress = { uiState.enrichmentProgress },
 //        modifier = Modifier

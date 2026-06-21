@@ -1,6 +1,7 @@
 package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
@@ -8,6 +9,8 @@ import com.example.musicapp.data.remote.dto.ArtistInfoLastfm
 import com.example.musicapp.data.remote.dto.ArtistLastfmResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.remote.dto.SimilarArtist
+import com.example.musicapp.data.remote.dto.SimilarArtistsResponse
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
@@ -39,6 +42,14 @@ interface ArtistRepository {
     suspend fun getArtistBio(mbid: String?, name: String): String
 
     suspend fun getArtistLastfmInfo(mbid: String?, name: String): ArtistInfoLastfm?
+
+    suspend fun getAllSimilarArtists(artistId: Int): List<Int>
+
+    suspend fun getSimilarArtistsLastfm(artistName: String): List<SimilarArtist>
+
+    suspend fun insertSimilar(artists: List<SimilarArtists>)
+
+    suspend fun getSimilarArtists(artistId: Int, minSimilarityScore: Double = 0.0): Flow<List<Artist>>
 
     suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo>
 

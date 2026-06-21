@@ -17,6 +17,8 @@ interface MetadataRepository {
 
     suspend fun backfillAreas(): Flow<ScanProgress>
 
+    suspend fun backfillSimilar(): Flow<ScanProgress>
+
     suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress>
 
     suspend fun updateAlbum(
