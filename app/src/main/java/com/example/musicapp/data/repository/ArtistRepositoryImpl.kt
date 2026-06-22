@@ -59,6 +59,12 @@ class ArtistRepositoryImpl(
         return artistDao.getArtistWithArea(id)
     }
 
+    override fun searchArtists(query: String): Flow<List<Artist>> {
+        val final = "%${query.trim()}%"
+
+        return artistDao.searchArtists(final)
+    }
+
     override suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int {
         return artistDao.getSingleArtistByName(searchKey)?.id ?: insertByName(name).toInt()
     }
@@ -142,6 +148,15 @@ class ArtistRepositoryImpl(
         minSimilarityScore: Double
     ): Flow<List<Artist>> {
         return artistDao.getSimilarArtists(artistId, minSimilarityScore)
+    }
+
+    override suspend fun insertSimilarManual(artist1Id: Int, artist2Id: Int) {
+        val entry = SimilarArtists(artist1Id = artist1Id, artist2Id = artist2Id, similarityScore = 1.0)
+        artistDao.insertSimilar(entry)
+    }
+
+    override suspend fun removeSimilar(artist1Id: Int, artist2Id: Int) {
+        artistDao.removeSimilar(artist1Id, artist2Id)
     }
 
     override suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo> {

@@ -7,33 +7,62 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
@@ -44,6 +73,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.fromHtml
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,8 +95,11 @@ import com.example.musicapp.ui.viewmodels.ArtistDetailViewModel
 import com.example.musicapp.ui.viewmodels.RefetchAlbumState
 import com.example.musicapp.util.getCountryDisplay
 import com.example.musicapp.util.getLifespanDisplay
+import com.example.musicapp.util.normalizeGenre
+import com.example.musicapp.util.toTitleCase
 import com.google.common.collect.ForwardingIterator
 import kotlin.collections.chunked
+import kotlin.text.trim
 
 
 @Composable
@@ -199,9 +232,10 @@ fun SimilarGrid(
     onAddToQueue: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     onClick: (GridItem) -> Unit,
-    onAddToPlaylist: (GridItem) -> Unit
+    onAddToPlaylist: (GridItem) -> Unit,
+    onRemoveSimilar: ((Int) -> Unit)? = null,
 ){
-    val artistRows = artists.chunked(3)
+    val artistRows = remember(artists) { artists.chunked(3) }
 
     artistRows.forEach { row ->
         Row(
@@ -209,26 +243,29 @@ fun SimilarGrid(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             for (artist in row) {
-                Box(modifier = Modifier.weight(1f)) {
-                    ImageWithTextColumn(
-                        item = GridItem.ArtistItem(
-                            id = artist.id,
-                            displayName = artist.name,
-                            imageRes = artist.image ?: "",
-                            description = artist.bio ?: ""
-                        ),
-                        image = artist.image ?: "",
-                        text = artist.name,
-                        isAlbum = false,
-                        onPlayNext = onPlayNext,
-                        imageShape = CircleShape,
-                        imageModifier = Modifier.size(80.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        onAddToQueue = onAddToQueue,
-                        onEdit = onEdit,
-                        onClick = onClick,
-                        onAddToPlaylist = onAddToPlaylist
-                    )
+                key(artist.id) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ImageWithTextColumn(
+                            item = GridItem.ArtistItem(
+                                id = artist.id,
+                                displayName = artist.name,
+                                imageRes = artist.image ?: "",
+                                description = artist.bio ?: ""
+                            ),
+                            image = artist.image ?: "",
+                            text = artist.name,
+                            isAlbum = false,
+                            onPlayNext = onPlayNext,
+                            imageShape = CircleShape,
+                            imageModifier = Modifier.size(80.dp),
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            onAddToQueue = onAddToQueue,
+                            onEdit = onEdit,
+                            onClick = onClick,
+                            onAddToPlaylist = onAddToPlaylist,
+                            onRemoveSimilar = onRemoveSimilar
+                        )
+                    }
                 }
 
             }
@@ -251,8 +288,9 @@ fun SimilarSection(
     onAddToQueue: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     onClick: (GridItem) -> Unit,
-    onAddToPlaylist: (GridItem) -> Unit
-    ) {
+    onAddToPlaylist: (GridItem) -> Unit,
+    onRemoveSimilar: (Int) -> Unit
+) {
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -280,7 +318,8 @@ fun SimilarSection(
             onAddToQueue = onAddToQueue,
             onEdit = onEdit,
             onClick = onClick,
-            onAddToPlaylist = onAddToPlaylist
+            onAddToPlaylist = onAddToPlaylist,
+            onRemoveSimilar
         )
     }
 }
@@ -300,8 +339,7 @@ fun SceneExpansionSection(
     onAddToQueue: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
     onClick: (GridItem) -> Unit,
-    onAddToPlaylist: (GridItem) -> Unit
-
+    onAddToPlaylist: (GridItem) -> Unit,
 ) {
     var expandedLevels by remember { mutableStateOf(emptySet<String>()) }
 
@@ -454,6 +492,127 @@ fun SceneExpansionSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddSimilarArtistDialog(
+    suggestions: List<Artist>,
+    onDismissRequest: () -> Unit,
+    onArtistSelected: (artistId: Int) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    currentSimilar: List<Artist>,
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel")
+            }
+        },
+        title = {
+            Text(
+                text = "Add Similar Artist",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = expanded && suggestions.isNotEmpty(),
+                    onExpandedChange = {
+                        expanded = it
+                    }
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            searchQuery = it
+                            onSearchQueryChange(it)
+                            expanded = true
+                        },
+                        modifier = Modifier
+                            .menuAnchor(MenuAnchorType.PrimaryEditable, true)
+                            .fillMaxWidth(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded && suggestions.isNotEmpty(),
+                        onDismissRequest = {
+                            expanded = false
+                        }
+                    ) {
+                        suggestions.forEach { suggestion ->
+                            if (!currentSimilar.contains(suggestion)) {
+                                DropdownMenuItem(
+                                    text = {
+
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    onArtistSelected(suggestion.id)
+                                                    onDismissRequest()
+                                                }
+                                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            AsyncImage(
+                                                model = suggestion.image,
+                                                contentDescription = null,
+                                                placeholder = painterResource(R.drawable.rounded_groups_24),
+                                                error = painterResource(R.drawable.rounded_groups_24),
+                                                fallback = painterResource(R.drawable.rounded_groups_24),
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                contentScale = ContentScale.Crop
+                                            )
+
+                                            Spacer(modifier = Modifier.width(12.dp))
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = suggestion.name,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                if (!suggestion.country.isNullOrBlank()) {
+                                                    Text(
+                                                        text = suggestion.country,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        }
+
+
+                                    },
+                                    onClick = {
+                                        onArtistSelected(suggestion.id)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
 @Composable
 fun ArtistView(
     modifier: Modifier = Modifier,
@@ -467,7 +626,9 @@ fun ArtistView(
     onClickArtist: (GridItem) -> Unit,
     onAddToPlaylistArtist: (GridItem) -> Unit,
     sortRequest: SortOption?,
-    onAddToPlaylist: (GridItem) -> Unit
+    onAddToPlaylist: (GridItem) -> Unit,
+    showAddSimilarDialog: Boolean,
+    onDismissSimilar: () -> Unit,
 ) {
 
     val artistDetailViewModel: ArtistDetailViewModel = hiltViewModel()
@@ -522,6 +683,8 @@ fun ArtistView(
     val sameStateArtists by artistDetailViewModel.sameStateArtists.collectAsState()
     val sameCountryArtists by artistDetailViewModel.sameCountryArtists.collectAsState()
 
+    val similarSuggestions by artistDetailViewModel.similarArtistSuggestions.collectAsState()
+
 
     if (artist != null) {
 
@@ -545,6 +708,7 @@ fun ArtistView(
                             onAddToPlaylist = onAddToPlaylistArtist,
                             onClick = onClickArtist,
                             onEdit = onEditArtist,
+                            onRemoveSimilar = { id -> artistDetailViewModel.removeSimilar(artist.artist.id, id) }
                         )
 
                         SceneExpansionSection(
@@ -567,6 +731,16 @@ fun ArtistView(
                 onDelete = { id, title -> pendingDeletion = DeleteEvent(id, title) },
                 onRefetch = { id -> artistDetailViewModel.refetchMetadata(id) },
             )
+
+            if (showAddSimilarDialog){
+                AddSimilarArtistDialog(
+                    suggestions = similarSuggestions,
+                    onDismissRequest = onDismissSimilar,
+                    onArtistSelected = { suggestionId -> artistDetailViewModel.addSimilar(artist.artist.id, suggestionId) },
+                    onSearchQueryChange = { query -> artistDetailViewModel.onQueryChange(query) },
+                    currentSimilar = similarArtists
+                )
+            }
 
 
 

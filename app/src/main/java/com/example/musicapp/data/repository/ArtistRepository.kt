@@ -29,6 +29,8 @@ interface ArtistRepository {
 
     fun getArtistWithArea(id: Int): Flow<ArtistWithArea>
 
+    fun searchArtists(query: String): Flow<List<Artist>>
+
     suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int
 
     suspend fun getArtistByName(name: String): List<Artist>
@@ -50,6 +52,10 @@ interface ArtistRepository {
     suspend fun insertSimilar(artists: List<SimilarArtists>)
 
     suspend fun getSimilarArtists(artistId: Int, minSimilarityScore: Double = 0.0): Flow<List<Artist>>
+
+    suspend fun insertSimilarManual(artist1Id: Int, artist2Id: Int)
+
+    suspend fun removeSimilar(artist1Id: Int, artist2Id: Int)
 
     suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo>
 

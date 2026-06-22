@@ -14,6 +14,7 @@ import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.remote.dto.Release
+import com.example.musicapp.data.remote.dto.SimilarArtist
 import com.example.musicapp.data.repository.AlbumArtistRepository
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.AreaRepository
@@ -26,12 +27,14 @@ import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -68,6 +71,8 @@ class ArtistDetailViewModel @Inject constructor(
 
     private val _refetchState = MutableStateFlow<RefetchAlbumState>(RefetchAlbumState.Idle)
     val refetchState = _refetchState.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -180,12 +185,47 @@ class ArtistDetailViewModel @Inject constructor(
     )
 
 
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val similarArtistSuggestions: StateFlow<List<Artist>> = _searchQuery
+        .debounce(250)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.length < 2) {
+                flowOf(emptyList())
+            } else {
+                artistRepository.searchArtists(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+
+    fun onQueryChange(newQuery: String) {
+        _searchQuery.value = newQuery
+    }
+
+    fun addSimilar(mainArtistId: Int, similarArtistId: Int){
+        viewModelScope.launch {
+            artistRepository.insertSimilarManual(mainArtistId, similarArtistId)
+        }
+    }
+
+
+    fun removeSimilar(mainArtistId: Int, similarArtistId: Int){
+        viewModelScope.launch {
+            artistRepository.removeSimilar(mainArtistId, similarArtistId)
+        }
+    }
 
     fun setSort(option: SortOption) {
         viewModelScope.launch {
             userPreferencesRepository.updateArtistAlbumsSort(option)
         }
     }
+
 
     fun prepareDeletion(albumId: Int) {
         viewModelScope.launch {

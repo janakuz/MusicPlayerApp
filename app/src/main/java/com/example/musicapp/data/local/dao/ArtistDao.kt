@@ -150,4 +150,11 @@ interface ArtistDao {
         ORDER BY similarityScore DESC
     """)
     fun getSimilarArtists(artistId: Int, minSimilarity: Double = 0.0): Flow<List<Artist>>
+
+    @Query("DELETE FROM similar_artists WHERE artist1Id=:artist1 AND artist2Id=:artist2")
+    suspend fun removeSimilar(artist1: Int, artist2: Int)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSimilar(similarArist: SimilarArtists)
+
 }
