@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistRemove
 import androidx.compose.material.icons.filled.Queue
@@ -44,6 +45,7 @@ data class MenuActions(
     val onRemoveFromQueue: (() -> Unit)? = null,
     val onAddToPlaylist: (() -> Unit)? = null,
     val onRemoveFromPlaylist: (() -> Unit)? = null,
+    val onRemoveSimilar: (() -> Unit)? = null,
     val onEdit: (() -> Unit)? = null,
     val onRename: (() -> Unit)? = null,
     val onDelete: (() -> Unit)? = null,
@@ -142,6 +144,14 @@ fun ActionMenu(
                     actions.onRemoveFromPlaylist,
                     onDismiss
                 )
+
+                MenuActionItem(
+                    "Remove as Similar Artist",
+                    Icons.Default.LinkOff,
+                    actions.onRemoveSimilar,
+                    onDismiss
+                )
+
 
                 if (actions.onEdit != null || actions.onRename != null || actions.onRefetchMetadata != null || actions.onExportM3u != null || actions.onMoveToAlbum != null) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

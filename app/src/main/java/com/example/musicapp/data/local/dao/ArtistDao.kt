@@ -11,6 +11,7 @@ import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
@@ -55,8 +56,9 @@ interface ArtistDao {
     @Query("SELECT * FROM artists where id=:id")
     fun getArtist(id: Int): Flow<Artist>
 
-    @Query("SELECT a.*, ah.city_name as area_city, ah.county_name as area_county, " +
-            "ah.state_name as area_state, ah.country_name as area_country " +
+    @Query("SELECT a.*, ah.city as area_city, ah.city_name as area_city_name, ah.county as area_county, ah.county_name as area_county_name, " +
+            "ah.state as area_state, ah.state_name as area_state_name, ah.country as area_country, ah.country_name as area_country_name, " +
+            "COALESCE(ah.id, '') as area_id, COALESCE(ah.gid, '') as area_gid " +
             "FROM artists a " +
             "LEFT JOIN area_hierarchy ah ON a.homeAreaGid=ah.gid " +
             "WHERE a.id=:id")
@@ -132,5 +134,27 @@ interface ArtistDao {
     FROM artists
     """)
     fun getMaxYear(): Flow<Int>
+
+    @Query("SELECT artist2Id FROM similar_artists WHERE artist1Id = :artistId")
+    suspend fun getAllSimilar(artistId: Int): List<Int>
+
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSimilarArtists(similarArtists: List<SimilarArtists>)
+
+    @Query("""
+        SELECT a2.*
+        FROM similar_artists sa
+        JOIN artists a2 ON sa.artist2Id=a2.id
+        WHERE sa.artist1Id = :artistId AND sa.similarityScore >= :minSimilarity
+        ORDER BY similarityScore DESC
+    """)
+    fun getSimilarArtists(artistId: Int, minSimilarity: Double = 0.0): Flow<List<Artist>>
+
+    @Query("DELETE FROM similar_artists WHERE artist1Id=:artist1 AND artist2Id=:artist2")
+    suspend fun removeSimilar(artist1: Int, artist2: Int)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSimilar(similarArist: SimilarArtists)
 
 }

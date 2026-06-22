@@ -5,7 +5,7 @@ fun String.normalizeForMatching(): String {
         .replace("&", "and")
         .replace(Regex("\\bthe\\b"), "")
 //        .replace(Regex("\\((.*?)\\)"), "")
-        .replace(Regex("[^a-z0-9\\s]"), "")
+        .replace(Regex("[^a-z0-9\\s\\-]"), "")
         .replace(Regex("\\s+"), " ")
         .replace("ep", "")
         .trim()

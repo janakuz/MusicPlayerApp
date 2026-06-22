@@ -18,7 +18,9 @@ interface AreaRepository {
 
     fun getAreaDashboard(sortBy: SortOption, limit: Int = 20): Flow<List<AreaInfo>>
 
-    fun getArtistsFromArea(gid: String, countryCode: String, type: AreaType): Flow<SearchResult>
+    fun getArtistsAndAlbumsFromArea(gid: String, countryCode: String, type: AreaType): Flow<SearchResult>
+
+    fun getArtistsFromArea(gid: String, countryCode: String, type: AreaType): Flow<List<Artist>>
 
     suspend fun getAreaName(gid: String): String
 

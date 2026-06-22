@@ -117,7 +117,7 @@ enum class HomeScreen(@StringRes val title: Int) {
 }
 
 enum class LibraryScreen {
-    ARTISTS, ALBUMS, TRACKS, ALBUM_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, OTHER
+    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, OTHER
 }
 
 fun routeToLibraryScreen(route: String?): LibraryScreen =
@@ -125,7 +125,7 @@ fun routeToLibraryScreen(route: String?): LibraryScreen =
         route?.startsWith(HomeScreen.Artists.name) == true -> LibraryScreen.ARTISTS
         route?.startsWith(HomeScreen.Albums.name) == true -> LibraryScreen.ALBUMS
         route?.startsWith(HomeScreen.Tracks.name) == true -> LibraryScreen.TRACKS
-        route?.startsWith("artist/{artistId}") == true -> LibraryScreen.ALBUM_DETAIL
+        route?.startsWith("artist/{artistId}") == true -> LibraryScreen.ARTIST_DETAIL
         route?.startsWith(HomeScreen.Playlists.name) == true -> LibraryScreen.PLAYLISTS
         route?.startsWith(HomeScreen.Genres.name) == true -> LibraryScreen.GENRES
         route?.startsWith(HomeScreen.Countries.name) == true -> LibraryScreen.COUNTRIES
@@ -158,6 +158,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showAddSimilarDialog by remember {mutableStateOf(false)}
 
     val editRoutes = listOf<String>(
         "artist/edit",
@@ -170,6 +171,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val selectionViewModel: TrackSelectionViewModel = hiltViewModel()
 
     val selectionMode by selectionViewModel.selectionMode.collectAsState()
+
 
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
     val createInfo by playlistViewModel.createInfo.collectAsState()
@@ -361,6 +363,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             showBack = backIndex < 0 && currentRoute != "about",
                             onBack = if (backIndex < 0 && currentRoute != "about") ({ navController.popBackStack() }) else null,
                             title = if (backIndex >= 0 || currentRoute=="about") currentRoute.toTitleCase() else null,
+                            onShowSimilar = { showAddSimilarDialog = true }
                         )
                     }
                     if (selectionMode) {
@@ -557,7 +560,14 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
                         onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") },
                         sortRequest = artistDetailSort,
-                        onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) }
+                        onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
+                        onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") } ,
+                        onClickArtist = { artist -> navController.navigate("artist/${artist.id}") },
+                        onAddToPlaylistArtist = { artist -> playlistViewModel.onAddToPlaylistArtist(artist.id) },
+                        showAddSimilarDialog = showAddSimilarDialog,
+                        onDismissSimilar = { showAddSimilarDialog = false }
                     )
                 }
 

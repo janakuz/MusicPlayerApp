@@ -56,7 +56,7 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         LibraryScreen.TRACKS ->
             listOf(SortField.NAME, SortField.DURATION)
 
-        LibraryScreen.ALBUM_DETAIL -> listOf(
+        LibraryScreen.ARTIST_DETAIL -> listOf(
             SortField.NAME,
             SortField.RELEASE_DATE,
             SortField.DURATION
@@ -150,8 +150,9 @@ fun SortMenu(
 fun RightMenu(
     screen: LibraryScreen,
     onSortSelected: (SortOption) -> Unit,
-    onImport: (() -> Unit)? = null
-) {
+    onImport: (() -> Unit)? = null,
+    onShowSimilar: (() -> Unit)? = null,
+    ) {
     var expanded by remember { mutableStateOf(false) }
     var menuPage by remember { mutableStateOf(MenuPage.MAIN) }
 
@@ -182,6 +183,16 @@ fun RightMenu(
                             }
                         )
                     }
+                    if (screen == LibraryScreen.ARTIST_DETAIL && onShowSimilar != null) {
+                        DropdownMenuItem(
+                            text = { Text("Add Similar Artist") },
+                            onClick = {
+                                expanded = false
+                                onShowSimilar()
+                            }
+                        )
+                    }
+
 
                     if (availableSortFields(screen).isNotEmpty()) {
 

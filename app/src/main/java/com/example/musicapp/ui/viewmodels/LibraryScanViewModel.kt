@@ -98,6 +98,15 @@ class LibraryScanViewModel @Inject constructor(
     }
 
 
+    fun backfillSimilar(context: Context){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerSimilarArtists()
+
+        }
+    }
+
+
+
     fun observeEnrichment() {
         workerManagerRepository.getEnrichmentProgress()
             .onEach { info ->

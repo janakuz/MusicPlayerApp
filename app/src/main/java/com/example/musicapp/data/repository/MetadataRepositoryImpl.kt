@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.ArtistSummary
@@ -448,11 +449,22 @@ class OfflineMetadataRepository(
                 discogsId = new.discogsId,
                 image = new.image,
                 bio = new.bio,
+                countryCode = mbArtist.country,
+                country = Locale.Builder().setRegion(mbArtist.country).build().displayCountry,
+                homeCity = mbArtist.beginArea?.name,
+                homeAreaGid = mbArtist.beginArea?.id,
+                activeStartYear = mbArtist.lifeSpan?.begin,
+                activeEndYear = mbArtist.lifeSpan?.end,
+                isDefunct = mbArtist.lifeSpan?.ended == true,
                 enrichmentAttempted = true,
                 isEnriched = true
             )
 
             artistRepository.update(updated)
+
+            if (currentArtist.mbId != null)
+                artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+
         }
     }
 
@@ -783,6 +795,68 @@ class OfflineMetadataRepository(
         }
     }
 
+    override suspend fun backfillSimilar(): Flow<ScanProgress> = flow {
+        val allArtists = artistRepository.getAll()
+        var current = 0
+        val total = allArtists.size
+
+        for (artist in allArtists){
+            insertSimilarArtists(artist.id, artist.name)
+            delay(500)
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = artist.name
+            )
+
+            emit(progress)
+
+            current++
+        }
+    }
+
+
+
+
+    private suspend fun insertSimilarArtists(artistId: Int, artistName: String){
+        if (artistRepository.getAllSimilarArtists(artistId).isEmpty()){
+            val similar = artistRepository.getSimilarArtistsLastfm(artistName)
+
+            val existingSimilar = mutableListOf<SimilarArtists>()
+
+            for (similarArtist in similar){
+                val existingMbId = if (similarArtist.mbid != null) artistRepository.getArtistByMbid(similarArtist.mbid) else null
+                val existingName = artistRepository.getArtistByName(similarArtist.name.normalizeForMatching())
+
+
+                if (existingMbId != null || existingName.size == 1){
+                    val existing = existingMbId ?: existingName[0]
+                    existingSimilar.add(
+                        SimilarArtists(
+                            artist1Id = artistId,
+                            artist2Id = existing.id,
+                            similarityScore = similarArtist.match
+                        )
+                    )
+                }
+
+                else if (existingName.size > 1){
+                    for (existing in existingName){
+                        existingSimilar.add(
+                            SimilarArtists(
+                                artist1Id = artistId,
+                                artist2Id = existing.id,
+                                similarityScore = similarArtist.match
+                            )
+                        )
+
+                    }
+                }
+            }
+            artistRepository.insertSimilar(existingSimilar)
+        }
+    }
+
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
         val currentAlbumArtists =
             if (isManual) albumArtistRepository.getAllUnenriched() else albumArtistRepository.getAllUnattempted()
@@ -860,6 +934,7 @@ class OfflineMetadataRepository(
                 currentArtist = currentArtist.copy(bio = bio)
                 toUpdate = true
             }
+
             if (toUpdate && !toInsert) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
 
@@ -869,6 +944,9 @@ class OfflineMetadataRepository(
 
                 if (currentArtist.mbId != null)
                     artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+
+                insertSimilarArtists(currentArtist.id, currentArtist.name)
+
                 artistRepository.update(currentArtist)
             } else if (toInsert) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
@@ -881,6 +959,7 @@ class OfflineMetadataRepository(
                 if (currentArtist.mbId != null)
                     artistGenreRepository.insertArtistGenres(inserted, artistGenresMB.get(currentArtist.mbId).orEmpty())
 
+                insertSimilarArtists(inserted, currentArtist.name)
 
                 albumArtistRepository.updateAlbumArtist(
                     albumArtist.albumId,
@@ -894,8 +973,14 @@ class OfflineMetadataRepository(
                 if (genres.isNotEmpty())
                     artistGenreRepository.insertArtistGenres(currentArtist.id, genres)
 
+
+                insertSimilarArtists(currentArtist.id, currentArtist.name)
+
                 artistRepository.update(currentArtist)
             }
+
+            if (!toUpdate && !toInsert)
+                delay(1000)
             Log.d("scan", "after artist $artistName")
 
             val progress = ScanProgress(

@@ -22,9 +22,24 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val minSimilarityScore: StateFlow<Double> = userPreferencesRepository.minVisibleSimilarityScore
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0.0
+        )
+
+
     fun updateSkipSilence(enabled: Boolean){
         viewModelScope.launch {
             userPreferencesRepository.updateSkipSilence(enabled)
         }
     }
+
+    fun updateMinSimilarityScore(new: Int){
+        viewModelScope.launch {
+            userPreferencesRepository.updateMinSimilarityScore(new/100.0)
+        }
+    }
+
 }

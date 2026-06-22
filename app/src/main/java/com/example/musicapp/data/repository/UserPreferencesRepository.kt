@@ -16,6 +16,7 @@ interface UserPreferencesRepository {
     val labelSortOption: Flow<SortOption>
 
     val skipSilenceToggle: Flow<Boolean>
+    val minVisibleSimilarityScore: Flow<Double>
 
     suspend fun updateArtistSort(option: SortOption)
     suspend fun updateAlbumSort(option: SortOption)
@@ -28,5 +29,6 @@ interface UserPreferencesRepository {
     suspend fun updateLabelSort(option: SortOption)
 
     suspend fun updateSkipSilence(enabled: Boolean)
+    suspend fun updateMinSimilarityScore(newValue: Double)
 
 }

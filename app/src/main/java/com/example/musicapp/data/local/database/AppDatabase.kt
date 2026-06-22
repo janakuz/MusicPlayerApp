@@ -29,6 +29,7 @@ import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.QueueItem
+import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackMood
 
@@ -49,9 +50,10 @@ import com.example.musicapp.data.local.entity.TrackMood
         Area::class,
         AreaType::class,
         AreaArea::class,
-        AreaHierarchy::class
+        AreaHierarchy::class,
+        SimilarArtists::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

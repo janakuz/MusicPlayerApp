@@ -14,6 +14,7 @@ import com.example.musicapp.service.ArtistAreaWorker
 import com.example.musicapp.service.ArtistMetadataWorker
 import com.example.musicapp.service.GenresWorker
 import com.example.musicapp.service.MetadataWorker
+import com.example.musicapp.service.SimilarArtistsWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.concurrent.TimeUnit
@@ -101,6 +102,30 @@ class WorkerManagerRepositoryImpl(private val workManager: WorkManager) :
         val policy = ExistingWorkPolicy.KEEP
 
         val request = OneTimeWorkRequestBuilder<ArtistAreaWorker>()
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                WorkRequest.Companion.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .setInputData(workDataOf("IS_MANUAL_SCAN" to true))
+            .build()
+        workManager.enqueueUniqueWork(
+            "MetadataSync",
+            policy,
+            request
+        )
+    }
+
+    override fun startWorkerSimilarArtists() {
+        val policy = ExistingWorkPolicy.KEEP
+
+        val request = OneTimeWorkRequestBuilder<SimilarArtistsWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(
                 Constraints.Builder()

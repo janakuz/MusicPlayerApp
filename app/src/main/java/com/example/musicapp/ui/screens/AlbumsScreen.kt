@@ -61,6 +61,7 @@ fun AlbumsGrid(
     onClick: ((GridItem) -> Unit)? = null,
     onEdit: (GridItem) -> Unit,
     header: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
     onDelete: (Int, String) -> Unit,
     onRefetch: (Int) -> Unit,
 ) {
@@ -94,6 +95,7 @@ fun AlbumsGrid(
         textStyle = MaterialTheme.typography.bodyMedium,
         onClick = onClick,
         header = header,
+        footer = footer,
         onEdit = onEdit,
         onDelete = onDelete,
         onRefetch = onRefetch

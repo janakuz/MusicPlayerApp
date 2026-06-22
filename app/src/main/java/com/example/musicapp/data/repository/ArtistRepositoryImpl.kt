@@ -4,11 +4,16 @@ import android.util.Log
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.model.ArtistWithArea
 import com.example.musicapp.data.local.model.CountryInfo
 import com.example.musicapp.data.remote.dto.ArtistDicogsResponse
+import com.example.musicapp.data.remote.dto.ArtistInfoLastfm
+import com.example.musicapp.data.remote.dto.ArtistLastfmResponse
 import com.example.musicapp.data.remote.dto.ArtistMBResponse
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.remote.dto.SimilarArtist
+import com.example.musicapp.data.remote.dto.SimilarArtistsResponse
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
@@ -54,6 +59,12 @@ class ArtistRepositoryImpl(
         return artistDao.getArtistWithArea(id)
     }
 
+    override fun searchArtists(query: String): Flow<List<Artist>> {
+        val final = "%${query.trim()}%"
+
+        return artistDao.searchArtists(final)
+    }
+
     override suspend fun getOrCreateArtistByName(name: String, searchKey: String): Int {
         return artistDao.getSingleArtistByName(searchKey)?.id ?: insertByName(name).toInt()
     }
@@ -80,18 +91,72 @@ class ArtistRepositoryImpl(
     }
 
     override suspend fun getArtistBio(mbid: String?, name: String): String {
-        return try {
-            val response = lastfmApiService.getArtistInfo(mbid = mbid, artist = null)
-            response.artist.bio.content
-        } catch (e: Exception) {
-            try {
-                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
-                fallbackResponse.artist.bio.content
-            } catch (e: Exception) {
-                "No bio available."
-            }
-        }
+        val artistInfo = getArtistLastfmInfo(mbid, name)
+        return artistInfo?.bio?.content ?: "No bio available."
+//        return try {
+//            val response = lastfmApiService.getArtistInfo(mbid = mbid, artist = null)
+//            response.artist.bio.content
+//        } catch (e: Exception) {
+//            try {
+//                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+//                fallbackResponse.artist.bio.content
+//            } catch (e: Exception) {
+//                "No bio available."
+//            }
+//        }
 
+    }
+
+    override suspend fun getArtistLastfmInfo(
+        mbid: String?,
+        name: String
+    ): ArtistInfoLastfm? {
+        return try {
+            val response = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+            response.artist
+        } catch (e: Exception) {
+//            try {
+//                val fallbackResponse = lastfmApiService.getArtistInfo(artist = name, mbid = null)
+//                fallbackResponse.artist
+//            } catch (e: Exception) {
+                Log.e("Last fm info", e.message.toString())
+                null
+//            }
+        }
+    }
+
+    override suspend fun getAllSimilarArtists(artistId: Int): List<Int> {
+        return artistDao.getAllSimilar(artistId)
+    }
+
+    override suspend fun getSimilarArtistsLastfm(artistName: String): List<SimilarArtist> {
+        return try {
+            val response = lastfmApiService.getSimilarArtists(artist = artistName, mbid=null)
+            response.similarartists.artist
+        } catch (e: Exception){
+            Log.e("Last fm similar", e.message.toString())
+            emptyList()
+        }
+    }
+
+    override suspend fun insertSimilar(artists: List<SimilarArtists>) {
+        artistDao.insertSimilarArtists(artists)
+    }
+
+    override suspend fun getSimilarArtists(
+        artistId: Int,
+        minSimilarityScore: Double
+    ): Flow<List<Artist>> {
+        return artistDao.getSimilarArtists(artistId, minSimilarityScore)
+    }
+
+    override suspend fun insertSimilarManual(artist1Id: Int, artist2Id: Int) {
+        val entry = SimilarArtists(artist1Id = artist1Id, artist2Id = artist2Id, similarityScore = 1.0)
+        artistDao.insertSimilar(entry)
+    }
+
+    override suspend fun removeSimilar(artist1Id: Int, artist2Id: Int) {
+        artistDao.removeSimilar(artist1Id, artist2Id)
     }
 
     override suspend fun findArtistMB(artistName: String): List<ArtistSearchInfo> {

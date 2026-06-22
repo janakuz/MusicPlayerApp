@@ -1,5 +1,6 @@
 package com.example.musicapp.util
 
+import android.util.Log
 import com.example.musicapp.data.repository.AreaType
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.ArtistWithArea
@@ -35,15 +36,15 @@ fun Artist.getLifespanDisplay(): String {
 }
 
 fun ArtistWithArea.getCountryDisplay(): String {
-    val state = if (area.country == "United Kingdom") area.state else null
+    val state = if (area.countryName == "United Kingdom") area.stateName else null
     var countryDisplay = getFlagEmoji(artist.countryCode, state)
-    countryDisplay += if (!area.city.isTrulyBlank()) " ${area.city},"
+    countryDisplay += if (!area.cityName.isTrulyBlank()) " ${area.cityName},"
                             else if (!artist.homeCity.isTrulyBlank()) " ${artist.homeCity},"
-                            else if (!area.county.isTrulyBlank()) " ${area.county},"
+                            else if (!area.countyName.isTrulyBlank()) " ${area.countyName},"
                             else ""
 
 
-    countryDisplay += if (!area.state.isTrulyBlank()) " ${area.state}" else if (!area.country.isTrulyBlank()) " ${area.country}" else " ${artist.country ?: ""}"
+    countryDisplay += if (!area.stateName.isTrulyBlank()) " ${area.stateName}" else if (!area.countryName.isTrulyBlank()) " ${area.countryName}" else " ${artist.country ?: ""}"
 
     return countryDisplay
 }
