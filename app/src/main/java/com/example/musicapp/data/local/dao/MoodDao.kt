@@ -12,7 +12,7 @@ interface MoodDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(mood: Mood): Long
 
-    @Query("SELECT * FROM genres where name=:name")
+    @Query("SELECT * FROM moods where name=:name")
     suspend fun getMoodByName(name: String): Mood?
 
     @Query("SELECT name FROM moods WHERE name LIKE '%' || :searchString || '%'")

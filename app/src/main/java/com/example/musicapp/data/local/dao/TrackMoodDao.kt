@@ -12,6 +12,9 @@ interface TrackMoodDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(link: TrackMood)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(links: List<TrackMood>)
+
     @Query("DELETE FROM track_moods WHERE trackId = :trackId")
     suspend fun deleteByTrackId(trackId: Int)
 

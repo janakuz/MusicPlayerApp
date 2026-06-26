@@ -96,6 +96,9 @@ fun ScanLibraryScreen(
         )
 
 
+        Spacer(Modifier.height(8.dp))
+
+
         Spacer(Modifier.height(32.dp))
 
         when (workflowState) {
@@ -157,6 +160,19 @@ fun ScanLibraryScreen(
                 ) {
                     Text("Start Import")
                 }
+
+                Spacer(Modifier.height(8.dp))
+
+                Button(
+                    onClick = { viewModel.extractAudioFeatures() },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Get Audio Features")
+                }
+
+
             }
         }
     }

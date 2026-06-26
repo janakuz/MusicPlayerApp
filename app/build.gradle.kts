@@ -33,8 +33,7 @@ android {
         buildConfigField("String", "DISCOGS_SECRET", apikeyProperties.getProperty("DISCOGS_SECRET"))
         buildConfigField("String", "LASTFM_KEY", apikeyProperties.getProperty("LASTFM_KEY"))
         buildConfigField("String", "LASTFM_SECRET", apikeyProperties.getProperty("LASTFM_SECRET"))
-        buildConfigField("String", "SPOTIFY_ID", apikeyProperties.getProperty("SPOTIFY_ID"))
-        buildConfigField("String", "SPOTIFY_SECRET", apikeyProperties.getProperty("SPOTIFY_SECRET"))
+        buildConfigField("String", "ESSENTIA_KEY", apikeyProperties.getProperty("ESSENTIA_KEY"))
         buildConfigField("String", "USER_AGENT", apikeyProperties.getProperty("USER_AGENT"))
 
 
@@ -85,6 +84,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation("androidx.media3:media3-session:1.7.1")
     implementation("androidx.media3:media3-exoplayer:1.7.1")
+    implementation("androidx.media3:media3-transformer:1.7.1")
     implementation("sh.calvin.reorderable:reorderable:2.5.1")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
 // Retrofit with Scalar Converter

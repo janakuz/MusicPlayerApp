@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.google.gson.annotations.SerializedName
 
 @Entity(
     tableName = "tracks",
@@ -36,8 +37,18 @@ data class Track(
     val lastPlayed: Long?,
     val fileUri: String,
     val filePath: String,
-    val valence: Int?,
-    val energy: Int?,
-    val key: String?,
-    val bpm: Int?
+    val key: String? = null,
+    val bpm: Int? = null,
+    val loudness: Double? = null,
+    val dynamicComplexity: Double? = null,
+    val approachability: Double? = null,
+    val engagement: Double? = null,
+    val danceability: Double? = null,
+    val moodAggressive: Double? = null,
+    val moodHappy: Double? = null,
+    val moodParty: Double? = null,
+    val moodRelaxed: Double? = null,
+    val moodSad: Double? = null,
+    val instrumental: Boolean? = null,
+    val voice: String? = null
 )

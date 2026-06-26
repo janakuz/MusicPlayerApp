@@ -1,6 +1,15 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
+import androidx.annotation.OptIn
+import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.transformer.Composition
+import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.Transformer
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
@@ -13,18 +22,27 @@ import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.remote.dto.Tag
 import com.example.musicapp.util.isSimilar
 import com.example.musicapp.util.normalizeForMatching
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import kotlin.collections.orEmpty
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class OfflineMetadataRepository(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val trackRepository: TrackRepository,
+    private val trackMoodRepository: TrackMoodRepository,
     private val albumArtistRepository: AlbumArtistRepository,
     private val albumGenreRepository: AlbumGenreRepository,
     private val artistGenreRepository: ArtistGenreRepository,
@@ -995,6 +1013,55 @@ class OfflineMetadataRepository(
         }
 
     }
+
+    override suspend fun extractAudioFeatures(context: Context): Flow<ScanProgress> = flow {
+        val allTracks = trackRepository.getAllUnEnriched()
+
+        var current = 0
+        val total = allTracks.size
+
+        for (track in allTracks){
+
+            val audioFeatures = trackRepository.getAudioFeatures(context, track)
+
+            if (audioFeatures != null) {
+                val updatedTrack = track.copy(
+                    loudness = audioFeatures.loudness,
+                    dynamicComplexity = audioFeatures.dynamicComplexity,
+                    approachability = audioFeatures.approachability,
+                    engagement = audioFeatures.engagement,
+                    danceability = audioFeatures.danceability,
+                    moodAggressive = audioFeatures.moodAggressive,
+                    moodHappy = audioFeatures.moodHappy,
+                    moodParty = audioFeatures.moodParty,
+                    moodRelaxed = audioFeatures.moodRelaxed,
+                    moodSad = audioFeatures.moodSad,
+                    instrumental = audioFeatures.instrumental,
+                    voice = audioFeatures.voice,
+                    bpm = audioFeatures.bpm.roundToInt(),
+                    key = "${audioFeatures.key.key} ${audioFeatures.key.scale}"
+                )
+
+                trackRepository.update(updatedTrack)
+
+                trackMoodRepository.addTrackMoods(track.id, audioFeatures.moods)
+
+            }
+
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = track.title
+            )
+
+            emit(progress)
+
+            current++
+
+
+        }
+    }
+
 
     private suspend fun fuzzyMatch(
         albumTitleLocal: String,

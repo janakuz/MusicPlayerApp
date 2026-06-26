@@ -366,6 +366,25 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
     }
 }
 
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tracks ADD COLUMN loudness REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN dynamicComplexity REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN approachability REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN engagement REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN danceability REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN moodAggressive REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN moodHappy REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN moodParty REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN moodRelaxed REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN moodSad REAL")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN instrumental INTEGER")
+        db.execSQL("ALTER TABLE tracks ADD COLUMN voice TEXT")
+        db.execSQL("ALTER TABLE tracks DROP COLUMN energy")
+        db.execSQL("ALTER TABLE tracks DROP COLUMN valence")
+    }
+}
+
 fun getAllMigrations(context: Context): Array<Migration> {
     return arrayOf(
         MIGRATION_4_5,
@@ -383,7 +402,8 @@ fun getAllMigrations(context: Context): Array<Migration> {
         MIGRATION_16_17,
         MIGRATION_17_18,
         MIGRATION_18_19,
-        MIGRATION_19_20
+        MIGRATION_19_20,
+        MIGRATION_20_21
     )
 }
 

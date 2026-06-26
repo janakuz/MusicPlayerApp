@@ -83,14 +83,14 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
-    fun backfillArtistMetadata(context: Context){
+    fun backfillArtistMetadata(){
         viewModelScope.launch {
             workerManagerRepository.startWorkerArtistMetadata()
 
         }
     }
 
-    fun backfillArtistArea(context: Context){
+    fun backfillArtistArea(){
         viewModelScope.launch {
             workerManagerRepository.startWorkerArtistArea()
 
@@ -98,13 +98,19 @@ class LibraryScanViewModel @Inject constructor(
     }
 
 
-    fun backfillSimilar(context: Context){
+    fun backfillSimilar(){
         viewModelScope.launch {
             workerManagerRepository.startWorkerSimilarArtists()
 
         }
     }
 
+    fun extractAudioFeatures(){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerTrackAudioFeatures()
+
+        }
+    }
 
 
     fun observeEnrichment() {

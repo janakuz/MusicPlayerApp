@@ -188,6 +188,9 @@ interface TrackDao {
     )
     suspend fun getAllGrouped(): List<Track>
 
+    @Query("SELECT * FROM tracks WHERE bpm IS NULL")
+    suspend fun getAllUnenriched(): List<Track>
+
     @Query("SELECT * FROM tracks WHERE fileUri=:uri")
     suspend fun getTrackByUri(uri: String): Track?
 
