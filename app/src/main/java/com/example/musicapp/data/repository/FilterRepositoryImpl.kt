@@ -1,11 +1,14 @@
 package com.example.musicapp.data.repository
 
+import android.R
 import android.util.Log
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.ArtistDao
+import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.HomeScreen
 import com.example.musicapp.util.normalizeGenre
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 class FilterRepositoryImpl(
     private val albumDao: AlbumDao,
     private val artistDao: ArtistDao,
+    private val trackDao: TrackDao,
 ) : FilterRepository {
 
 
@@ -42,6 +46,13 @@ class FilterRepositoryImpl(
             bindArgs.addAll(filter.selectedGenres)
             conditions.add("g.name in ($genres)")
         }
+
+        if (filter.selectedMoods.isNotEmpty()) {
+            val moods = filter.selectedMoods.map { it.normalizeGenre() }.joinToString(",") { "?" }
+            bindArgs.addAll(filter.selectedMoods)
+            conditions.add("m.name in ($moods)")
+        }
+
 
         if (filter.selectedCountries.isNotEmpty()) {
             val countries = filter.selectedCountries.joinToString(",") { "?" }
@@ -124,10 +135,129 @@ class FilterRepositoryImpl(
         }
 
 
+        when (filter.instrumental) {
+            Instrumental.ANY -> {}
+            Instrumental.VOCAL ->  {conditions.add("t.instrumental = false")}
+            Instrumental.INSTRUMENTAL -> {conditions.add("t.instrumental = true")}
+        }
+
+        when (filter.voice) {
+            VoiceGender.ALL -> {}
+            VoiceGender.MALE -> {
+                conditions.add("t.voice = ?")
+                bindArgs.add("male")
+            }
+            VoiceGender.FEMALE -> {
+                conditions.add("t.voice = ?")
+                bindArgs.add("female")            }
+            VoiceGender.MIXED -> {
+                conditions.add("t.voice = ?")
+                bindArgs.add("mixed")
+            }
+        }
+
+        if (filter.selectedKeys.isNotEmpty()) {
+            val keyClauses = filter.selectedKeys.map { fullKey ->
+                val pattern = when {
+                    fullKey.key != null && fullKey.scale != null -> "${fullKey.key} ${fullKey.scale}"
+                    fullKey.key != null -> "${fullKey.key} %"
+                    fullKey.scale != null -> "% ${fullKey.scale}"
+                    else -> "%"
+                }
+                bindArgs.add(pattern)
+                "t.key LIKE ?"
+            }
+            conditions.add("(${keyClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.bpmRanges.isNotEmpty()) {
+            val rangeClauses = filter.bpmRanges.map { range ->
+                bindArgs.add(range.first)
+                bindArgs.add(range.last)
+                "(t.bpm BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.approachabilityRanges.isNotEmpty()) {
+            val rangeClauses = filter.approachabilityRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.approachability BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.engagementRanges.isNotEmpty()) {
+            val rangeClauses = filter.engagementRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.engagement BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.danceabilityRanges.isNotEmpty()) {
+            val rangeClauses = filter.danceabilityRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.danceability BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.moodAggressiveRanges.isNotEmpty()) {
+            val rangeClauses = filter.moodAggressiveRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.moodAggressive BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.moodHappyRanges.isNotEmpty()) {
+            val rangeClauses = filter.moodHappyRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.moodHappy BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.moodPartyRanges.isNotEmpty()) {
+            val rangeClauses = filter.moodPartyRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.moodParty BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.moodRelaxedRanges.isNotEmpty()) {
+            val rangeClauses = filter.moodRelaxedRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.moodRelaxed BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+        if (filter.moodSadRanges.isNotEmpty()) {
+            val rangeClauses = filter.moodSadRanges.map { range ->
+                bindArgs.add(range.start)
+                bindArgs.add(range.endInclusive)
+                "(t.moodSad BETWEEN ? AND ?)"
+            }
+            conditions.add("(${rangeClauses.joinToString(" OR ")})")
+        }
+
+
+
+
         val baseQuery =
             when (type) {
-             FilterSection.ALBUMS ->
-                 """
+                FilterSection.ALBUMS ->
+                    """
                      SELECT al.id as albumId, al.title, al.releaseDate, ar.name as artistName, ar.id as artistId, al.image, al.label, al.mbId, al.duration, al.numTracks
                      FROM albums al
                      JOIN album_artists aa ON al.id=aa.albumId
@@ -135,20 +265,35 @@ class FilterRepositoryImpl(
                      LEFT JOIN album_genres ag ON ag.albumId=al.id
                      LEFT JOIN genres g ON ag.genreId=g.id
                  """.trimIndent()
-             FilterSection.ARTISTS ->
-                """
+
+                FilterSection.ARTISTS ->
+                    """
                     SELECT ar.*
                     FROM artists ar
                     LEFT JOIN artist_genres ag on ag.artistId=ar.id
                     LEFT JOIN area_hierarchy ah on ah.gid=ar.homeAreaGid
                     LEFT JOIN genres g on ag.genreId=g.id
                 """.trimIndent()
-                }
+
+                FilterSection.TRACKS ->
+                    """
+                    SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
+                            t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
+                    FROM tracks t
+                    JOIN artists ar ON t.artistId=ar.id
+                    JOIN albums al ON t.albumId=al.id
+                    LEFT JOIN track_moods tm ON tm.trackId=t.id
+                    LEFT JOIN moods m on tm.moodId=m.id
+                """.trimIndent()
+            }
         val joiner = if (filter.logic == FilterLogic.AND) " AND " else " OR "
         val sql = baseQuery + if (conditions.isNotEmpty()) {
             " WHERE ${conditions.joinToString(joiner)}"
         } else ""
-        val sqlGrouped = if (type == FilterSection.ALBUMS) "$sql GROUP BY al.id" else "$sql GROUP BY ar.id"
+        val sqlGrouped = if (type == FilterSection.ALBUMS) "$sql GROUP BY al.id" else if (type == FilterSection.ARTISTS) "$sql GROUP BY ar.id" else "$sql GROUP BY t.id"
+
+        println("DEBUG QUERY: $sqlGrouped")
+        println("DEBUG ARGS: ${bindArgs.joinToString(", ")}")
 
         return SimpleSQLiteQuery(sqlGrouped, bindArgs.toTypedArray())
     }
@@ -163,6 +308,12 @@ class FilterRepositoryImpl(
         val rawQuery = buildLibraryQuery(filter, FilterSection.ARTISTS)
 
         return artistDao.getFilteredArtists(rawQuery)
+    }
+
+    override fun getFilteredTracks(filter: LibraryFilter): Flow<List<TrackInfo>> {
+        val rawQuery = buildLibraryQuery(filter, FilterSection.TRACKS)
+
+        return trackDao.getFilteredTracks(rawQuery)
     }
 
     override fun getMinYear(): Flow<Int> {

@@ -117,7 +117,7 @@ enum class HomeScreen(@StringRes val title: Int) {
 }
 
 enum class LibraryScreen {
-    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, OTHER
+    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, MOODS, OTHER
 }
 
 fun routeToLibraryScreen(route: String?): LibraryScreen =
@@ -189,12 +189,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val filterAlbumResults by filterViewModel.filteredAlbums.collectAsState()
     val filterArtistCount by filterViewModel.potentialArtistMatches.collectAsState()
     val filterArtistResults by filterViewModel.filteredArtists.collectAsState()
+    val filterTrackResults by filterViewModel.filteredTracks.collectAsState()
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
     val genreSuggestions by filterViewModel.genreSuggestions.collectAsState()
     val filterType by filterViewModel.libraryType.collectAsState()
     val areaSuggestions by filterViewModel.areaSuggestions.collectAsState()
+    val moodSuggestions by filterViewModel.moodSuggestions.collectAsState()
+    val filterTrackCount by filterViewModel.potentialTrackMatches.collectAsState()
+
 
 
 
@@ -775,7 +779,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     route = "filter_results",
                     ) {
                     SearchContent(
-                        results = SearchResult(albums = filterAlbumResults, artists = filterArtistResults),
+                        results = SearchResult(albums = filterAlbumResults, artists = filterArtistResults, tracks = filterTrackResults),
                         onArtistClick = { id -> navController.navigate("artist/$id") },
                         onAlbumClick = { id -> navController.navigate("album/$id") },
                         onTrackClick = { tracks, track ->
@@ -957,13 +961,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         genreSuggestions = genreSuggestions,
                         onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) },
+                        moodSuggestions = moodSuggestions,
+                        onMoodQueryChange = { query -> filterViewModel.onMoodQueryChange(query) },
                         potentialArtistCount = filterArtistCount,
                         onTabChange = { tab ->
                             filterViewModel.resetAll()
                             filterViewModel.updateType(tab)
                         },
                         areaSuggestions = areaSuggestions,
-                        onAreaQueryChange = { query -> filterViewModel.onAreaQueryChange(query) }
+                        onAreaQueryChange = { query -> filterViewModel.onAreaQueryChange(query) },
+                        potentialTrackCount = filterTrackCount
                     )
                 }
 

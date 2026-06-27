@@ -21,6 +21,6 @@ data class AudioFeaturesResponse(
 )
 
 data class Key(
-    val key: String,
-    val scale: String
+    val key: String?,
+    val scale: String?
 )

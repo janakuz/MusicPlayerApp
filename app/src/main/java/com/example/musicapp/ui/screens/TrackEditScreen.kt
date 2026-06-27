@@ -341,10 +341,6 @@ fun TrackEditScreen(
                         var noteDropdownExpanded by remember { mutableStateOf(false) }
                         var scaleDropdownExpanded by remember { mutableStateOf(false) }
 
-                        var noteInput by remember { mutableStateOf(trackEditUiState.note ?: "") }
-                        var scaleInput by remember { mutableStateOf(trackEditUiState.scale ?: "") }
-
-
                         ExposedDropdownMenuBox(
                             expanded = noteDropdownExpanded,
                             onExpandedChange = { noteDropdownExpanded = !noteDropdownExpanded },

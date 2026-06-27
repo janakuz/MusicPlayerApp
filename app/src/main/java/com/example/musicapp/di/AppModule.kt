@@ -486,8 +486,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao): FilterRepository {
-        return FilterRepositoryImpl(albumDao, artistDao)
+    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao, trackDao: TrackDao): FilterRepository {
+        return FilterRepositoryImpl(albumDao, artistDao, trackDao)
     }
 
     @Provides
