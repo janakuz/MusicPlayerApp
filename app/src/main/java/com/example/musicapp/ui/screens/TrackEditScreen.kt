@@ -1,7 +1,13 @@
 package com.example.musicapp.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,17 +20,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,6 +51,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,6 +61,7 @@ import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
 import com.example.musicapp.ui.viewmodels.TrackEditViewModel
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackEditScreen(
     onNavigateBack: () -> Unit,
@@ -111,7 +128,7 @@ fun TrackEditScreen(
             LazyColumn(modifier = Modifier.padding(padding)) {
 
                 item {
-                    Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
                         Text(
                             text = "File path",
                             style = MaterialTheme.typography.labelLarge,
@@ -144,7 +161,7 @@ fun TrackEditScreen(
 
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
 
@@ -183,7 +200,7 @@ fun TrackEditScreen(
                         onValueChange = { trackEditViewModel.onArtistChange(it) },
                         label = { Text("Artist") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -198,7 +215,7 @@ fun TrackEditScreen(
                         onValueChange = { trackEditViewModel.onAlbumChange(it) },
                         label = { Text("Album") },
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -214,6 +231,179 @@ fun TrackEditScreen(
                         onGenreQueryChange = { query -> trackEditViewModel.onMoodQueryChange(query) },
                         label = "Mood"
                     )
+                }
+
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Instrumental",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "Track contains no vocals",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = trackEditUiState.instrumental == true,
+                                onCheckedChange = { checked ->
+                                    trackEditViewModel.onInstrumentalChange(checked)
+                                }
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = trackEditUiState.instrumental != true,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.0.dp)
+                            ) {
+                                Text(
+                                    text = "Voice Type",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.0.dp)
+                                ) {
+                                    val genderOptions = listOf("male", "female", "mixed")
+
+                                    genderOptions.forEach { option ->
+                                        FilterChip(
+                                            selected = (trackEditUiState.voice == option),
+                                            onClick = { trackEditViewModel.onVoiceChange(option) },
+                                            label = {
+                                                Text(text = option.replaceFirstChar { it.uppercase() })
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                item {
+                    val rootNotes = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+                    val scales = listOf("major", "minor")
+
+                    var bpmInput by remember { mutableStateOf(trackEditUiState.bpm?.toInt()?.toString() ?: "") }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = bpmInput,
+                            onValueChange = { newValue ->
+                                val digitsOnly = newValue.filter { it.isDigit() }
+
+                                if (digitsOnly.isEmpty()) {
+                                    bpmInput = ""
+                                } else {
+                                    val parsedBpm = digitsOnly.toIntOrNull()
+                                    if (parsedBpm != null && parsedBpm <= 250) {
+                                        bpmInput = digitsOnly
+                                        trackEditViewModel.onBPMChange(parsedBpm)
+                                    }
+                                }
+                            },
+                            label = { Text("BPM") },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            modifier = Modifier.weight(0.8f),
+                            singleLine = true,
+                            isError = bpmInput.isNotEmpty() && (bpmInput.toIntOrNull() ?: 0) < 40
+                        )
+
+                        var noteDropdownExpanded by remember { mutableStateOf(false) }
+                        var scaleDropdownExpanded by remember { mutableStateOf(false) }
+
+                        var noteInput by remember { mutableStateOf(trackEditUiState.note ?: "") }
+                        var scaleInput by remember { mutableStateOf(trackEditUiState.scale ?: "") }
+
+
+                        ExposedDropdownMenuBox(
+                            expanded = noteDropdownExpanded,
+                            onExpandedChange = { noteDropdownExpanded = !noteDropdownExpanded },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                readOnly = true,
+                                value = trackEditUiState.note ?: "",
+                                onValueChange = {},
+                                label = { Text("Note") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = noteDropdownExpanded) },
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true)
+
+                            )
+                            ExposedDropdownMenu(
+                                expanded = noteDropdownExpanded,
+                                onDismissRequest = { noteDropdownExpanded = false }
+                            ) {
+                                rootNotes.forEach { note ->
+                                    DropdownMenuItem(
+                                        text = { Text(note) },
+                                        onClick = {
+                                            trackEditViewModel.onKeyChange(note, trackEditUiState.scale ?: "")
+                                            noteDropdownExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        ExposedDropdownMenuBox(
+                            expanded = scaleDropdownExpanded,
+                            onExpandedChange = { scaleDropdownExpanded = !scaleDropdownExpanded },
+                            modifier = Modifier.weight(1.2f)
+                        ) {
+                            OutlinedTextField(
+                                readOnly = true,
+                                value = (trackEditUiState.scale?: "").replaceFirstChar { it.uppercase() },
+                                onValueChange = {},
+                                label = { Text("Scale") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = scaleDropdownExpanded) },
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = scaleDropdownExpanded,
+                                onDismissRequest = { scaleDropdownExpanded = false }
+                            ) {
+                                scales.forEach { scale ->
+                                    DropdownMenuItem(
+                                        text = { Text(scale.replaceFirstChar { it.uppercase() }) },
+                                        onClick = {
+                                            trackEditViewModel.onKeyChange(trackEditUiState.note ?: "", scale)
+                                            scaleDropdownExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
 
