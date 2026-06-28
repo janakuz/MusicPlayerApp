@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GenreDetailViewModel @Inject constructor (
-    genreRepository: GenreRepository,
+    private val genreRepository: GenreRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 

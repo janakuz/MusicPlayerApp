@@ -11,5 +11,7 @@ interface MoodRepository {
 
     fun getAll(sortBy: SortOption): Flow<List<MoodInfo>>
 
+    fun getItemsForMood(moodId: Int, artistLimit: Int, albumThreshold: Float): Flow<SearchResult>
 
+    fun getMoodName(moodId: Int): Flow<String>
 }

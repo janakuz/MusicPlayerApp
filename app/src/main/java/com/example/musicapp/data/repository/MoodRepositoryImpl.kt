@@ -7,6 +7,7 @@ import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.util.normalizeGenre
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 class MoodRepositoryImpl(
     private val moodDao: MoodDao
@@ -29,6 +30,24 @@ class MoodRepositoryImpl(
                 else -> moodDao.getAllMoods("count", false)
             }
 
+    }
+
+    override fun getItemsForMood(
+        moodId: Int,
+        artistLimit: Int,
+        albumThreshold: Float
+    ): Flow<SearchResult> {
+        return combine (
+            moodDao.getMoodArtists(moodId, artistLimit),
+            moodDao.getMoodAlbums(moodId, albumThreshold),
+            moodDao.getMoodTracks(moodId)
+        ) { artists, albums, tracks ->
+            SearchResult(artists, albums, tracks)
+        }
+    }
+
+    override fun getMoodName(moodId: Int): Flow<String> {
+        return moodDao.getMoodName(moodId)
     }
 
 }
