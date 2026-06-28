@@ -31,6 +31,7 @@ import com.example.musicapp.data.local.database.getAllMigrations
 import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
+import com.example.musicapp.data.remote.service.EssentiaApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
 import com.example.musicapp.data.repository.AlbumArtistRepository
@@ -82,6 +83,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -122,10 +124,9 @@ object AppModule {
     @Retention(AnnotationRetention.BINARY)
     annotation class CoverArtArchiveRetrofit
 
-//    @Qualifier
-//    @Retention(AnnotationRetention.BINARY)
-//    annotation class SpotifyRetrofit
-
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class EssentiaApi
 
     @Provides
     @Singleton
@@ -202,8 +203,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackRepository(trackDao: TrackDao): TrackRepository {
-        return TrackRepositoryImpl(trackDao)
+    fun provideTrackRepository(trackDao: TrackDao, audioFeaturesApi: EssentiaApiService): TrackRepository {
+        return TrackRepositoryImpl(trackDao, audioFeaturesApi)
     }
 
     @Provides
@@ -292,6 +293,8 @@ object AppModule {
         }
         .build()
 
+
+
     @Provides
     @DiscogsRetrofit
     @Singleton
@@ -326,6 +329,47 @@ object AppModule {
     fun provideLastfmApiService(@LastfmRetrofit retrofit: Retrofit): LastfmApiService {
         return retrofit.create(LastfmApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    @EssentiaApi
+    fun provideEssentiaOkHttpClient(
+        userAgentInterceptor: Interceptor,
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
+        .addInterceptor(loggingInterceptor)
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("X-API-KEY", BuildConfig.ESSENTIA_KEY)
+                .build()
+            chain.proceed(request)
+        }
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .build()
+
+    @Provides
+    @Singleton
+    @EssentiaApi
+    fun provideEssentiaRetrofit(
+        @EssentiaApi okHttpClient: OkHttpClient
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("http://192.168.1.72:8000/")
+            .client(okHttpClient)
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEssentiaApiService(@EssentiaApi retrofit: Retrofit): EssentiaApiService {
+        return retrofit.create(EssentiaApiService::class.java)
+    }
+
 
     @Provides
     @Singleton
@@ -442,8 +486,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao): FilterRepository {
-        return FilterRepositoryImpl(albumDao, artistDao)
+    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao, trackDao: TrackDao): FilterRepository {
+        return FilterRepositoryImpl(albumDao, artistDao, trackDao)
     }
 
     @Provides
@@ -538,6 +582,7 @@ object AppModule {
         albumRepository: AlbumRepository,
         artistRepository: ArtistRepository,
         trackRepository: TrackRepository,
+        trackMoodRepository: TrackMoodRepository,
         albumArtistRepository: AlbumArtistRepository,
         albumGenreRepository: AlbumGenreRepository,
         artistGenreRepository: ArtistGenreRepository
@@ -546,6 +591,7 @@ object AppModule {
             albumRepository,
             artistRepository,
             trackRepository,
+            trackMoodRepository,
             albumArtistRepository,
             albumGenreRepository,
             artistGenreRepository

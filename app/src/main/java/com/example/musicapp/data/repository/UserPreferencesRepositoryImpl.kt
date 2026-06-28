@@ -40,6 +40,9 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
 
         val LABEL_SORT_FIELD = stringPreferencesKey("label_sort_field")
 
+        val MOODS_SORT_FIELD = stringPreferencesKey("moods_sort_field")
+        val MOODS_SORT_ASC = booleanPreferencesKey("moods_sort_ascending")
+
         val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
         val MIN_SIMILARITY_SCORE = doublePreferencesKey("min_similarity_score")
     }
@@ -107,6 +110,13 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         SortOption(
             field = SortField.valueOf(prefs[LABEL_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
             ascending = false
+        )
+    }.distinctUntilChanged()
+
+    override val moodSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+        SortOption(
+            field = SortField.valueOf(prefs[MOODS_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
+            ascending = prefs[MOODS_SORT_ASC] ?: false
         )
     }.distinctUntilChanged()
 
@@ -182,6 +192,14 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
             prefs[LABEL_SORT_FIELD] = option.field.name
         }
     }
+
+    override suspend fun updateMoodSort(option: SortOption) {
+        dataStore.edit { prefs ->
+            prefs[MOODS_SORT_FIELD] = option.field.name
+            prefs[MOODS_SORT_ASC] = option.ascending
+        }
+    }
+
 
 
     override suspend fun updateSkipSilence(enabled: Boolean) {

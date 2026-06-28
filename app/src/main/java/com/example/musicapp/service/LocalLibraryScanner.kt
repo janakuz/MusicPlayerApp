@@ -343,8 +343,6 @@ class LocalLibraryScanner @Inject constructor(
                             lastPlayed = null,
                             fileUri = trackUri,
                             filePath = filePath,
-                            valence = null,
-                            energy = null,
                             key = null,
                             bpm = null
                         )

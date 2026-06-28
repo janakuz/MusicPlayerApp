@@ -1,7 +1,9 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.remote.dto.AudioFeaturesResponse
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.SelectSource
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +29,11 @@ interface TrackRepository {
     fun getTracksByArtist(artistId: Int): Flow<List<TrackInfo>>
 
     fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
+
+
+    suspend fun getAllUnEnriched(): List<Track>
+
+    suspend fun getAudioFeatures(context: Context, track: Track): AudioFeaturesResponse?
 
     suspend fun getAlbumTracks(albumId: Int): List<TrackInfo>
 

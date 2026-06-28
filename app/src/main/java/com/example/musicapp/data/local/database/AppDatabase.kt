@@ -53,7 +53,7 @@ import com.example.musicapp.data.local.entity.TrackMood
         AreaHierarchy::class,
         SimilarArtists::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

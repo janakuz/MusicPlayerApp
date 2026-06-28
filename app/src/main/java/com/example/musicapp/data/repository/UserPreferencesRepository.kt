@@ -14,6 +14,7 @@ interface UserPreferencesRepository {
     val countriesSortOption: Flow<SortOption>
     val areaSortOption: Flow<SortOption>
     val labelSortOption: Flow<SortOption>
+    val moodSortOption: Flow<SortOption>
 
     val skipSilenceToggle: Flow<Boolean>
     val minVisibleSimilarityScore: Flow<Double>
@@ -27,6 +28,7 @@ interface UserPreferencesRepository {
     suspend fun updateCountrySort(option: SortOption)
     suspend fun updateAreaSort(option: SortOption)
     suspend fun updateLabelSort(option: SortOption)
+    suspend fun updateMoodSort(option: SortOption)
 
     suspend fun updateSkipSilence(enabled: Boolean)
     suspend fun updateMinSimilarityScore(newValue: Double)

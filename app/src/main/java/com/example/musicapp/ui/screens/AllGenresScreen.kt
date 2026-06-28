@@ -88,6 +88,7 @@ fun GenreCard(
     genreName: String,
     artistCount: Int,
     albumCount: Int,
+    isTracks: Boolean = false,
     onClick: () -> Unit,
     onDelete: (() -> Unit)? = null,
     onRename: ((String) -> Unit)? = null,
@@ -137,13 +138,16 @@ fun GenreCard(
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                text = if (artistCount == 1) "1 Artist" else "$artistCount Artists",
+                text = if (artistCount == 1) "1 Artist" else if (!isTracks) "$artistCount Artists" else "",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.75f)
             )
 
             Text(
-                text = if (albumCount == 1) "1 Album" else "$albumCount Albums",
+                text = if (albumCount == 1 && !isTracks) "1 Album"
+                        else if (albumCount == 1 ) "1 Track"
+                        else if (!isTracks) "$albumCount Albums"
+                        else "$albumCount Tracks",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.75f)
             )

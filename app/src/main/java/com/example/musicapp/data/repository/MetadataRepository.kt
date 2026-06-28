@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.Track
@@ -20,6 +21,8 @@ interface MetadataRepository {
     suspend fun backfillSimilar(): Flow<ScanProgress>
 
     suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress>
+
+    suspend fun extractAudioFeatures(context: Context): Flow<ScanProgress>
 
     suspend fun updateAlbum(
         newAlbumTitle: String,
@@ -64,6 +67,7 @@ interface MetadataRepository {
         oldAlbumId: Int,
         markEnriched: Boolean = false,
     )
+
 }
 
 data class AlbumMetadataResult(

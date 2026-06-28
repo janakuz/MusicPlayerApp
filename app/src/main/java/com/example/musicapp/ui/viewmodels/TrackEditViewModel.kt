@@ -82,10 +82,16 @@ class TrackEditViewModel @Inject constructor(
     private var initialNumber: String? = ""
     private var initialTitle: String? = ""
     private var initialMoods: List<String> = emptyList()
+    private var initialInst: Boolean? = null
+    private var initialVoice: String? = null
+    private var initialBPM: Int? = null
+    private var initialKey: String? = null
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges = state.draftTrackNumber != initialNumber || state.title != initialTitle
                 || state.draftMoods != initialMoods || state.album != initialAlbum || state.artist != initialArtist
+                || state.instrumental != initialInst || state.voice != initialVoice
+                || state.bpm != initialBPM || state.key != initialKey
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -102,6 +108,10 @@ class TrackEditViewModel @Inject constructor(
             initialNumber = track.trackNum.toString()
             initialTitle = track.title
             initialMoods = moods
+            initialInst = track.instrumental
+            initialVoice = track.voice
+            initialBPM = track.bpm
+            initialKey = track.key
             _uiState.update {
                 it.copy(
                     title = track.title,
@@ -109,7 +119,13 @@ class TrackEditViewModel @Inject constructor(
                     artist = track.artistName,
                     album = track.albumTitle,
                     filePath = getPathFromUri(context, track.fileUri),
-                    draftMoods = moods
+                    draftMoods = moods,
+                    instrumental = track.instrumental,
+                    voice = track.voice,
+                    bpm = track.bpm,
+                    key = track.key,
+                    note = track.key?.split(" ")[0],
+                    scale = track.key?.split(" ")[1]
                 )
             }
 
@@ -146,6 +162,25 @@ class TrackEditViewModel @Inject constructor(
         _moodQuery.value = newQuery
     }
 
+    fun onInstrumentalChange(newValue: Boolean){
+        _uiState.update { it.copy(instrumental = newValue) }
+    }
+
+    fun onVoiceChange(newValue: String){
+        _uiState.update { it.copy(voice = newValue) }
+    }
+
+    fun onKeyChange(newNote: String, newScale: String){
+        _uiState.update { it.copy(
+            note = newNote,
+            scale = newScale,
+            key = "$newNote $newScale"
+        ) }
+    }
+
+    fun onBPMChange(newBPM: Int){
+        _uiState.update { it.copy(bpm = newBPM) }
+    }
 
     fun getPathFromUri(context: Context, uriString: String): String {
         val uri = uriString.toUri()
@@ -214,6 +249,11 @@ class TrackEditViewModel @Inject constructor(
             val newTrack = currentTrack.copy(
                 title = _uiState.value.title,
                 trackNumber = _uiState.value.draftTrackNumber.toInt(),
+                instrumental = _uiState.value.instrumental ?: initialInst,
+                voice = _uiState.value.voice ?: initialVoice,
+                bpm = _uiState.value.bpm ?: initialBPM,
+                key = _uiState.value.key ?: initialKey
+
             )
             trackRepository.update(newTrack)
             trackMoodRepository.updateTrackMoods(trackId, _uiState.value.draftMoods)
@@ -321,5 +361,11 @@ data class TrackEditUiState(
     val filePath: String = "",
     val draftTrackNumber: String = "",
     val draftMoods: List<String> = emptyList(),
+    val instrumental: Boolean? = null,
+    val voice: String? = null,
+    val bpm: Int? = null,
+    val key: String? = null,
+    val note: String? = null,
+    val scale: String? = null,
     val isSaving: Boolean = false
 )

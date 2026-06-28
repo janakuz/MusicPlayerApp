@@ -81,6 +81,8 @@ import com.example.musicapp.ui.screens.GenreDetailScreen
 import com.example.musicapp.ui.screens.GenresScreen
 import com.example.musicapp.ui.screens.LabelDetailScreen
 import com.example.musicapp.ui.screens.LabelsScreen
+import com.example.musicapp.ui.screens.MoodDashboardScreen
+import com.example.musicapp.ui.screens.MoodDetailScreen
 import com.example.musicapp.ui.screens.NowPlayingWithQueue
 import com.example.musicapp.ui.screens.PlaylistDetailScreen
 import com.example.musicapp.ui.screens.PlaylistEditScreen
@@ -113,11 +115,12 @@ enum class HomeScreen(@StringRes val title: Int) {
     Genres(title=R.string.genres),
     Countries(title = R.string.countries),
     Areas(title = R.string.areas),
-    Labels(title = R.string.labels)
+    Labels(title = R.string.labels),
+    Moods(title = R.string.moods)
 }
 
 enum class LibraryScreen {
-    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, OTHER
+    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, MOODS, OTHER
 }
 
 fun routeToLibraryScreen(route: String?): LibraryScreen =
@@ -131,6 +134,8 @@ fun routeToLibraryScreen(route: String?): LibraryScreen =
         route?.startsWith(HomeScreen.Countries.name) == true -> LibraryScreen.COUNTRIES
         route?.startsWith(HomeScreen.Areas.name) == true -> LibraryScreen.AREAS
         route?.startsWith(HomeScreen.Labels.name) == true -> LibraryScreen.LABELS
+        route?.startsWith(HomeScreen.Moods.name) == true -> LibraryScreen.MOODS
+
         else -> LibraryScreen.OTHER
     }
 
@@ -142,7 +147,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val startDest = if (isLibraryInitialized) HomeScreen.Artists.name else HomeScreen.Scan.name
 
     val tabs = listOf(HomeScreen.Artists, HomeScreen.Albums, HomeScreen.Tracks, HomeScreen.Genres,
-        HomeScreen.Countries, HomeScreen.Areas, HomeScreen.Labels)
+        HomeScreen.Countries, HomeScreen.Areas, HomeScreen.Labels, HomeScreen.Moods)
     val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists, HomeScreen.Settings)
 //    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -155,6 +160,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     var countriesSort by remember { mutableStateOf<SortOption?>(null) }
     var areasSort by remember { mutableStateOf<SortOption?>(null) }
     var labelsSort by remember { mutableStateOf<SortOption?>(null) }
+    var moodsSort by remember { mutableStateOf<SortOption?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -189,12 +195,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val filterAlbumResults by filterViewModel.filteredAlbums.collectAsState()
     val filterArtistCount by filterViewModel.potentialArtistMatches.collectAsState()
     val filterArtistResults by filterViewModel.filteredArtists.collectAsState()
+    val filterTrackResults by filterViewModel.filteredTracks.collectAsState()
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
     val genreSuggestions by filterViewModel.genreSuggestions.collectAsState()
     val filterType by filterViewModel.libraryType.collectAsState()
     val areaSuggestions by filterViewModel.areaSuggestions.collectAsState()
+    val moodSuggestions by filterViewModel.moodSuggestions.collectAsState()
+    val filterTrackCount by filterViewModel.potentialTrackMatches.collectAsState()
+
 
 
 
@@ -349,6 +359,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     HomeScreen.Countries.name -> countriesSort = sort
                                     HomeScreen.Areas.name -> areasSort = sort
                                     HomeScreen.Labels.name -> labelsSort = sort
+                                    HomeScreen.Moods.name -> moodsSort = sort
                                 }
                             },
                             onImport = {
@@ -531,6 +542,15 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 }
 
 
+                composable(route = HomeScreen.Moods.name) {
+                    MoodDashboardScreen(
+                        onMoodClick = { id ->
+                            navController.navigate("mood/$id")},
+                        sortRequest = moodsSort
+                    )
+                }
+
+
                 composable(route = HomeScreen.Areas.name) {
                     AreasScreen(
                         onAreaClick = { gid, code, type ->
@@ -624,6 +644,31 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
                         )
                 }
+
+                composable("mood/{moodId}") {
+                    MoodDetailScreen(
+                        onArtistClick = { id -> navController.navigate("artist/$id") },
+                        onAlbumClick = { id -> navController.navigate("album/$id") },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onAddToPlaylistArtist = { album ->
+                            playlistViewModel.onAddToPlaylistArtist(
+                                album.id
+                            )
+                        },
+                        onAddToPlaylistAlbum = { album ->
+                            playlistViewModel.onAddToPlaylistAlbum(
+                                album.id
+                            )
+                        },
+                        onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
+                        onPlayNextAlbum = { album -> playerViewModel.playNextAlbum(album.id) },
+                        onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
+                        onAddToQueueAlbum = { album -> playerViewModel.addToQueueAlbum(album.id) },
+                        onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") },
+                        onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
+                    )
+                }
+
 
                 composable("country/{code}") {
                     CountryDetailScreen(
@@ -775,7 +820,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     route = "filter_results",
                     ) {
                     SearchContent(
-                        results = SearchResult(albums = filterAlbumResults, artists = filterArtistResults),
+                        results = SearchResult(albums = filterAlbumResults, artists = filterArtistResults, tracks = filterTrackResults),
                         onArtistClick = { id -> navController.navigate("artist/$id") },
                         onAlbumClick = { id -> navController.navigate("album/$id") },
                         onTrackClick = { tracks, track ->
@@ -957,13 +1002,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         },
                         genreSuggestions = genreSuggestions,
                         onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) },
+                        moodSuggestions = moodSuggestions,
+                        onMoodQueryChange = { query -> filterViewModel.onMoodQueryChange(query) },
                         potentialArtistCount = filterArtistCount,
                         onTabChange = { tab ->
                             filterViewModel.resetAll()
                             filterViewModel.updateType(tab)
                         },
                         areaSuggestions = areaSuggestions,
-                        onAreaQueryChange = { query -> filterViewModel.onAreaQueryChange(query) }
+                        onAreaQueryChange = { query -> filterViewModel.onAreaQueryChange(query) },
+                        potentialTrackCount = filterTrackCount
                     )
                 }
 

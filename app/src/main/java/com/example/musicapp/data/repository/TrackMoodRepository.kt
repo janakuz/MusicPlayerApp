@@ -5,4 +5,6 @@ interface TrackMoodRepository {
 
     suspend fun getTrackMoods(trackId: Int): List<String>
 
+    suspend fun addTrackMoods(trackId: Int, moods: List<String>)
+
 }
