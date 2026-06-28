@@ -24,10 +24,11 @@ import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
+import com.example.musicapp.data.local.dao.SequencerDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
+import com.example.musicapp.data.local.database.ALL_MIGRATIONS
 import com.example.musicapp.data.local.database.AppDatabase
-import com.example.musicapp.data.local.database.getAllMigrations
 import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
@@ -138,7 +139,7 @@ object AppModule {
             AppDatabase::class.java,
             "music_app_db"
         )
-            .addMigrations(*getAllMigrations(context))
+            .addMigrations(*ALL_MIGRATIONS)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
@@ -597,6 +598,10 @@ object AppModule {
             artistGenreRepository
         )
     }
+
+    @Provides
+    @Singleton
+    fun provideSequencerDao(db: AppDatabase): SequencerDao = db.sequencerDao()
 
 
 }
