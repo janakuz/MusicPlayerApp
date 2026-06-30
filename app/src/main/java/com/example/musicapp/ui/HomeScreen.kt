@@ -90,6 +90,7 @@ import com.example.musicapp.ui.screens.PlaylistsScreen
 import com.example.musicapp.ui.screens.ScanLibraryScreen
 import com.example.musicapp.ui.screens.SearchContent
 import com.example.musicapp.ui.screens.SearchResultsScreen
+import com.example.musicapp.ui.screens.SequencerScreen
 import com.example.musicapp.ui.screens.SettingsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
@@ -120,7 +121,7 @@ enum class HomeScreen(@StringRes val title: Int) {
 }
 
 enum class LibraryScreen {
-    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, GENRES, COUNTRIES, AREAS, LABELS, MOODS, OTHER
+    ARTISTS, ALBUMS, TRACKS, ARTIST_DETAIL, PLAYLISTS, PLAYLIST_DETAIL, GENRES, COUNTRIES, AREAS, LABELS, MOODS, OTHER
 }
 
 fun routeToLibraryScreen(route: String?): LibraryScreen =
@@ -129,6 +130,7 @@ fun routeToLibraryScreen(route: String?): LibraryScreen =
         route?.startsWith(HomeScreen.Albums.name) == true -> LibraryScreen.ALBUMS
         route?.startsWith(HomeScreen.Tracks.name) == true -> LibraryScreen.TRACKS
         route?.startsWith("artist/{artistId}") == true -> LibraryScreen.ARTIST_DETAIL
+        route?.startsWith("playlist/{playlistId}") == true -> LibraryScreen.PLAYLIST_DETAIL
         route?.startsWith(HomeScreen.Playlists.name) == true -> LibraryScreen.PLAYLISTS
         route?.startsWith(HomeScreen.Genres.name) == true -> LibraryScreen.GENRES
         route?.startsWith(HomeScreen.Countries.name) == true -> LibraryScreen.COUNTRIES
@@ -374,7 +376,13 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             showBack = backIndex < 0 && currentRoute != "about",
                             onBack = if (backIndex < 0 && currentRoute != "about") ({ navController.popBackStack() }) else null,
                             title = if (backIndex >= 0 || currentRoute=="about") currentRoute.toTitleCase() else null,
-                            onShowSimilar = { showAddSimilarDialog = true }
+                            onShowSimilar = { showAddSimilarDialog = true },
+                            onOpenSequencer = {
+                                val playlistId =
+                                    navBackStackEntry?.arguments?.getString("playlistId") ?: ""
+
+                                navController.navigate("sequencer?playlistId=$playlistId")
+                            }
                         )
                     }
                     if (selectionMode) {
@@ -772,6 +780,11 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     TrackEditScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
+                }
+
+                composable("sequencer?playlistId={playlistId}", arguments = listOf(navArgument("playlistId") {type = NavType.IntType})){ backStackEntry ->
+                    val playlistId = backStackEntry.arguments?.getInt("playlistId") ?: -1
+                    SequencerScreen(playlistId)
                 }
 
                 composable(

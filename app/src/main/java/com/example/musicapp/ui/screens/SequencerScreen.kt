@@ -1,0 +1,344 @@
+package com.example.musicapp.ui.screens
+
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.Divider
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.example.musicapp.R
+import com.example.musicapp.data.local.model.BlockWithTracks
+import com.example.musicapp.data.local.model.CompatibleTrack
+import com.example.musicapp.ui.components.TrackInfoRow
+import com.example.musicapp.ui.viewmodels.SequencerViewModel
+import java.util.Locale
+
+
+@Composable
+fun SequencerScreen(
+    playlistId: Int
+) {
+    val sequencerViewModel: SequencerViewModel = hiltViewModel()
+    val uiBlocks by sequencerViewModel.uiBlocks.collectAsState()
+    val recommendations by sequencerViewModel.compatibleTracks.collectAsState()
+    val selectedBlock by sequencerViewModel.selectedBlock.collectAsState()
+
+    DisposableEffect(playlistId) {
+        onDispose {
+            sequencerViewModel.onDiscard()
+        }
+    }
+
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = { sequencerViewModel.onSave() }) {
+                Icon(Icons.Default.Save, contentDescription = "Save new order")
+            }
+        }
+
+    ) { padding ->
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.6f)
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center
+            ) {
+                if (uiBlocks.isEmpty()) {
+                    Text("No tracks in sequencer scratchpad")
+                } else {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        itemsIndexed(uiBlocks) { index, block ->
+                            BlockCard(
+                                block = block,
+                                isSelected = selectedBlock?.blockNumber == block.blockNumber,
+                                onBlockClick = {
+                                    sequencerViewModel.selectBlock(block, findPrev = false)
+                                }
+                            )
+
+                            if (index < uiBlocks.lastIndex) {
+                                BlockSeamSeparator(
+                                    onMergeClick = {
+                                        sequencerViewModel.onMerge(index + 1, index)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.4f)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Text(
+                    text = if (selectedBlock != null) "Compatible Matches" else "Select a block to see matches",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    recommendations.forEach { compatibleTrack ->
+                        CompatibleTrackItem(
+                            track = compatibleTrack,
+                            inMultiTrackBlock = compatibleTrack.inMultiTrackBlock,
+                            onClick = {
+                                sequencerViewModel.onMerge(
+                                    compatibleTrack.currentBlock,
+                                    selectedBlock!!.blockNumber
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun CompatibleTrackItem(
+    track: CompatibleTrack,
+    inMultiTrackBlock: Boolean,
+    onClick: () -> Unit,
+    isMatch: Boolean = true,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(track.track.albumArt)
+                    .size(128)
+                    .crossfade(false)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(track.track.albumArt)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .placeholderMemoryCacheKey(track.track.albumArt)
+                    .memoryCacheKey(track.track.albumArt)
+                    .build(),
+                placeholder = painterResource(R.drawable.baseline_album_24),
+                error = painterResource(R.drawable.baseline_album_24),
+                fallback = painterResource(R.drawable.baseline_album_24),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.track.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${track.track.artistName} • ${track.track.albumTitle}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (inMultiTrackBlock) {
+                    Text(
+                        text = "⛓️ Includes linked tracks",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(horizontalAlignment = Alignment.End) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                ) {
+                    Text(
+                        text = if (isMatch) track.matchDescription else "Incompatible Key",
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        color = if (track.wrongKey) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+
+                        )
+                }
+
+                Text(
+                    text = "${if (track.tempoDifference >= 0) "+" else ""}${track.tempoDifference} BPM",
+                    color = if (track.wrongBPM) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "${if (track.loudnessDifference >= 0) "+" else ""}${String.format(Locale.ROOT,"%.1f", track.loudnessDifference)} dB",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (track.wrongLoudness) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun BlockCard(
+    block: BlockWithTracks,
+    isSelected: Boolean,
+    onBlockClick: () -> Unit
+) {
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+
+    Surface(
+        modifier = Modifier
+            .width(240.dp)
+            .height(280.dp)
+            .padding(vertical = 8.dp)
+            .clickable { onBlockClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(12.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = "BLOCK ${block.blockNumber + 1}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            block.tracks.forEachIndexed { index, track ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (index > 0) {
+                        Text(
+                            text = "🔗",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(track.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun BlockSeamSeparator(
+    onMergeClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .width(48.dp)
+            .fillMaxHeight()
+            .clickable { onMergeClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.fillMaxWidth().width(1.dp)
+        )
+
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = Modifier.size(32.dp),
+            tonalElevation = 2.dp
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Link, contentDescription = "merge")
+            }
+        }
+    }
+}

@@ -156,6 +156,7 @@ fun RightMenu(
     onSortSelected: (SortOption) -> Unit,
     onImport: (() -> Unit)? = null,
     onShowSimilar: (() -> Unit)? = null,
+    onOpenSequencer: (() -> Unit)? = null,
     ) {
     var expanded by remember { mutableStateOf(false) }
     var menuPage by remember { mutableStateOf(MenuPage.MAIN) }
@@ -195,6 +196,16 @@ fun RightMenu(
                                 onShowSimilar()
                             }
                         )
+                    }
+                    if (screen == LibraryScreen.PLAYLIST_DETAIL && onOpenSequencer != null){
+                        DropdownMenuItem(
+                            text = { Text("Open Sequencing Helper") },
+                            onClick = {
+                                expanded = false
+                                onOpenSequencer()
+                            }
+                        )
+
                     }
 
 

@@ -65,6 +65,8 @@ import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepositoryImpl
 import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.SearchRepositoryImpl
+import com.example.musicapp.data.repository.SequencerRepository
+import com.example.musicapp.data.repository.SequencerRepositoryImpl
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackMoodRepositoryImpl
 import com.example.musicapp.data.repository.TrackRepository
@@ -602,6 +604,12 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSequencerDao(db: AppDatabase): SequencerDao = db.sequencerDao()
+
+    @Provides
+    @Singleton
+    fun provideSequencerRepository(sequencerDao: SequencerDao, playlistTracksDao: PlaylistTracksDao): SequencerRepository {
+        return SequencerRepositoryImpl(sequencerDao, playlistTracksDao)
+    }
 
 
 }
