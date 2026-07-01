@@ -59,6 +59,7 @@ import coil.request.ImageRequest
 import com.example.musicapp.R
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.components.TrackInfoRow
 import com.example.musicapp.ui.viewmodels.SequencerViewModel
 import java.util.Locale
@@ -92,7 +93,7 @@ fun SequencerScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.6f)
+                    .weight(0.3f)
                     .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) {
@@ -105,17 +106,28 @@ fun SequencerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         itemsIndexed(uiBlocks) { index, block ->
-                            BlockCard(
-                                block = block,
-                                isSelected = selectedBlock?.blockNumber == block.blockNumber,
-                                onBlockClick = {
-                                    sequencerViewModel.selectBlock(block, findPrev = false)
+                            block.tracks.forEachIndexed { trackOrder, track ->
+                                TrackCapsule(
+                                    track = track,
+                                    onBlockClick = { sequencerViewModel.selectBlock(block) },
+                                    isSelected = block.blockNumber == selectedBlock?.blockNumber
+                                )
+
+
+                                if (trackOrder < block.tracks.lastIndex) {
+                                    InteractiveLinkSeam(
+                                        isMerged = true,
+                                        onClick = {
+                                                sequencerViewModel.onSplit(block.blockNumber, trackOrder)
+                                        }
+                                    )
                                 }
-                            )
+                            }
 
                             if (index < uiBlocks.lastIndex) {
-                                BlockSeamSeparator(
-                                    onMergeClick = {
+                                InteractiveLinkSeam(
+                                    isMerged = false,
+                                    onClick = {
                                         sequencerViewModel.onMerge(index + 1, index)
                                     }
                                 )
@@ -130,7 +142,7 @@ fun SequencerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.4f)
+                    .weight(0.7f)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Text(
@@ -248,6 +260,70 @@ fun CompatibleTrackItem(
                     text = "${if (track.loudnessDifference >= 0) "+" else ""}${String.format(Locale.ROOT,"%.1f", track.loudnessDifference)} dB",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (track.wrongLoudness) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun TrackCapsule(
+    track: TrackInfo,
+    onBlockClick: () -> Unit,
+    isSelected: Boolean) {
+
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+
+
+    Surface(
+        modifier = Modifier
+            .width(160.dp)
+            .height(100.dp)
+            .clickable { onBlockClick() },
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
+        color = containerColor
+    ) {
+        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Text(track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(track.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun InteractiveLinkSeam(
+    isMerged: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .width(40.dp)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        HorizontalDivider(
+            color = if (isMerged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.width(40.dp).height(2.dp)
+        )
+
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, if (isMerged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+            modifier = Modifier.size(24.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = if (isMerged) "🔗" else "🔓",
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }

@@ -69,7 +69,7 @@ class SequencerViewModel @Inject constructor(
         }
     }
 
-    fun selectBlock(block: BlockWithTracks, findPrev: Boolean) {
+    fun selectBlock(block: BlockWithTracks) {
         _selectedBlockNumber.value = block.blockNumber
     }
 
@@ -95,6 +95,7 @@ class SequencerViewModel @Inject constructor(
     fun onMerge(startBlock: Int, goalBlock: Int){
         viewModelScope.launch {
             sequencerRepository.mergeBlocks(startBlock, goalBlock)
+            _selectedBlockNumber.value = if (startBlock < goalBlock) goalBlock-1 else goalBlock
         }
     }
 
