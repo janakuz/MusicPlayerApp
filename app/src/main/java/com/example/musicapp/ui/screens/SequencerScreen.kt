@@ -26,15 +26,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,6 +71,7 @@ import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.components.TrackInfoRow
 import com.example.musicapp.ui.viewmodels.SequencerViewModel
 import java.util.Locale
+import kotlin.math.roundToInt
 
 
 @Composable
@@ -72,9 +80,14 @@ fun SequencerScreen(
 ) {
     val sequencerViewModel: SequencerViewModel = hiltViewModel()
     val uiBlocks by sequencerViewModel.uiBlocks.collectAsState()
+
     val recommendations by sequencerViewModel.compatibleTracks.collectAsState()
     val selectedBlock by sequencerViewModel.selectedBlock.collectAsState()
     val incompatibleOptions by sequencerViewModel.incompatibleTracks.collectAsState()
+
+    val findPrev by sequencerViewModel.findPrev.collectAsState()
+    val bpmTolerance by sequencerViewModel.bpmTolerance.collectAsState()
+    val loudnessTolerance by sequencerViewModel.loudnessTolerance.collectAsState()
 
     DisposableEffect(playlistId) {
         onDispose {
@@ -147,14 +160,86 @@ fun SequencerScreen(
                     .weight(0.7f)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text(
-                    text = if (selectedBlock != null) "Compatible Matches" else "Select a block to see matches",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
 
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.2f)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.SpaceBetween // Spreads title row and slider row evenly
+                ) {
+                    // ROW 1: Title and Compact Direction Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (selectedBlock != null && recommendations.isNotEmpty()) "Compatible Matches"
+                            else if (selectedBlock != null) "Alternative Candidates"
+                            else "Select a block to see matches",
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        IconButton(
+                            onClick = { sequencerViewModel.setDirection(lookBack = !findPrev) },
+                            enabled = selectedBlock != null
+                        ) {
+                            Icon(
+                                imageVector = if (findPrev) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = if (findPrev) "Matching Previous Track" else "Matching Next Track",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "±${bpmTolerance}BPM",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.width(48.dp)
+                            )
+                            Slider(
+                                value = bpmTolerance.toFloat(),
+                                onValueChange = { sequencerViewModel.updateBPMTolerance(it.roundToInt()) },
+                                valueRange = 2f..20f,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "±${String.format(Locale.ROOT, "%.1f", loudnessTolerance)}dB",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.width(48.dp)
+                            )
+                            Slider(
+                                value = loudnessTolerance,
+                                onValueChange = { sequencerViewModel.updateLoudnessTolerance(it) },
+                                valueRange = 0.5f..5.0f,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                Column(modifier = Modifier.fillMaxSize().weight(0.8f).verticalScroll(rememberScrollState())) {
                     recommendations.forEach { compatibleTrack ->
                         CompatibleTrackItem(
                             track = compatibleTrack,

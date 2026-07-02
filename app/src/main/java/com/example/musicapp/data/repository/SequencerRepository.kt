@@ -7,9 +7,19 @@ import kotlinx.coroutines.flow.Flow
 
 interface SequencerRepository {
 
-    fun getCompatible(block: BlockWithTracks, playlistId: Int, findPrev: Boolean = false): Flow<List<CompatibleTrack>>
+    fun getCompatible(
+        block: BlockWithTracks,
+        playlistId: Int,
+        findPrev: Boolean = false,
+        bpmTolerance: Int = 10,
+        loudnessTolerance: Float = 2.5F): Flow<List<CompatibleTrack>>
 
-    fun getIncompatible(block: BlockWithTracks, playlistId: Int, findPrev: Boolean = false): Flow<List<CompatibleTrack>>
+    fun getIncompatible(
+        block: BlockWithTracks,
+        playlistId: Int,
+        findPrev: Boolean = false,
+        bpmTolerance: Int = 10,
+        loudnessTolerance: Float = 2.5F): Flow<List<CompatibleTrack>>
 
     fun getLastTracksInBlock(): Flow<List<Int>>
 
@@ -23,7 +33,7 @@ interface SequencerRepository {
 
     fun getBlocks(): Flow<List<BlockWithTracks>>
 
-    suspend fun mergeBlocks(startBlock: Int, goalBlock: Int)
+    suspend fun mergeBlocks(startBlock: Int, goalBlock: Int, findPrev: Boolean = false)
 
     suspend fun splitBlock(startBlock: Int, splitIndex: Int)
 

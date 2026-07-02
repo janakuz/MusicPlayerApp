@@ -1,6 +1,5 @@
 package com.example.musicapp.data.repository
 
-import android.util.Log
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.SequencerDao
 import com.example.musicapp.data.local.entity.PlaylistTracks
@@ -18,20 +17,24 @@ class SequencerRepositoryImpl(
         block: BlockWithTracks,
         playlistId: Int,
         findPrev: Boolean,
+        bpmTolerance: Int,
+        loudnessTolerance: Float
     ): Flow<List<CompatibleTrack>> {
         val trackId = if (findPrev) block.tracks.first().trackId else block.tracks.last().trackId
 
-        return sequencerDao.getCompatibleTracks(trackId, playlistId, block.blockNumber)
+        return sequencerDao.getCompatibleTracks(trackId, playlistId, block.blockNumber, findPrev, bpmTolerance, loudnessTolerance)
     }
 
     override fun getIncompatible(
         block: BlockWithTracks,
         playlistId: Int,
-        findPrev: Boolean
+        findPrev: Boolean,
+        bpmTolerance: Int,
+        loudnessTolerance: Float
     ): Flow<List<CompatibleTrack>> {
         val trackId = if (findPrev) block.tracks.first().trackId else block.tracks.last().trackId
 
-        return sequencerDao.getIncompatibleAvailableTracks(trackId, playlistId, block.blockNumber)
+        return sequencerDao.getIncompatibleAvailableTracks(trackId, playlistId, block.blockNumber, findPrev, bpmTolerance, loudnessTolerance)
     }
 
     override fun getLastTracksInBlock(): Flow<List<Int>> {
@@ -77,8 +80,8 @@ class SequencerRepositoryImpl(
         }
     }
 
-    override suspend fun mergeBlocks(startBlock: Int, goalBlock: Int) {
-        sequencerDao.mergeBlocks(startBlock, goalBlock)
+    override suspend fun mergeBlocks(startBlock: Int, goalBlock: Int, findPrev: Boolean) {
+        if (!findPrev) sequencerDao.mergeBlocksNext(startBlock, goalBlock) else sequencerDao.mergeBlocksPrev(startBlock, goalBlock)
     }
 
     override suspend fun splitBlock(startBlock: Int, splitIndex: Int) {

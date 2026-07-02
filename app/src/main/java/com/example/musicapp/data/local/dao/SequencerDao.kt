@@ -6,11 +6,8 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.model.BlockWithTrackInfo
-import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
-import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
-import kotlin.math.max
 
 @Dao
 interface SequencerDao {
@@ -151,21 +148,37 @@ interface SequencerDao {
     @Update
     suspend fun reorder(reordered: List<SequencerBlock>)
 
-    @Query("SELECT MAX(blockOrder) FROM sequencer_blocks WHERE blockNumber=:blockNUmber")
-    suspend fun getMaxOrder(blockNUmber: Int): Int
+    @Query("SELECT MAX(blockOrder) FROM sequencer_blocks WHERE blockNumber=:blockNumber")
+    suspend fun getMaxOrder(blockNumber: Int): Int
 
     @Query("UPDATE sequencer_blocks SET blockNumber = blockNumber - 1 WHERE blockNumber >= :startBlock")
     suspend fun shiftPositionsUp(startBlock: Int)
 
     @Query("UPDATE sequencer_blocks SET blockNumber = :goalBlock, blockOrder = blockOrder + :startOrder WHERE blockNumber = :startBlock")
-    suspend fun moveToBlock(startBlock: Int, goalBlock: Int, startOrder: Int)
+    suspend fun moveToBlockNext(startBlock: Int, goalBlock: Int, startOrder: Int)
 
     @Transaction
-    suspend fun mergeBlocks(startBlock: Int, goalBlock: Int){
+    suspend fun mergeBlocksNext(startBlock: Int, goalBlock: Int){
         val maxOrderGoal = getMaxOrder(goalBlock)
-        moveToBlock(startBlock, goalBlock, maxOrderGoal+1)
+        moveToBlockNext(startBlock, goalBlock, maxOrderGoal+1)
         shiftPositionsUp(startBlock+1)
     }
+
+    @Query("UPDATE sequencer_blocks SET blockNumber = :goalBlock WHERE blockNumber= :startBlock")
+    suspend fun moveToBlockPrev(startBlock: Int, goalBlock: Int)
+
+    @Query("UPDATE sequencer_blocks SET blockOrder = blockOrder + :startOrder WHERE blockNumber = :goalBlock")
+    suspend fun updateBlockOrderPrev(goalBlock: Int, startOrder: Int)
+
+
+    @Transaction
+    suspend fun mergeBlocksPrev(startBlock: Int, goalBlock: Int){
+        val maxOrderStart = getMaxOrder(startBlock)
+        updateBlockOrderPrev(goalBlock, maxOrderStart+1)
+        moveToBlockPrev(startBlock, goalBlock)
+        shiftPositionsUp(startBlock+1)
+    }
+
 
     @Query("UPDATE sequencer_blocks SET blockNumber = blockNumber + 1 WHERE blockNumber >= :startBlock")
     suspend fun shiftPositionsDown(startBlock: Int)

@@ -32,6 +32,13 @@ class SequencerViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _findPrev = MutableStateFlow(false)
+    val findPrev = _findPrev.asStateFlow()
+
+    private val _bpmTolerance = MutableStateFlow(10)
+    val bpmTolerance = _bpmTolerance.asStateFlow()
+
+    private val _loudnessTolerance = MutableStateFlow(2.5F)
+    val loudnessTolerance = _loudnessTolerance.asStateFlow()
 
     private val _selectedBlockNumber = MutableStateFlow<Int?>(null)
 
@@ -49,9 +56,21 @@ class SequencerViewModel @Inject constructor(
 //    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val compatibleTracks: StateFlow<List<CompatibleTrack>> = selectedBlock.flatMapLatest { currentBlock ->
-        if (currentBlock == null) flowOf(emptyList())
-        else sequencerRepository.getCompatible(currentBlock, playlistId, false)
+    val compatibleTracks: StateFlow<List<CompatibleTrack>> = combine(
+        selectedBlock,
+        _findPrev,
+        _bpmTolerance,
+        _loudnessTolerance
+    ) {
+        block, prev, bpm, loudness ->
+        CompatibilitySettings(block, prev, bpm, loudness)
+    }.flatMapLatest { compatibilitySettings ->
+        if (compatibilitySettings.block == null) flowOf(emptyList())
+        else sequencerRepository.getCompatible(compatibilitySettings.block,
+                                            playlistId,
+                                            compatibilitySettings.findPrev,
+                                            compatibilitySettings.bpmTolerance,
+                                            compatibilitySettings.loudnessTolerance)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -59,9 +78,21 @@ class SequencerViewModel @Inject constructor(
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val incompatibleTracks: StateFlow<List<CompatibleTrack>> = selectedBlock.flatMapLatest { currentBlock ->
-        if (currentBlock == null) flowOf(emptyList())
-        else sequencerRepository.getIncompatible(currentBlock, playlistId, false)
+    val incompatibleTracks: StateFlow<List<CompatibleTrack>> = combine(
+        selectedBlock,
+        _findPrev,
+        _bpmTolerance,
+        _loudnessTolerance
+    ) {
+            block, prev, bpm, loudness ->
+        CompatibilitySettings(block, prev, bpm, loudness)
+    }.flatMapLatest { compatibilitySettings ->
+        if (compatibilitySettings.block == null) flowOf(emptyList())
+        else sequencerRepository.getIncompatible(compatibilitySettings.block,
+            playlistId,
+            compatibilitySettings.findPrev,
+            compatibilitySettings.bpmTolerance,
+            compatibilitySettings.loudnessTolerance)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -98,9 +129,10 @@ class SequencerViewModel @Inject constructor(
         }
     }
 
+
     fun onMerge(startBlock: Int, goalBlock: Int){
         viewModelScope.launch {
-            sequencerRepository.mergeBlocks(startBlock, goalBlock)
+            sequencerRepository.mergeBlocks(startBlock, goalBlock, _findPrev.value)
             _selectedBlockNumber.value = if (startBlock < goalBlock) goalBlock-1 else goalBlock
         }
     }
@@ -110,4 +142,25 @@ class SequencerViewModel @Inject constructor(
             sequencerRepository.splitBlock(block, splitIndex)
         }
     }
+
+    fun setDirection(lookBack: Boolean){
+        _findPrev.value = lookBack
+    }
+
+    fun updateBPMTolerance(newValue: Int){
+        _bpmTolerance.value = newValue
+    }
+
+
+    fun updateLoudnessTolerance(newValue: Float){
+        _loudnessTolerance.value = newValue
+    }
+
 }
+
+data class CompatibilitySettings(
+    val block: BlockWithTracks?,
+    val findPrev: Boolean,
+    val bpmTolerance: Int,
+    val loudnessTolerance: Float
+)
