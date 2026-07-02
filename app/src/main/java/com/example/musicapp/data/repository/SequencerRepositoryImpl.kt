@@ -24,6 +24,16 @@ class SequencerRepositoryImpl(
         return sequencerDao.getCompatibleTracks(trackId, playlistId, block.blockNumber)
     }
 
+    override fun getIncompatible(
+        block: BlockWithTracks,
+        playlistId: Int,
+        findPrev: Boolean
+    ): Flow<List<CompatibleTrack>> {
+        val trackId = if (findPrev) block.tracks.first().trackId else block.tracks.last().trackId
+
+        return sequencerDao.getIncompatibleAvailableTracks(trackId, playlistId, block.blockNumber)
+    }
+
     override fun getLastTracksInBlock(): Flow<List<Int>> {
         return sequencerDao.getLastTracksInBlock()
     }

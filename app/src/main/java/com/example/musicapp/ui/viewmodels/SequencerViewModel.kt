@@ -58,6 +58,17 @@ class SequencerViewModel @Inject constructor(
         initialValue = emptyList()
     )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val incompatibleTracks: StateFlow<List<CompatibleTrack>> = selectedBlock.flatMapLatest { currentBlock ->
+        if (currentBlock == null) flowOf(emptyList())
+        else sequencerRepository.getIncompatible(currentBlock, playlistId, false)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+
     init{
         viewModelScope.launch {
             sequencerRepository.setUpSequencer(playlistId)

@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -73,6 +74,7 @@ fun SequencerScreen(
     val uiBlocks by sequencerViewModel.uiBlocks.collectAsState()
     val recommendations by sequencerViewModel.compatibleTracks.collectAsState()
     val selectedBlock by sequencerViewModel.selectedBlock.collectAsState()
+    val incompatibleOptions by sequencerViewModel.incompatibleTracks.collectAsState()
 
     DisposableEffect(playlistId) {
         onDispose {
@@ -164,6 +166,22 @@ fun SequencerScreen(
                                 )
                             }
                         )
+                    }
+
+                    if (recommendations.isEmpty()){
+                        incompatibleOptions.forEach { incompatibleTrack ->
+                            CompatibleTrackItem(
+                                track = incompatibleTrack,
+                                inMultiTrackBlock = incompatibleTrack.inMultiTrackBlock,
+                                onClick = {
+                                    sequencerViewModel.onMerge(
+                                        incompatibleTrack.currentBlock,
+                                        selectedBlock!!.blockNumber
+                                    )
+
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -274,9 +292,8 @@ fun TrackCapsule(
     onBlockClick: () -> Unit,
     isSelected: Boolean) {
 
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-    val containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val borderWidth = if (isSelected) 2.dp else 1.dp
 
     Surface(
         modifier = Modifier
@@ -284,17 +301,76 @@ fun TrackCapsule(
             .height(100.dp)
             .clickable { onBlockClick() },
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
-        color = containerColor
+        border = BorderStroke(borderWidth, borderColor),
+        color = MaterialTheme.colorScheme.surface
     ) {
-        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.SpaceBetween) {
-            Text(track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(track.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.weight(1f))
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(track.albumArt)
+                    .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                placeholder = painterResource(R.drawable.baseline_album_24),
+                error = painterResource(R.drawable.baseline_album_24),
+                fallback = painterResource(R.drawable.baseline_album_24),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.4f),
+                                Color.Black.copy(alpha = 0.75f)
+                            )
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = track.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = track.artistName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Text(
+                        text = if (track.bpm != null) "${track.bpm} BPM" else "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isSelected) MaterialTheme.colorScheme.inversePrimary else Color.White.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
-    }
-}
+    }}
 
 
 

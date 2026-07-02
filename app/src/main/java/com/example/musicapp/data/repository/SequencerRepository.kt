@@ -9,6 +9,8 @@ interface SequencerRepository {
 
     fun getCompatible(block: BlockWithTracks, playlistId: Int, findPrev: Boolean = false): Flow<List<CompatibleTrack>>
 
+    fun getIncompatible(block: BlockWithTracks, playlistId: Int, findPrev: Boolean = false): Flow<List<CompatibleTrack>>
+
     fun getLastTracksInBlock(): Flow<List<Int>>
 
     fun getFirstTracksInBlock(): Flow<List<Int>>
