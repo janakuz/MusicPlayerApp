@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface SequencerRepository {
 
-    fun getCompatible(block: BlockWithTracks, playlistId: Int, findPrev: Boolean = false, valid: List<Int>): Flow<List<CompatibleTrack>>
+    fun getCompatible(block: BlockWithTracks, playlistId: Int, findPrev: Boolean = false): Flow<List<CompatibleTrack>>
 
     fun getLastTracksInBlock(): Flow<List<Int>>
 

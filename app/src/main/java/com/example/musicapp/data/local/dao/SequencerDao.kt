@@ -46,13 +46,23 @@ interface SequencerDao {
         JOIN playlist_tracks pt ON pt.trackId=t.id
         JOIN sequencer_blocks sb on sb.trackId=t.id
         JOIN sequencer_blocks ssb ON ssb.trackId=st.id
-        WHERE st.id = :sourceTrackId AND pt.playlistId=:playlistId AND t.id != :sourceTrackId AND t.id in (:validTracks) AND ssb.blockNumber != sb.blockNumber
+        WHERE st.id = :sourceTrackId AND pt.playlistId=:playlistId 
+            AND t.id != :sourceTrackId
+            AND CASE WHEN :lookBack = false THEN sb.blockOrder = 0 ELSE sb.blockOrder = (SELECT MAX(blockOrder) FROM sequencer_blocks sb3 WHERE sb3.blockNumber=sb.blockNumber) END
+            AND ssb.blockNumber != sb.blockNumber AND :sourceBlock != sb.blockNumber
             AND t.bpm BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) 
             AND t.loudness BETWEEN (st.loudness - :loudnessTolerance) AND (st.loudness + :loudnessTolerance)
-        GROUP BY t.id
+        GROUP BY currentBlock, t.id
         ORDER BY ABS(kc.harmonicDistance) ASC
     """)
-    fun getCompatibleTracks(sourceTrackId: Int, playlistId: Int, validTracks: List<Int>, bpmTolerance: Int = 10, loudnessTolerance: Float = 2.5F): Flow<List<CompatibleTrack>>
+    fun getCompatibleTracks(
+        sourceTrackId: Int,
+        playlistId: Int,
+        sourceBlock: Int,
+        lookBack: Boolean = false,
+        bpmTolerance: Int = 10,
+        loudnessTolerance: Float = 2.5F
+    ): Flow<List<CompatibleTrack>>
 
     @Query("SELECT trackid FROM sequencer_blocks GROUP BY blockNumber HAVING MAX(blockOrder)")
     fun getLastTracksInBlock(): Flow<List<Int>>

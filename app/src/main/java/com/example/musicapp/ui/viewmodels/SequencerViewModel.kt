@@ -39,24 +39,19 @@ class SequencerViewModel @Inject constructor(
         if (number == null) null else blocks.find { it.blockNumber == number }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val validCandidates: Flow<List<Int>> = _findPrev.flatMapLatest { isLookingBack ->
-        if (isLookingBack) {
-            sequencerRepository.getLastTracksInBlock()
-        } else {
-            sequencerRepository.getFirstTracksInBlock()
-        }
-    }
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    private val validCandidates: Flow<List<Int>> = _findPrev.flatMapLatest { isLookingBack ->
+//        if (isLookingBack) {
+//            sequencerRepository.getLastTracksInBlock()
+//        } else {
+//            sequencerRepository.getFirstTracksInBlock()
+//        }
+//    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val compatibleTracks: StateFlow<List<CompatibleTrack>> = combine(
-        selectedBlock,
-        validCandidates
-    ) { currentBlock, validIds ->
-        Pair(currentBlock, validIds)
-    }.flatMapLatest { (currentBlock, validIds) ->
-        if (currentBlock == null || validIds.isEmpty()) flowOf(emptyList())
-        else sequencerRepository.getCompatible(currentBlock, playlistId, false, validIds)
+    val compatibleTracks: StateFlow<List<CompatibleTrack>> = selectedBlock.flatMapLatest { currentBlock ->
+        if (currentBlock == null) flowOf(emptyList())
+        else sequencerRepository.getCompatible(currentBlock, playlistId, false)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

@@ -18,11 +18,10 @@ class SequencerRepositoryImpl(
         block: BlockWithTracks,
         playlistId: Int,
         findPrev: Boolean,
-        valid: List<Int>
     ): Flow<List<CompatibleTrack>> {
         val trackId = if (findPrev) block.tracks.first().trackId else block.tracks.last().trackId
 
-        return sequencerDao.getCompatibleTracks(trackId, playlistId, valid)
+        return sequencerDao.getCompatibleTracks(trackId, playlistId, block.blockNumber)
     }
 
     override fun getLastTracksInBlock(): Flow<List<Int>> {
