@@ -184,13 +184,13 @@ interface SequencerDao {
     suspend fun shiftPositionsDown(startBlock: Int)
 
 
-    @Query("UPDATE sequencer_blocks SET blockNumber = blockNumber + 1, blockOrder = blockOrder - :splitIndex WHERE blockNumber = :blockNumber")
+    @Query("UPDATE sequencer_blocks SET blockNumber = blockNumber + 1, blockOrder = blockOrder - :splitIndex WHERE blockNumber = :blockNumber AND blockOrder >= :splitIndex")
     suspend fun splitToBlock(blockNumber: Int, splitIndex: Int)
 
     @Transaction
     suspend fun splitBlocks(blockNumber: Int, splitIndex: Int){
         shiftPositionsDown(blockNumber+1)
-        splitToBlock(blockNumber, splitIndex)
+        splitToBlock(blockNumber, splitIndex+1)
     }
 
 

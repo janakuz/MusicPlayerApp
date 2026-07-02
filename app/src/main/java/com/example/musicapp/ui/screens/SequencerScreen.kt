@@ -166,9 +166,8 @@ fun SequencerScreen(
                         .fillMaxWidth()
                         .weight(0.2f)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.SpaceBetween // Spreads title row and slider row evenly
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // ROW 1: Title and Compact Direction Toggle
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
