@@ -164,7 +164,9 @@ fun SequencerScreen(
                                     compatibleTrack.currentBlock,
                                     selectedBlock!!.blockNumber
                                 )
-                            }
+                            },
+                            isHalfTime = compatibleTrack.halfTime,
+                            isDoubleTime = compatibleTrack.doubleTime,
                         )
                     }
 
@@ -179,7 +181,9 @@ fun SequencerScreen(
                                         selectedBlock!!.blockNumber
                                     )
 
-                                }
+                                },
+                                isHalfTime = incompatibleTrack.halfTime,
+                                isDoubleTime = incompatibleTrack.doubleTime,
                             )
                         }
                     }
@@ -196,7 +200,8 @@ fun CompatibleTrackItem(
     track: CompatibleTrack,
     inMultiTrackBlock: Boolean,
     onClick: () -> Unit,
-    isMatch: Boolean = true,
+    isHalfTime: Boolean,
+    isDoubleTime: Boolean,
 ) {
     Surface(
         modifier = Modifier
@@ -261,7 +266,7 @@ fun CompatibleTrackItem(
                     modifier = Modifier.padding(bottom = 4.dp)
                 ) {
                     Text(
-                        text = if (isMatch) track.matchDescription else "Incompatible Key",
+                        text = track.matchDescription,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         color = if (track.wrongKey) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -270,7 +275,8 @@ fun CompatibleTrackItem(
                 }
 
                 Text(
-                    text = "${if (track.tempoDifference >= 0) "+" else ""}${track.tempoDifference} BPM",
+                    text = "${if (track.tempoDifference >= 0) "+" else ""}${track.tempoDifference} BPM " +
+                            if (isHalfTime) "(Half Time)" else if (isDoubleTime) "(Double Time)" else "",
                     color = if (track.wrongBPM) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )

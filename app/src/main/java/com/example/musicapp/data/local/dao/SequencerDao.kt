@@ -33,7 +33,15 @@ interface SequencerDao {
     @Query("""
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
                 t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId,
-                t.instrumental, t.voice, t.bpm, t.`key`, kc.matchDescription, t.bpm - st.bpm as tempoDifference, t.loudness - st.loudness as loudnessDifference,
+                t.instrumental, t.voice, t.bpm, t.`key`, kc.matchDescription, 
+                CASE 
+                   WHEN t.bpm BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) THEN (t.bpm - st.bpm)
+                    WHEN (t.bpm / 2.0) BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) THEN ((t.bpm / 2.0) - st.bpm)
+                    WHEN (t.bpm * 2.0) BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) THEN ((t.bpm * 2.0) - st.bpm)
+                ELSE (t.bpm - st.bpm) END as tempoDifference, 
+                (t.bpm / 2.0) BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) as halfTime,
+                (t.bpm * 2.0) BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) as doubleTime,
+                t.loudness - st.loudness as loudnessDifference,
                 sb.blockNumber as currentBlock, false as wrongBPM, false as wrongKey, false as wrongLoudness,
                 (SELECT COUNT(*) 
                 FROM sequencer_blocks sb2 
@@ -50,7 +58,9 @@ interface SequencerDao {
             AND t.id != :sourceTrackId
             AND CASE WHEN :lookBack = false THEN sb.blockOrder = 0 ELSE sb.blockOrder = (SELECT MAX(blockOrder) FROM sequencer_blocks sb3 WHERE sb3.blockNumber=sb.blockNumber) END
             AND ssb.blockNumber != sb.blockNumber AND :sourceBlock != sb.blockNumber
-            AND t.bpm BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance) 
+            AND ((t.bpm BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance)) OR
+                ((t.bpm / 2.0) BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance)) OR
+                ((t.bpm * 2.0) BETWEEN (st.bpm - :bpmTolerance) AND (st.bpm + :bpmTolerance)))
             AND t.loudness BETWEEN (st.loudness - :loudnessTolerance) AND (st.loudness + :loudnessTolerance)
         GROUP BY currentBlock, t.id
         ORDER BY ABS(kc.harmonicDistance) ASC
@@ -70,15 +80,29 @@ interface SequencerDao {
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
                 t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId,
                 t.instrumental, t.voice, t.bpm, t.`key`, 
-                COALESCE(
-                       (SELECT kc.matchDescription 
-                        FROM key_compatibility kc 
-                        JOIN tracks st ON st.`key`=kc.sourceKey 
-                        WHERE kc.compatibleKey=t.`key` and st.id=:sourceTrackId), "Incompatible Key") as matchDescription, 
-                t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId) as tempoDifference, 
+                COALESCE((SELECT kc.matchDescription 
+                          FROM key_compatibility kc 
+                          JOIN tracks st ON st.`key`=kc.sourceKey 
+                          WHERE kc.compatibleKey=t.`key` and st.id=:sourceTrackId), "Incompatible Key") as matchDescription, 
+                CASE 
+                    WHEN ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) < ABS((t.bpm / 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) 
+                    AND ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) < ABS((t.bpm * 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId))
+                    THEN (t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId))
+
+                    WHEN ABS((t.bpm / 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) < ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) 
+                    AND ABS((t.bpm / 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) < ABS((t.bpm * 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId))
+                    THEN ((t.bpm / 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId))
+
+                    ELSE ((t.bpm * 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId))
+                END as tempoDifference, 
                 t.loudness - (SELECT loudness FROM tracks st WHERE st.id=:sourceTrackId) as loudnessDifference,
                 sb.blockNumber as currentBlock, 
-                ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) > :bpmTolerance as wrongBPM, 
+                ABS((t.bpm / 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) < ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) as halfTime,
+                ABS((t.bpm * 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) < ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)) as doubleTime,
+                (MIN(ABS(t.bpm - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)),
+                        ABS((t.bpm / 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId)),
+                        ABS((t.bpm * 2.0) - (SELECT bpm FROM tracks st WHERE st.id=:sourceTrackId))
+                    )) > :bpmTolerance as wrongBPM, 
                 t.`key` NOT IN (SELECT kc.compatibleKey FROM key_compatibility kc JOIN tracks st ON st.`key`=kc.sourceKey WHERE st.id=:sourceTrackId) as wrongKey, 
                 ABS(t.loudness - (SELECT loudness FROM tracks st WHERE st.id=:sourceTrackId)) > :loudnessTolerance as wrongLoudness,
                 (SELECT COUNT(*) 

@@ -8,6 +8,8 @@ data class CompatibleTrack(
     val tempoDifference: Int,
     val loudnessDifference: Float,
     val currentBlock: Int,
+    val halfTime: Boolean,
+    val doubleTime: Boolean,
     val wrongKey: Boolean = false,
     val wrongBPM: Boolean = false,
     val wrongLoudness: Boolean = false,
