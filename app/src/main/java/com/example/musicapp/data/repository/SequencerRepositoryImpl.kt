@@ -6,6 +6,7 @@ import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
+import com.example.musicapp.data.local.model.SequencerTrack
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,7 +21,7 @@ class SequencerRepositoryImpl(
         bpmTolerance: Int,
         loudnessTolerance: Float
     ): Flow<List<CompatibleTrack>> {
-        val trackId = if (findPrev) block.tracks.first().trackId else block.tracks.last().trackId
+        val trackId = if (findPrev) block.tracks.first().trackInfo.trackId else block.tracks.last().trackInfo.trackId
 
         return sequencerDao.getCompatibleTracks(trackId, playlistId, block.blockNumber, findPrev, bpmTolerance, loudnessTolerance)
     }
@@ -32,7 +33,7 @@ class SequencerRepositoryImpl(
         bpmTolerance: Int,
         loudnessTolerance: Float
     ): Flow<List<CompatibleTrack>> {
-        val trackId = if (findPrev) block.tracks.first().trackId else block.tracks.last().trackId
+        val trackId = if (findPrev) block.tracks.first().trackInfo.trackId else block.tracks.last().trackInfo.trackId
 
         return sequencerDao.getIncompatibleAvailableTracks(trackId, playlistId, block.blockNumber, findPrev, bpmTolerance, loudnessTolerance)
     }
@@ -72,8 +73,9 @@ class SequencerRepositoryImpl(
                 .groupBy { it.blockNumber }
                 .map { (blockNum, rowsForThisBlock) ->
                     BlockWithTracks(
+                        id = rowsForThisBlock.minOf { it.id },
                         blockNumber = blockNum,
-                        tracks = rowsForThisBlock.map { it.trackInfo }
+                        tracks = rowsForThisBlock.map { SequencerTrack(it.trackInfo, it.id) }
                     )
                 }
                 .sortedBy { it.blockNumber }
@@ -90,11 +92,12 @@ class SequencerRepositoryImpl(
 
     override suspend fun reorder(reordered: List<BlockWithTracks>) {
         val newBlocks = reordered.flatMapIndexed { index, block ->
-            block.tracks.mapIndexed { trackIndex, trackInfo ->
+            block.tracks.mapIndexed { trackIndex, track ->
                 SequencerBlock(
+                    id = track.sequencerId,
                     blockNumber = index,
                     blockOrder = trackIndex,
-                    trackId = trackInfo.trackId
+                    trackId = track.trackInfo.trackId
                 )
             }
         }

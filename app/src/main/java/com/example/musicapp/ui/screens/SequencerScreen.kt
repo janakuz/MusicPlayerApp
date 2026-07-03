@@ -1,6 +1,9 @@
 package com.example.musicapp.ui.screens
 
 import android.util.Log
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,10 +20,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,13 +30,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.Divider
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,12 +52,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -68,10 +71,14 @@ import com.example.musicapp.R
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
 import com.example.musicapp.data.local.model.TrackInfo
-import com.example.musicapp.ui.components.TrackInfoRow
 import com.example.musicapp.ui.viewmodels.SequencerViewModel
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.util.Locale
 import kotlin.math.roundToInt
+
+
+
 
 
 @Composable
@@ -89,11 +96,56 @@ fun SequencerScreen(
     val bpmTolerance by sequencerViewModel.bpmTolerance.collectAsState()
     val loudnessTolerance by sequencerViewModel.loudnessTolerance.collectAsState()
 
+    val lazyListState = rememberLazyListState()
+    var isDragging by remember { mutableStateOf(false) }
+    var visibleBlocks by remember { mutableStateOf(uiBlocks) }
+
+    LaunchedEffect(uiBlocks) {
+        if (!isDragging) {
+            visibleBlocks = uiBlocks
+        }
+    }
+
+    val reorderableLazyListState = rememberReorderableLazyListState(
+        lazyListState = lazyListState,
+        onMove = { from, to ->
+            val isFromBlock = from.key.toString().startsWith("block_")
+            val isToBlock = to.key.toString().startsWith("block_")
+
+            if (isFromBlock && isToBlock) {
+                val fromStateIndex = visibleBlocks.indexOfFirst { "block_${it.id}" == from.key }
+                val toStateIndex = visibleBlocks.indexOfFirst { "block_${it.id}" == to.key }
+
+                if (fromStateIndex != -1 && toStateIndex != -1) {
+                    visibleBlocks = visibleBlocks.toMutableList().apply {
+                        add(toStateIndex, removeAt(fromStateIndex))
+                    }
+                }
+            }
+        },
+    )
+
+
+    LaunchedEffect(reorderableLazyListState.isAnyItemDragging) {
+        if (reorderableLazyListState.isAnyItemDragging) {
+            isDragging = true
+        } else if (isDragging) {
+            sequencerViewModel.reorder(visibleBlocks)
+            isDragging = false
+        }
+    }
+
+
+
     DisposableEffect(playlistId) {
         onDispose {
             sequencerViewModel.onDiscard()
         }
     }
+
+    val hapticFeedback = LocalHapticFeedback.current
+
+
 
     Scaffold(
         floatingActionButton = {
@@ -112,40 +164,82 @@ fun SequencerScreen(
                     .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) {
-                if (uiBlocks.isEmpty()) {
+                if (visibleBlocks.isEmpty()) {
                     Text("No tracks in sequencer scratchpad")
                 } else {
                     LazyRow(
+                        state = lazyListState,
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        itemsIndexed(uiBlocks) { index, block ->
-                            block.tracks.forEachIndexed { trackOrder, track ->
-                                TrackCapsule(
-                                    track = track,
-                                    onBlockClick = { sequencerViewModel.selectBlock(block) },
-                                    isSelected = block.blockNumber == selectedBlock?.blockNumber
-                                )
+                        visibleBlocks.forEachIndexed { index, block ->
+                            item(key = "block_${block.id}") {
+                                ReorderableItem(
+                                    reorderableLazyListState,
+                                    key = "block_${block.id}"
+                                ) { isDragging ->
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .shadow(if (isDragging) 8.dp else 0.dp)
+                                    ) {
+                                        block.tracks.forEachIndexed { trackOrder, track ->
+                                            val reorderModifier = if (trackOrder==0) Modifier
+                                                .draggableHandle(
+                                                onDragStarted = {
+                                                    hapticFeedback.performHapticFeedback(
+                                                        HapticFeedbackType.GestureThresholdActivate
+                                                    )
+                                                },
+                                                onDragStopped = {
+                                                    hapticFeedback.performHapticFeedback(
+                                                        HapticFeedbackType.GestureEnd
+                                                    )
+                                                },
+                                            ) else Modifier
+
+                                            TrackCapsule(
+                                                track = track.trackInfo,
+                                                onBlockClick = {
+                                                    sequencerViewModel.selectBlock(
+                                                        block.blockNumber
+                                                    )
+                                                },
+                                                isSelected = block.blockNumber == selectedBlock?.blockNumber,
+                                                modifier = reorderModifier
+                                            )
 
 
-                                if (trackOrder < block.tracks.lastIndex) {
-                                    InteractiveLinkSeam(
-                                        isMerged = true,
-                                        onClick = {
-                                                sequencerViewModel.onSplit(block.blockNumber, trackOrder)
+                                            if (trackOrder < block.tracks.lastIndex) {
+                                                InteractiveLinkSeam(
+                                                    isMerged = true,
+                                                    onClick = {
+                                                        sequencerViewModel.onSplit(
+                                                            block.blockNumber,
+                                                            trackOrder
+                                                        )
+                                                    }
+                                                )
+                                            }
                                         }
-                                    )
-                                }
-                            }
 
-                            if (index < uiBlocks.lastIndex) {
-                                InteractiveLinkSeam(
-                                    isMerged = false,
-                                    onClick = {
-                                        sequencerViewModel.onMerge(index + 1, index)
                                     }
-                                )
+                                }
+
+                                if (index < visibleBlocks.lastIndex) {
+                                        InteractiveLinkSeam(
+                                            isMerged = false,
+                                            onClick = {
+                                                val currentBlockNum = block.blockNumber
+                                                val nextBlockNum = visibleBlocks[index + 1].blockNumber
+                                                sequencerViewModel.onMerge(nextBlockNum, currentBlockNum)
+                                            }
+                                        )
+                                }
+
+
                             }
                         }
                     }
@@ -380,13 +474,15 @@ fun CompatibleTrackItem(
 fun TrackCapsule(
     track: TrackInfo,
     onBlockClick: () -> Unit,
-    isSelected: Boolean) {
+    isSelected: Boolean,
+    modifier: Modifier) {
 
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val borderWidth = if (isSelected) 2.dp else 1.dp
 
+
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .width(160.dp)
             .height(100.dp)
             .clickable { onBlockClick() },
@@ -394,7 +490,8 @@ fun TrackCapsule(
         border = BorderStroke(borderWidth, borderColor),
         color = MaterialTheme.colorScheme.surface
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()
+            ) {
 
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -544,8 +641,8 @@ fun BlockCard(
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(track.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(track.trackInfo.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(track.trackInfo.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
 
                 }

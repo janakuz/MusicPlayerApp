@@ -1,10 +1,12 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.SequencerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -106,8 +108,8 @@ class SequencerViewModel @Inject constructor(
         }
     }
 
-    fun selectBlock(block: BlockWithTracks) {
-        _selectedBlockNumber.value = block.blockNumber
+    fun selectBlock(block: Int) {
+        _selectedBlockNumber.value = block
     }
 
 
@@ -154,6 +156,12 @@ class SequencerViewModel @Inject constructor(
 
     fun updateLoudnessTolerance(newValue: Float){
         _loudnessTolerance.value = newValue
+    }
+
+    fun reorder(reordered: List<BlockWithTracks>){
+        viewModelScope.launch {
+            sequencerRepository.reorder(reordered)
+        }
     }
 
 }

@@ -1,9 +1,11 @@
 package com.example.musicapp.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.model.BlockWithTrackInfo
 import com.example.musicapp.data.local.model.CompatibleTrack
@@ -134,7 +136,7 @@ interface SequencerDao {
 
 
     @Query("""
-        SELECT sb.blockNumber, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
+        SELECT sb.id, sb.blockNumber, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
                 t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId,
                 t.instrumental, t.voice, t.bpm, t.`key`
         FROM sequencer_blocks sb
@@ -147,6 +149,16 @@ interface SequencerDao {
 
     @Update
     suspend fun reorder(reordered: List<SequencerBlock>)
+
+    @Insert
+    suspend fun insert(blocks: List<SequencerBlock>)
+
+    @Transaction
+    suspend fun replaceOrder(blocks: List<SequencerBlock>) {
+        clearScratchpad()
+        insert(blocks)
+    }
+
 
     @Query("SELECT MAX(blockOrder) FROM sequencer_blocks WHERE blockNumber=:blockNumber")
     suspend fun getMaxOrder(blockNumber: Int): Int
