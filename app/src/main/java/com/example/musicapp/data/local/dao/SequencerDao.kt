@@ -5,7 +5,6 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.model.BlockWithTrackInfo
 import com.example.musicapp.data.local.model.CompatibleTrack
@@ -152,13 +151,6 @@ interface SequencerDao {
 
     @Insert
     suspend fun insert(blocks: List<SequencerBlock>)
-
-    @Transaction
-    suspend fun replaceOrder(blocks: List<SequencerBlock>) {
-        clearScratchpad()
-        insert(blocks)
-    }
-
 
     @Query("SELECT MAX(blockOrder) FROM sequencer_blocks WHERE blockNumber=:blockNumber")
     suspend fun getMaxOrder(blockNumber: Int): Int

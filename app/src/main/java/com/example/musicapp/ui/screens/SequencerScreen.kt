@@ -1,9 +1,5 @@
 package com.example.musicapp.ui.screens
 
-import android.util.Log
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,8 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.DragIndicator
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -61,14 +53,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
-import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.viewmodels.SequencerViewModel
@@ -76,9 +66,6 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.util.Locale
 import kotlin.math.roundToInt
-
-
-
 
 
 @Composable
@@ -186,19 +173,19 @@ fun SequencerScreen(
                                             .shadow(if (isDragging) 8.dp else 0.dp)
                                     ) {
                                         block.tracks.forEachIndexed { trackOrder, track ->
-                                            val reorderModifier = if (trackOrder==0) Modifier
+                                            val reorderModifier = if (trackOrder == 0) Modifier
                                                 .draggableHandle(
-                                                onDragStarted = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.GestureThresholdActivate
-                                                    )
-                                                },
-                                                onDragStopped = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.GestureEnd
-                                                    )
-                                                },
-                                            ) else Modifier
+                                                    onDragStarted = {
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.GestureThresholdActivate
+                                                        )
+                                                    },
+                                                    onDragStopped = {
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.GestureEnd
+                                                        )
+                                                    },
+                                                ) else Modifier
 
                                             TrackCapsule(
                                                 track = track.trackInfo,
@@ -229,14 +216,17 @@ fun SequencerScreen(
                                 }
 
                                 if (index < visibleBlocks.lastIndex) {
-                                        InteractiveLinkSeam(
-                                            isMerged = false,
-                                            onClick = {
-                                                val currentBlockNum = block.blockNumber
-                                                val nextBlockNum = visibleBlocks[index + 1].blockNumber
-                                                sequencerViewModel.onMerge(nextBlockNum, currentBlockNum)
-                                            }
-                                        )
+                                    InteractiveLinkSeam(
+                                        isMerged = false,
+                                        onClick = {
+                                            val currentBlockNum = block.blockNumber
+                                            val nextBlockNum = visibleBlocks[index + 1].blockNumber
+                                            sequencerViewModel.onMerge(
+                                                nextBlockNum,
+                                                currentBlockNum
+                                            )
+                                        }
+                                    )
                                 }
 
 
@@ -332,7 +322,12 @@ fun SequencerScreen(
                     }
                 }
 
-                Column(modifier = Modifier.fillMaxSize().weight(0.8f).verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(0.8f)
+                        .verticalScroll(rememberScrollState())
+                ) {
                     recommendations.forEach { compatibleTrack ->
                         CompatibleTrackItem(
                             track = compatibleTrack,
@@ -348,7 +343,7 @@ fun SequencerScreen(
                         )
                     }
 
-                    if (recommendations.isEmpty()){
+                    if (recommendations.isEmpty()) {
                         incompatibleOptions.forEach { incompatibleTrack ->
                             CompatibleTrackItem(
                                 track = incompatibleTrack,
@@ -370,7 +365,6 @@ fun SequencerScreen(
         }
     }
 }
-
 
 
 @Composable
@@ -459,7 +453,13 @@ fun CompatibleTrackItem(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "${if (track.loudnessDifference >= 0) "+" else ""}${String.format(Locale.ROOT,"%.1f", track.loudnessDifference)} dB",
+                    text = "${if (track.loudnessDifference >= 0) "+" else ""}${
+                        String.format(
+                            Locale.ROOT,
+                            "%.1f",
+                            track.loudnessDifference
+                        )
+                    } dB",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (track.wrongLoudness) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -469,15 +469,16 @@ fun CompatibleTrackItem(
 }
 
 
-
 @Composable
 fun TrackCapsule(
     track: TrackInfo,
     onBlockClick: () -> Unit,
     isSelected: Boolean,
-    modifier: Modifier) {
+    modifier: Modifier
+) {
 
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val borderColor =
+        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val borderWidth = if (isSelected) 2.dp else 1.dp
 
 
@@ -490,8 +491,9 @@ fun TrackCapsule(
         border = BorderStroke(borderWidth, borderColor),
         color = MaterialTheme.colorScheme.surface
     ) {
-        Box(modifier = Modifier.fillMaxSize()
-            ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
 
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -552,13 +554,15 @@ fun TrackCapsule(
                     Text(
                         text = if (track.bpm != null) "${track.bpm} BPM" else "",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) MaterialTheme.colorScheme.inversePrimary else Color.White.copy(alpha = 0.6f)
+                        color = if (isSelected) MaterialTheme.colorScheme.inversePrimary else Color.White.copy(
+                            alpha = 0.6f
+                        )
                     )
                 }
             }
         }
-    }}
-
+    }
+}
 
 
 @Composable
@@ -574,13 +578,18 @@ fun InteractiveLinkSeam(
     ) {
         HorizontalDivider(
             color = if (isMerged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-            modifier = Modifier.width(40.dp).height(2.dp)
+            modifier = Modifier
+                .width(40.dp)
+                .height(2.dp)
         )
 
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, if (isMerged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+            border = BorderStroke(
+                1.dp,
+                if (isMerged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            ),
             modifier = Modifier.size(24.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -588,95 +597,6 @@ fun InteractiveLinkSeam(
                     text = if (isMerged) "🔗" else "🔓",
                     style = MaterialTheme.typography.bodySmall
                 )
-            }
-        }
-    }
-}
-
-
-@Composable
-fun BlockCard(
-    block: BlockWithTracks,
-    isSelected: Boolean,
-    onBlockClick: () -> Unit
-) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-    val containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-
-    Surface(
-        modifier = Modifier
-            .width(240.dp)
-            .height(280.dp)
-            .padding(vertical = 8.dp)
-            .clickable { onBlockClick() },
-        shape = RoundedCornerShape(12.dp),
-        color = containerColor,
-        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(12.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Text(
-                text = "BLOCK ${block.blockNumber + 1}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            block.tracks.forEachIndexed { index, track ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (index > 0) {
-                        Text(
-                            text = "🔗",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(end = 6.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(track.trackInfo.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(track.trackInfo.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-fun BlockSeamSeparator(
-    onMergeClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .width(48.dp)
-            .fillMaxHeight()
-            .clickable { onMergeClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        HorizontalDivider(
-            color = MaterialTheme.colorScheme.outlineVariant,
-            modifier = Modifier.fillMaxWidth().width(1.dp)
-        )
-
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.size(32.dp),
-            tonalElevation = 2.dp
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Link, contentDescription = "merge")
             }
         }
     }

@@ -1,16 +1,13 @@
 package com.example.musicapp.ui.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
-import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.SequencerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -44,9 +41,10 @@ class SequencerViewModel @Inject constructor(
 
     private val _selectedBlockNumber = MutableStateFlow<Int?>(null)
 
-    val selectedBlock: StateFlow<BlockWithTracks?> = combine(_selectedBlockNumber, uiBlocks) { number, blocks ->
-        if (number == null) null else blocks.find { it.blockNumber == number }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val selectedBlock: StateFlow<BlockWithTracks?> =
+        combine(_selectedBlockNumber, uiBlocks) { number, blocks ->
+            if (number == null) null else blocks.find { it.blockNumber == number }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
 //    @OptIn(ExperimentalCoroutinesApi::class)
 //    private val validCandidates: Flow<List<Int>> = _findPrev.flatMapLatest { isLookingBack ->
@@ -63,16 +61,17 @@ class SequencerViewModel @Inject constructor(
         _findPrev,
         _bpmTolerance,
         _loudnessTolerance
-    ) {
-        block, prev, bpm, loudness ->
+    ) { block, prev, bpm, loudness ->
         CompatibilitySettings(block, prev, bpm, loudness)
     }.flatMapLatest { compatibilitySettings ->
         if (compatibilitySettings.block == null) flowOf(emptyList())
-        else sequencerRepository.getCompatible(compatibilitySettings.block,
-                                            playlistId,
-                                            compatibilitySettings.findPrev,
-                                            compatibilitySettings.bpmTolerance,
-                                            compatibilitySettings.loudnessTolerance)
+        else sequencerRepository.getCompatible(
+            compatibilitySettings.block,
+            playlistId,
+            compatibilitySettings.findPrev,
+            compatibilitySettings.bpmTolerance,
+            compatibilitySettings.loudnessTolerance
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -85,16 +84,17 @@ class SequencerViewModel @Inject constructor(
         _findPrev,
         _bpmTolerance,
         _loudnessTolerance
-    ) {
-            block, prev, bpm, loudness ->
+    ) { block, prev, bpm, loudness ->
         CompatibilitySettings(block, prev, bpm, loudness)
     }.flatMapLatest { compatibilitySettings ->
         if (compatibilitySettings.block == null) flowOf(emptyList())
-        else sequencerRepository.getIncompatible(compatibilitySettings.block,
+        else sequencerRepository.getIncompatible(
+            compatibilitySettings.block,
             playlistId,
             compatibilitySettings.findPrev,
             compatibilitySettings.bpmTolerance,
-            compatibilitySettings.loudnessTolerance)
+            compatibilitySettings.loudnessTolerance
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -102,7 +102,7 @@ class SequencerViewModel @Inject constructor(
     )
 
 
-    init{
+    init {
         viewModelScope.launch {
             sequencerRepository.setUpSequencer(playlistId)
         }
@@ -119,46 +119,46 @@ class SequencerViewModel @Inject constructor(
         }
     }
 
-    fun onSave(){
+    fun onSave() {
         viewModelScope.launch {
             sequencerRepository.saveNewOrder(playlistId)
         }
     }
 
-    fun onDiscard(){
+    fun onDiscard() {
         viewModelScope.launch {
             sequencerRepository.clearSequencer()
         }
     }
 
 
-    fun onMerge(startBlock: Int, goalBlock: Int){
+    fun onMerge(startBlock: Int, goalBlock: Int) {
         viewModelScope.launch {
             sequencerRepository.mergeBlocks(startBlock, goalBlock, _findPrev.value)
-            _selectedBlockNumber.value = if (startBlock < goalBlock) goalBlock-1 else goalBlock
+            _selectedBlockNumber.value = if (startBlock < goalBlock) goalBlock - 1 else goalBlock
         }
     }
 
-    fun onSplit(block: Int, splitIndex: Int){
+    fun onSplit(block: Int, splitIndex: Int) {
         viewModelScope.launch {
             sequencerRepository.splitBlock(block, splitIndex)
         }
     }
 
-    fun setDirection(lookBack: Boolean){
+    fun setDirection(lookBack: Boolean) {
         _findPrev.value = lookBack
     }
 
-    fun updateBPMTolerance(newValue: Int){
+    fun updateBPMTolerance(newValue: Int) {
         _bpmTolerance.value = newValue
     }
 
 
-    fun updateLoudnessTolerance(newValue: Float){
+    fun updateLoudnessTolerance(newValue: Float) {
         _loudnessTolerance.value = newValue
     }
 
-    fun reorder(reordered: List<BlockWithTracks>){
+    fun reorder(reordered: List<BlockWithTracks>) {
         viewModelScope.launch {
             sequencerRepository.reorder(reordered)
         }

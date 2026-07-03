@@ -1,6 +1,5 @@
 package com.example.musicapp.data.repository
 
-import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
 import kotlinx.coroutines.flow.Flow
@@ -12,14 +11,16 @@ interface SequencerRepository {
         playlistId: Int,
         findPrev: Boolean = false,
         bpmTolerance: Int = 10,
-        loudnessTolerance: Float = 2.5F): Flow<List<CompatibleTrack>>
+        loudnessTolerance: Float = 2.5F
+    ): Flow<List<CompatibleTrack>>
 
     fun getIncompatible(
         block: BlockWithTracks,
         playlistId: Int,
         findPrev: Boolean = false,
         bpmTolerance: Int = 10,
-        loudnessTolerance: Float = 2.5F): Flow<List<CompatibleTrack>>
+        loudnessTolerance: Float = 2.5F
+    ): Flow<List<CompatibleTrack>>
 
     fun getLastTracksInBlock(): Flow<List<Int>>
 
