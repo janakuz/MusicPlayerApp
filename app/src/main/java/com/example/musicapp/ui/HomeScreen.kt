@@ -396,7 +396,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         val selectedQueueUUIDs = selection.selectedQueueIds.map { it.queueId }
                         SelectionTopBar(
                             count = selection.count,
-                            onClear = { selectionViewModel.clearSelection() },
+                            onClear = {
+                                if (currentRoute?.startsWith("track/multiedit") == true){
+                                    navController.popBackStack()
+                                }
+                                selectionViewModel.clearSelection()
+                            },
                             onPlayNext = {
                                 if (playlistScreen)
                                     playerViewModel.playNextListIds(selectedPlaylistEntries,

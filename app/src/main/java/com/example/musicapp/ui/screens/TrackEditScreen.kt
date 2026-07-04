@@ -491,6 +491,7 @@ fun TrackMultiEditScreen(
             }
         }
     ) { _ ->
+        if (tracksToEdit.isEmpty()) onNavigateBack()
         InstrumentalAndVoiceSection(
             voiceState = currentVoiceState,
             onInstrumentalChange = {value -> trackMultiEditViewModel.onInstrumentalChange(value) },
