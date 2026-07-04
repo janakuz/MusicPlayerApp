@@ -93,6 +93,7 @@ import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.SequencerScreen
 import com.example.musicapp.ui.screens.SettingsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
+import com.example.musicapp.ui.screens.TrackMultiEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.PlaylistViewModel
@@ -395,7 +396,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         val selectedQueueUUIDs = selection.selectedQueueIds.map { it.queueId }
                         SelectionTopBar(
                             count = selection.count,
-                            onClear = { selectionViewModel.clearSelection() },
+                            onClear = {
+                                if (currentRoute?.startsWith("track/multiedit") == true){
+                                    navController.popBackStack()
+                                }
+                                selectionViewModel.clearSelection()
+                            },
                             onPlayNext = {
                                 if (playlistScreen)
                                     playerViewModel.playNextListIds(selectedPlaylistEntries,
@@ -431,7 +437,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     playlistViewModel.onAdd(selectedQueueTracks)
                                 else
                                     playlistViewModel.onAdd(selection.selectedTrackIds.toList()) },
-                            moveEnabled = moveEnabled
+                            moveEnabled = moveEnabled,
+                            onEdit = { navController.navigate("track/multiedit") }
                         )
                     }
                     if (selectedTabIndex >= 0 && currentRoute != HomeScreen.Scan.name && !selectionMode) {
@@ -782,6 +789,20 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     )
                 }
 
+                composable("track/multiedit") {
+                    if (selectionMode) {
+                        val selection by selectionViewModel.selectionState.collectAsState()
+                        TrackMultiEditScreen(
+                            tracksToEdit = selection.selectedTrackIds,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                                selectionViewModel.clearSelection()
+                            }
+                        )
+                    }
+                }
+
+
                 composable("sequencer?playlistId={playlistId}", arguments = listOf(navArgument("playlistId") {type = NavType.IntType})){ backStackEntry ->
                     val playlistId = backStackEntry.arguments?.getInt("playlistId") ?: -1
                     SequencerScreen(playlistId, onPreview = { playerViewModel.pause() })
@@ -895,7 +916,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { id -> playerViewModel.addToQueuePlaylist(id) },
                         onPlay = { id -> playerViewModel.playPlaylist(id) },
                         sortRequest = playlistsSort,
-                        onSort = { option -> playlistViewModel.setSort(option) }
+                        onSort = { option -> playlistViewModel.setSort(option) },
+                        onAddToPlaylist = { id -> playlistViewModel.onAddToPlaylistPlaylist(id) }
                     )
                 }
 

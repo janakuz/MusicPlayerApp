@@ -71,6 +71,14 @@ class TrackRepositoryImpl(
     override fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>> =
         trackDao.getAllTracksInAlbum(albumId)
 
+    override suspend fun updateInstrumentalAndVoice(
+        newInstrumental: Boolean?,
+        newVoice: String?,
+        tracks: List<Int>
+    ) {
+        trackDao.updateInstrumentalVoice(newInstrumental, newVoice, tracks)
+    }
+
     override suspend fun getAllUnEnriched(): List<Track> {
         return trackDao.getAllUnenriched()
     }
