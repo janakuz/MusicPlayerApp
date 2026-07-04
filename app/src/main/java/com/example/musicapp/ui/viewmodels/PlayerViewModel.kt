@@ -339,6 +339,12 @@ class PlayerViewModel @Inject constructor(
 
     }
 
+    fun pause() {
+        if (controller!!.isPlaying) {
+            controller!!.pause()
+        }
+    }
+
 
     private fun updatePlaybackSession() {
         val currentIndex = controller!!.currentMediaItemIndex

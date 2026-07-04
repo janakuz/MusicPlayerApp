@@ -1,12 +1,21 @@
 package com.example.musicapp.ui.viewmodels
 
+import android.content.Context
+import android.os.CountDownTimer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.musicapp.data.local.model.BlockWithTracks
 import com.example.musicapp.data.local.model.CompatibleTrack
 import com.example.musicapp.data.repository.SequencerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +32,7 @@ import javax.inject.Inject
 class SequencerViewModel @Inject constructor(
     private val sequencerRepository: SequencerRepository,
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     val playlistId: Int = savedStateHandle.get<Int>("playlistId")?.toInt() ?: -1
@@ -45,15 +55,6 @@ class SequencerViewModel @Inject constructor(
         combine(_selectedBlockNumber, uiBlocks) { number, blocks ->
             if (number == null) null else blocks.find { it.blockNumber == number }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-//    @OptIn(ExperimentalCoroutinesApi::class)
-//    private val validCandidates: Flow<List<Int>> = _findPrev.flatMapLatest { isLookingBack ->
-//        if (isLookingBack) {
-//            sequencerRepository.getLastTracksInBlock()
-//        } else {
-//            sequencerRepository.getFirstTracksInBlock()
-//        }
-//    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val compatibleTracks: StateFlow<List<CompatibleTrack>> = combine(
@@ -102,21 +103,24 @@ class SequencerViewModel @Inject constructor(
     )
 
 
+    private var previewPlayer: ExoPlayer? = null
+
+    var previewState by mutableStateOf<Int?>(null)
+        private set
+
+    private var previewTimer: CountDownTimer? = null
+
     init {
         viewModelScope.launch {
             sequencerRepository.setUpSequencer(playlistId)
+        }
+        previewPlayer = ExoPlayer.Builder(context).build().apply {
+            playWhenReady = true
         }
     }
 
     fun selectBlock(block: Int) {
         _selectedBlockNumber.value = block
-    }
-
-
-    fun onReorderBlocks(reorderedList: List<BlockWithTracks>) {
-        viewModelScope.launch {
-            sequencerRepository.reorder(reorderedList)
-        }
     }
 
     fun onSave() {
@@ -162,6 +166,67 @@ class SequencerViewModel @Inject constructor(
         viewModelScope.launch {
             sequencerRepository.reorder(reordered)
         }
+    }
+
+
+
+
+    fun togglePreview(trackId: Int, audioUrl: String, isSuggestedTrack: Boolean) {
+        if (previewState == trackId) {
+            stopPreview()
+            return
+        }
+
+        stopPreview()
+
+        previewState = trackId
+
+        val mediaItem = MediaItem.fromUri(audioUrl)
+        previewPlayer?.setMediaItem(mediaItem)
+        previewPlayer?.prepare()
+
+        if (isSuggestedTrack) {
+            previewPlayer?.seekTo(0)
+            startPreviewCutoffTimer(15000)
+        } else {
+            previewPlayer?.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_READY) {
+                        val duration = previewPlayer?.duration ?: 0L
+                        if (duration > 15000L) {
+                            previewPlayer?.seekTo(duration - 15000L)
+                        } else {
+                            previewPlayer?.seekTo(0)
+                        }
+                        previewPlayer?.removeListener(this)
+                        startPreviewCutoffTimer(15000)
+                    }
+                }
+            })
+        }
+    }
+
+    private fun startPreviewCutoffTimer(durationMs: Long) {
+        previewTimer?.cancel()
+        previewTimer = object : CountDownTimer(durationMs, 1000) {
+            override fun onTick(millisUntilFinished: Long) {}
+            override fun onFinish() {
+                stopPreview()
+            }
+        }.start()
+    }
+
+    fun stopPreview() {
+        previewTimer?.cancel()
+        previewPlayer?.stop()
+        previewState = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        previewTimer?.cancel()
+        previewPlayer?.release()
+        previewPlayer = null
     }
 
 }

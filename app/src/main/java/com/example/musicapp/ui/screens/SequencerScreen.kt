@@ -3,6 +3,7 @@ package com.example.musicapp.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,7 +71,8 @@ import kotlin.math.roundToInt
 
 @Composable
 fun SequencerScreen(
-    playlistId: Int
+    playlistId: Int,
+    onPreview: () -> Unit,
 ) {
     val sequencerViewModel: SequencerViewModel = hiltViewModel()
     val uiBlocks by sequencerViewModel.uiBlocks.collectAsState()
@@ -195,6 +197,10 @@ fun SequencerScreen(
                                                     )
                                                 },
                                                 isSelected = block.blockNumber == selectedBlock?.blockNumber,
+                                                onPreviewClick = {
+                                                    onPreview()
+                                                    sequencerViewModel.togglePreview(track.trackInfo.trackId, track.trackInfo.fileUri, false)
+                                                },
                                                 modifier = reorderModifier
                                             )
 
@@ -340,6 +346,11 @@ fun SequencerScreen(
                             },
                             isHalfTime = compatibleTrack.halfTime,
                             isDoubleTime = compatibleTrack.doubleTime,
+                            onPreviewClick = {
+                                onPreview()
+                                sequencerViewModel.togglePreview(compatibleTrack.track.trackId, compatibleTrack.track.fileUri, true)
+                            }
+
                         )
                     }
 
@@ -357,6 +368,10 @@ fun SequencerScreen(
                                 },
                                 isHalfTime = incompatibleTrack.halfTime,
                                 isDoubleTime = incompatibleTrack.doubleTime,
+                                onPreviewClick = {
+                                    onPreview()
+                                    sequencerViewModel.togglePreview(incompatibleTrack.track.trackId, incompatibleTrack.track.fileUri, true)
+                                }
                             )
                         }
                     }
@@ -374,11 +389,14 @@ fun CompatibleTrackItem(
     onClick: () -> Unit,
     isHalfTime: Boolean,
     isDoubleTime: Boolean,
+    onPreviewClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onPreviewClick),
         color = MaterialTheme.colorScheme.surface
     ) {
         Row(
@@ -474,6 +492,7 @@ fun TrackCapsule(
     track: TrackInfo,
     onBlockClick: () -> Unit,
     isSelected: Boolean,
+    onPreviewClick: () -> Unit,
     modifier: Modifier
 ) {
 
@@ -486,7 +505,9 @@ fun TrackCapsule(
         modifier = modifier
             .width(160.dp)
             .height(100.dp)
-            .clickable { onBlockClick() },
+            .combinedClickable(
+                onClick = { onBlockClick() },
+                onLongClick = onPreviewClick),
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(borderWidth, borderColor),
         color = MaterialTheme.colorScheme.surface

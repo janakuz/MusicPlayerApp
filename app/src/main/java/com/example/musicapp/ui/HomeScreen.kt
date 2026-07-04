@@ -784,7 +784,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
                 composable("sequencer?playlistId={playlistId}", arguments = listOf(navArgument("playlistId") {type = NavType.IntType})){ backStackEntry ->
                     val playlistId = backStackEntry.arguments?.getInt("playlistId") ?: -1
-                    SequencerScreen(playlistId)
+                    SequencerScreen(playlistId, onPreview = { playerViewModel.pause() })
                 }
 
                 composable(
