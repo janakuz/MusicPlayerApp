@@ -354,7 +354,8 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
                 FOREIGN KEY(`artist1Id`) REFERENCES `artists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , 
                 FOREIGN KEY(`artist2Id`) REFERENCES `artists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_similar_artists_artist2Id` ON `similar_artists` (`artist2Id`)"
@@ -385,27 +386,121 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
-fun getAllMigrations(context: Context): Array<Migration> {
-    return arrayOf(
-        MIGRATION_4_5,
-        MIGRATION_5_6,
-        MIGRATION_6_7,
-        MIGRATION_7_8,
-        MIGRATION_8_9,
-        MIGRATION_9_10,
-        MIGRATION_10_11,
-        MIGRATION_11_12,
-        MIGRATION_12_13,
-        MIGRATION_13_14,
-        MIGRATION_14_15,
-        MIGRATION_15_16,
-        MIGRATION_16_17,
-        MIGRATION_17_18,
-        MIGRATION_18_19,
-        MIGRATION_19_20,
-        MIGRATION_20_21
-    )
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS key_compatibility (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                sourceKey TEXT NOT NULL,
+                compatibleKey TEXT NOT NULL,
+                harmonicDistance REAL NOT NULL,
+                matchDescription TEXT NOT NULL
+            )
+        """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS sequencer_blocks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                blockNumber INTEGER NOT NULL,
+                blockOrder INTEGER NOT NULL,
+                trackId INTEGER NOT NULL, 
+                FOREIGN KEY(trackId) REFERENCES tracks(id) ON UPDATE NO ACTION ON DELETE CASCADE 
+            )
+        """
+        )
+
+        val camelotToKey = mapOf(
+            "11B" to "A major" ,  "12B" to "E major", "1B" to "B major", "2B" to "F# major",
+            "3B" to "C# major", "4B" to "G# major", "5B" to "D# major", "6B" to "A# major",
+            "7B" to "F major", "8B" to "C major", "9B" to "G major", "10B" to "D major",
+
+            "11A" to "F# minor", "12A" to "C# minor", "1A" to "G# minor", "2A" to "D# minor",
+            "3A" to "A# minor", "4A" to "F minor", "5A" to "C minor", "6A" to "G minor",
+            "7A" to "D minor", "8A" to "A minor", "9A" to "E minor", "10A" to "B minor"
+        )
+
+        for (key in camelotToKey.keys){
+            val number = key.dropLast(1).toInt()
+            val letter = key.takeLast(1)
+
+            val minusOne = if (number == 1) 12 else number - 1
+            val plusOne = if (number == 12) 1 else number + 1
+
+            val minusTwo = if (number == 1) 11 else if (number == 2) 12 else number - 2
+            val plusTwo = if (number == 12) 2 else if (number == 11) 1 else number + 2
+
+
+            val oppositeLetter = if (letter == "A") "B" else "A"
+
+            val compatibleKeys = listOf(
+                Triple(key, 0.0, "Exact"),
+                Triple("$minusOne$letter", -1.0, "Adjacent Down"),
+                Triple("$plusOne$letter", 1.0, "Adjacent Up"),
+                Triple("$number$oppositeLetter", 1.0, "Relative Key"),
+
+                Triple("$minusOne$oppositeLetter", -1.5, "Diagonal Down"),
+                Triple("$plusOne$oppositeLetter", 1.5, "Diagonal Up"),
+
+                Triple("$minusTwo$letter", -2, "Energy Drop"),
+                Triple("$plusTwo$letter", 2, "Energy Boost"),
+
+                )
+
+            for (compatKey in compatibleKeys) {
+                db.execSQL("""
+                        INSERT INTO key_compatibility (sourceKey, compatibleKey, harmonicDistance, matchDescription) 
+                        VALUES ('${camelotToKey[key]}', '${camelotToKey[compatKey.first]}', ${compatKey.second}, '${compatKey.third}')
+                    """.trimIndent())
+            }
+        }
+    }
 }
+
+val ALL_MIGRATIONS = arrayOf(
+    MIGRATION_4_5,
+    MIGRATION_5_6,
+    MIGRATION_6_7,
+    MIGRATION_7_8,
+    MIGRATION_8_9,
+    MIGRATION_9_10,
+    MIGRATION_10_11,
+    MIGRATION_11_12,
+    MIGRATION_12_13,
+    MIGRATION_13_14,
+    MIGRATION_14_15,
+    MIGRATION_15_16,
+    MIGRATION_16_17,
+    MIGRATION_17_18,
+    MIGRATION_18_19,
+    MIGRATION_19_20,
+    MIGRATION_20_21,
+    MIGRATION_21_22
+)
+
+//fun getAllMigrations(context: Context): Array<Migration> {
+//    return arrayOf(
+//        MIGRATION_4_5,
+//        MIGRATION_5_6,
+//        MIGRATION_6_7,
+//        MIGRATION_7_8,
+//        MIGRATION_8_9,
+//        MIGRATION_9_10,
+//        MIGRATION_10_11,
+//        MIGRATION_11_12,
+//        MIGRATION_12_13,
+//        MIGRATION_13_14,
+//        MIGRATION_14_15,
+//        MIGRATION_15_16,
+//        MIGRATION_16_17,
+//        MIGRATION_17_18,
+//        MIGRATION_18_19,
+//        MIGRATION_19_20,
+//        MIGRATION_20_21,
+//        MIGRATION_21_22
+//    )
+//}
 
 fun populateMetadataFromAsset(context: Context, db: SupportSQLiteDatabase) {
     val tempFile = context.getDatabasePath("area_metadata.db")

@@ -13,6 +13,7 @@ import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
+import com.example.musicapp.data.local.dao.SequencerDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
 import com.example.musicapp.data.local.entity.Album
@@ -25,10 +26,12 @@ import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.ArtistGenre
 import com.example.musicapp.data.local.entity.Genre
+import com.example.musicapp.data.local.entity.KeyCompatibility
 import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.QueueItem
+import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackMood
@@ -51,9 +54,11 @@ import com.example.musicapp.data.local.entity.TrackMood
         AreaType::class,
         AreaArea::class,
         AreaHierarchy::class,
-        SimilarArtists::class
+        SimilarArtists::class,
+        KeyCompatibility::class,
+        SequencerBlock::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -70,5 +75,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistTracksDao(): PlaylistTracksDao
     abstract fun artistGenreDao(): ArtistGenreDao
     abstract fun areaDao(): AreaDao
+    abstract fun sequencerDao(): SequencerDao
 
 }

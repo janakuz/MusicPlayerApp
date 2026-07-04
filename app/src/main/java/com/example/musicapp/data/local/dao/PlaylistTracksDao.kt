@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
@@ -42,6 +43,19 @@ interface PlaylistTracksDao {
 
     @Update
     suspend fun reorder(reordered: List<PlaylistTracks>)
+
+    @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId")
+    suspend fun clearPlaylistTracks(playlistId: Int)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylistTracks(tracks: List<PlaylistTracks>)
+
+    @Transaction
+    suspend fun replacePlaylistOrder(playlistId: Int, tracks: List<PlaylistTracks>) {
+        clearPlaylistTracks(playlistId)
+        insertPlaylistTracks(tracks)
+    }
+
 
     @Query("SELECT position FROM playlist_tracks WHERE id = :entryId")
     suspend fun getTrackPosition(entryId: Int): Int?

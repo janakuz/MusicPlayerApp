@@ -24,10 +24,11 @@ import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
+import com.example.musicapp.data.local.dao.SequencerDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
+import com.example.musicapp.data.local.database.ALL_MIGRATIONS
 import com.example.musicapp.data.local.database.AppDatabase
-import com.example.musicapp.data.local.database.getAllMigrations
 import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
@@ -64,6 +65,8 @@ import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepositoryImpl
 import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.SearchRepositoryImpl
+import com.example.musicapp.data.repository.SequencerRepository
+import com.example.musicapp.data.repository.SequencerRepositoryImpl
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackMoodRepositoryImpl
 import com.example.musicapp.data.repository.TrackRepository
@@ -138,7 +141,7 @@ object AppModule {
             AppDatabase::class.java,
             "music_app_db"
         )
-            .addMigrations(*getAllMigrations(context))
+            .addMigrations(*ALL_MIGRATIONS)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
@@ -596,6 +599,16 @@ object AppModule {
             albumGenreRepository,
             artistGenreRepository
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideSequencerDao(db: AppDatabase): SequencerDao = db.sequencerDao()
+
+    @Provides
+    @Singleton
+    fun provideSequencerRepository(sequencerDao: SequencerDao, playlistTracksDao: PlaylistTracksDao): SequencerRepository {
+        return SequencerRepositoryImpl(sequencerDao, playlistTracksDao)
     }
 
 

@@ -1,5 +1,7 @@
 package com.example.musicapp.data.local.model
 
+import androidx.room.Embedded
+
 data class TrackInfo(
     val trackId: Int,
     val title: String,
