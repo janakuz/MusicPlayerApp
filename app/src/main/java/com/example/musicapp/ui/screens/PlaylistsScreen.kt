@@ -70,6 +70,7 @@ fun PlaylistsScreen(
     onEdit: (Int) -> Unit,
     onPlayNext: (Int) -> Unit,
     onAddToQueue: (Int) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
     sortRequest: SortOption?,
     onSort: (SortOption) -> Unit,
@@ -116,7 +117,8 @@ fun PlaylistsScreen(
                     onExport = onExport,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
-                    onPlay = onPlay
+                    onPlay = onPlay,
+                    onAddToPlaylist = onAddToPlaylist
                 )
             }
         }
@@ -135,6 +137,7 @@ fun PlaylistRow(
     onAddToQueue: (Int) -> Unit,
     onEdit: (Int) -> Unit,
     onDelete: (Int) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
 ) {
 
@@ -210,6 +213,10 @@ fun PlaylistRow(
             },
             onAddToQueue = {
                 onAddToQueue(playlist.id)
+                expanded = false
+            },
+            onAddToPlaylist = {
+                onAddToPlaylist(playlist.id)
                 expanded = false
             },
             onEdit = {

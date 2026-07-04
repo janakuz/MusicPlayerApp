@@ -895,7 +895,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueue = { id -> playerViewModel.addToQueuePlaylist(id) },
                         onPlay = { id -> playerViewModel.playPlaylist(id) },
                         sortRequest = playlistsSort,
-                        onSort = { option -> playlistViewModel.setSort(option) }
+                        onSort = { option -> playlistViewModel.setSort(option) },
+                        onAddToPlaylist = { id -> playlistViewModel.onAddToPlaylistPlaylist(id) }
                     )
                 }
 
