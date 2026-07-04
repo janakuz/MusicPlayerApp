@@ -369,3 +369,8 @@ data class TrackEditUiState(
     val scale: String? = null,
     val isSaving: Boolean = false
 )
+
+data class VoiceState(
+    val instrumental: Boolean? = null,
+    val voice: String? = null,
+)

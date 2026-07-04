@@ -93,6 +93,7 @@ import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.SequencerScreen
 import com.example.musicapp.ui.screens.SettingsScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
+import com.example.musicapp.ui.screens.TrackMultiEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.PlaylistViewModel
@@ -431,7 +432,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     playlistViewModel.onAdd(selectedQueueTracks)
                                 else
                                     playlistViewModel.onAdd(selection.selectedTrackIds.toList()) },
-                            moveEnabled = moveEnabled
+                            moveEnabled = moveEnabled,
+                            onEdit = { navController.navigate("track/multiedit") }
                         )
                     }
                     if (selectedTabIndex >= 0 && currentRoute != HomeScreen.Scan.name && !selectionMode) {
@@ -781,6 +783,20 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
+
+                composable("track/multiedit") {
+                    if (selectionMode) {
+                        val selection by selectionViewModel.selectionState.collectAsState()
+                        TrackMultiEditScreen(
+                            tracksToEdit = selection.selectedTrackIds,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                                selectionViewModel.clearSelection()
+                            }
+                        )
+                    }
+                }
+
 
                 composable("sequencer?playlistId={playlistId}", arguments = listOf(navArgument("playlistId") {type = NavType.IntType})){ backStackEntry ->
                     val playlistId = backStackEntry.arguments?.getInt("playlistId") ?: -1

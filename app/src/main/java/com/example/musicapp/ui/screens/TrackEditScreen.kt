@@ -1,6 +1,8 @@
 package com.example.musicapp.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -23,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -31,6 +34,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
@@ -56,9 +60,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStoreOwner
 import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
+import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.ui.viewmodels.TrackEditViewModel
+import com.example.musicapp.ui.viewmodels.TrackMultiEditViewModel
+import com.example.musicapp.ui.viewmodels.VoiceState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -234,70 +242,12 @@ fun TrackEditScreen(
                 }
 
                 item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Instrumental",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    text = "Track contains no vocals",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = trackEditUiState.instrumental == true,
-                                onCheckedChange = { checked ->
-                                    trackEditViewModel.onInstrumentalChange(checked)
-                                }
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = trackEditUiState.instrumental != true,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.0.dp)
-                            ) {
-                                Text(
-                                    text = "Voice Type",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.0.dp)
-                                ) {
-                                    val genderOptions = listOf("male", "female", "mixed")
-
-                                    genderOptions.forEach { option ->
-                                        FilterChip(
-                                            selected = (trackEditUiState.voice == option),
-                                            onClick = { trackEditViewModel.onVoiceChange(option) },
-                                            label = {
-                                                Text(text = option.replaceFirstChar { it.uppercase() })
-                                            },
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    val voiceState = VoiceState(trackEditUiState.instrumental, trackEditUiState.voice)
+                    InstrumentalAndVoiceSection(
+                        voiceState,
+                        onInstrumentalChange = {value -> trackEditViewModel.onInstrumentalChange(value)},
+                        onVoiceChange = {voice -> trackEditViewModel.onVoiceChange(voice)}
+                        )
                 }
 
 
@@ -449,4 +399,102 @@ fun TrackEditScreen(
         showDiscardDialog = true
     }
 
+}
+
+@Composable
+fun InstrumentalAndVoiceSection(
+    voiceState: VoiceState,
+    onInstrumentalChange: (Boolean) -> Unit,
+    onVoiceChange: (String) -> Unit,
+){
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Instrumental",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "Track contains no vocals",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = voiceState.instrumental == true,
+                onCheckedChange = { checked ->
+                    onInstrumentalChange(checked)
+                }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = voiceState.instrumental != true,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.0.dp)
+            ) {
+                Text(
+                    text = "Voice Type",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.0.dp)
+                ) {
+                    val genderOptions = listOf("male", "female", "mixed")
+
+                    genderOptions.forEach { option ->
+                        FilterChip(
+                            selected = (voiceState.voice == option),
+                            onClick = { onVoiceChange(option) },
+                            label = {
+                                Text(text = option.replaceFirstChar { it.uppercase() })
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@Composable
+fun TrackMultiEditScreen(
+    tracksToEdit: Set<Int>,
+    onNavigateBack: () -> Unit
+) {
+    val trackMultiEditViewModel: TrackMultiEditViewModel = hiltViewModel()
+    val currentVoiceState by trackMultiEditViewModel.voiceState.collectAsState()
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                trackMultiEditViewModel.onEditMultiple(currentVoiceState, tracksToEdit)
+                onNavigateBack()
+        }) {
+                Icon(Icons.Default.Save, contentDescription = "Save new order")
+            }
+        }
+    ) { _ ->
+        InstrumentalAndVoiceSection(
+            voiceState = currentVoiceState,
+            onInstrumentalChange = {value -> trackMultiEditViewModel.onInstrumentalChange(value) },
+            onVoiceChange = {voice -> trackMultiEditViewModel.onVoiceChange(voice)},
+        )
+    }
 }

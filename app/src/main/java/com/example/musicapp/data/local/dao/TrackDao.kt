@@ -179,6 +179,8 @@ interface TrackDao {
     )
     fun getAllTracksFull(): Flow<List<Track>>
 
+    @Query("UPDATE tracks SET instrumental=:newInstrumental, voice=:newVoice WHERE id in (:tracks)")
+    suspend fun updateInstrumentalVoice(newInstrumental: Boolean?, newVoice: String?, tracks: List<Int>)
 
     @Query(
         """

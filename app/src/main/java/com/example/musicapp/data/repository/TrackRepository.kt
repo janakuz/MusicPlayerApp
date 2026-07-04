@@ -30,6 +30,7 @@ interface TrackRepository {
 
     fun getTracksInAlbum(albumId: Int): Flow<List<TrackInfo>>
 
+    suspend fun updateInstrumentalAndVoice(newInstrumental: Boolean?, newVoice: String?, tracks: List<Int>)
 
     suspend fun getAllUnEnriched(): List<Track>
 

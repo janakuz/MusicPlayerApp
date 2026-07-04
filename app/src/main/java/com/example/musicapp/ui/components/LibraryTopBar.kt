@@ -89,6 +89,7 @@ fun SelectionTopBar(
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
     onAddToPlaylist: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     TopAppBar(
         title = {
@@ -136,6 +137,10 @@ fun SelectionTopBar(
                     onDelete = {
                         onDelete()
                         onClear()
+                        expanded = false
+                    },
+                    onEdit = {
+                        onEdit()
                         expanded = false
                     },
                     onAddToPlaylist = {
