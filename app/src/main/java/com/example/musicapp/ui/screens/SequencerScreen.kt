@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -248,7 +249,6 @@ fun SequencerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.7f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
 
                 Column(
@@ -354,25 +354,48 @@ fun SequencerScreen(
                         )
                     }
 
-                    if (recommendations.isEmpty()) {
-                        incompatibleOptions.forEach { incompatibleTrack ->
-                            CompatibleTrackItem(
-                                track = incompatibleTrack,
-                                inMultiTrackBlock = incompatibleTrack.inMultiTrackBlock,
-                                onClick = {
-                                    sequencerViewModel.onMerge(
-                                        incompatibleTrack.currentBlock,
-                                        selectedBlock!!.blockNumber
-                                    )
+                    var showIncompatible by remember { mutableStateOf(false) }
 
-                                },
-                                isHalfTime = incompatibleTrack.halfTime,
-                                isDoubleTime = incompatibleTrack.doubleTime,
-                                onPreviewClick = {
-                                    onPreview()
-                                    sequencerViewModel.togglePreview(incompatibleTrack.track.trackId, incompatibleTrack.track.fileUri, true)
-                                }
-                            )
+                    if (recommendations.isNotEmpty()){
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            TextButton(onClick = {
+                                if (showIncompatible) showIncompatible=false
+                                else showIncompatible=true }) {
+                                Text("Show Incompatible Options")
+                            }
+                        }
+
+                    }
+
+
+                    if (recommendations.isEmpty() || showIncompatible) {
+                        incompatibleOptions.forEach { incompatibleTrack ->
+                            if (!recommendations.contains(incompatibleTrack)) {
+                                CompatibleTrackItem(
+                                    track = incompatibleTrack,
+                                    inMultiTrackBlock = incompatibleTrack.inMultiTrackBlock,
+                                    onClick = {
+                                        sequencerViewModel.onMerge(
+                                            incompatibleTrack.currentBlock,
+                                            selectedBlock!!.blockNumber
+                                        )
+
+                                    },
+                                    isHalfTime = incompatibleTrack.halfTime,
+                                    isDoubleTime = incompatibleTrack.doubleTime,
+                                    onPreviewClick = {
+                                        onPreview()
+                                        sequencerViewModel.togglePreview(
+                                            incompatibleTrack.track.trackId,
+                                            incompatibleTrack.track.fileUri,
+                                            true
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
