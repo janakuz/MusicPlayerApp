@@ -15,6 +15,8 @@ interface WorkerManagerRepository {
 
     fun startWorkerSimilarArtists()
 
+    fun startWorkerLyrics()
+
     fun startWorkerTrackAudioFeatures()
 
     fun getEnrichmentProgress(): Flow<WorkInfo?>

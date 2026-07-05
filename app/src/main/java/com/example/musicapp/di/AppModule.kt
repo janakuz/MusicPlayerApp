@@ -33,6 +33,7 @@ import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.EssentiaApiService
+import com.example.musicapp.data.remote.service.LRCLibApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
 import com.example.musicapp.data.repository.AlbumArtistRepository
@@ -125,6 +126,10 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
+    annotation class LRCLibRetrofit
+
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
     annotation class CoverArtArchiveRetrofit
 
     @Qualifier
@@ -206,8 +211,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackRepository(trackDao: TrackDao, audioFeaturesApi: EssentiaApiService): TrackRepository {
-        return TrackRepositoryImpl(trackDao, audioFeaturesApi)
+    fun provideTrackRepository(
+        trackDao: TrackDao,
+        audioFeaturesApi: EssentiaApiService,
+        lyricsApi: LRCLibApiService): TrackRepository {
+        return TrackRepositoryImpl(trackDao, audioFeaturesApi, lyricsApi)
     }
 
     @Provides
@@ -371,6 +379,24 @@ object AppModule {
     @Singleton
     fun provideEssentiaApiService(@EssentiaApi retrofit: Retrofit): EssentiaApiService {
         return retrofit.create(EssentiaApiService::class.java)
+    }
+
+
+    @Provides
+    @LRCLibRetrofit
+    @Singleton
+    fun provideLRCLIbRetrofit(@MusicBrainzClient okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://lrclib.net/")
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideLRCLibService(@LRCLibRetrofit retrofit: Retrofit): LRCLibApiService {
+        return retrofit.create(LRCLibApiService::class.java)
     }
 
 

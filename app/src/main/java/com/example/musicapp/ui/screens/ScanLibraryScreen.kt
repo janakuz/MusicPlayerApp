@@ -1,7 +1,6 @@
 package com.example.musicapp.ui.screens
 
 import android.Manifest
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,7 +49,7 @@ fun ScanLibraryScreen(
     //TEMP BUTTON
 //    val context = LocalContext.current
 //    Button(
-//        onClick = { viewModel.backfillSimilar(context) },
+//        onClick = { viewModel.getLyrics() },
 //        modifier = Modifier.fillMaxWidth(),
 //        contentPadding = PaddingValues(vertical = 16.dp),
 //        shape = RoundedCornerShape(16.dp)
@@ -163,15 +163,37 @@ fun ScanLibraryScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                Button(
-                    onClick = { viewModel.extractAudioFeatures() },
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 16.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Get Audio Features")
-                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Scanning for the following features (lyrics and audio features) takes a " +
+                                "significant amount of time (potentially a few hours for large libraries). " +
+                                "You can leave the scan running safely in the background.",
+                        color = Color.Yellow,
+                        style = MaterialTheme.typography.labelSmall
+                    )
 
+                    Spacer(Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { viewModel.getLyrics() },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(vertical = 16.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Get Lyrics")
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { viewModel.extractAudioFeatures() },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(vertical = 16.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Get Audio Features")
+                    }
+                }
 
             }
         }

@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
@@ -13,9 +14,12 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.remote.dto.AudioFeaturesResponse
+import com.example.musicapp.data.remote.dto.LRCLibResponse
 import com.example.musicapp.data.remote.service.EssentiaApiService
+import com.example.musicapp.data.remote.service.LRCLibApiService
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.SelectSource
@@ -32,7 +36,8 @@ import kotlin.coroutines.resumeWithException
 
 class TrackRepositoryImpl(
     private val trackDao: TrackDao,
-    private val audioFeaturesApi: EssentiaApiService
+    private val audioFeaturesApi: EssentiaApiService,
+    private val lyricsApi: LRCLibApiService,
     ) : TrackRepository {
 
     override fun getAllTracksByName(): Flow<List<TrackInfo>> =
@@ -202,6 +207,14 @@ class TrackRepositoryImpl(
         trackDao.update(track)
     }
 
+    override suspend fun updateAll(tracks: List<Track>) {
+        trackDao.updateAll(tracks)
+    }
+
+    override suspend fun getTrackWithLyrics(): List<Int> {
+        return trackDao.getAllTracksWithLyrics()
+    }
+
     override suspend fun delete(track: Track) {
         trackDao.delete(track)
     }
@@ -216,5 +229,24 @@ class TrackRepositoryImpl(
 
     override suspend fun getAll(): List<Track> {
         return trackDao.getAllGrouped()
+    }
+
+    override suspend fun getLyrics(trackInfo: TrackInfo): LRCLibResponse? {
+        return try {
+            lyricsApi.getLyrics(
+                trackName = trackInfo.title,
+                albumName = trackInfo.albumTitle,
+                artistName = trackInfo.artistName,
+                durationSec = trackInfo.duration/1000
+            )
+        } catch (e: Exception) {
+            Log.e("lyrics search", e.message.toString())
+            null
+        }
+
+    }
+
+    override suspend fun insertAllLyrics(lyrics: List<TrackLyrics>) {
+        trackDao.insertAllLyrics(lyrics)
     }
 }
