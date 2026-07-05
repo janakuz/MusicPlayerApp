@@ -249,4 +249,16 @@ class TrackRepositoryImpl(
     override suspend fun insertAllLyrics(lyrics: List<TrackLyrics>) {
         trackDao.insertAllLyrics(lyrics)
     }
+
+    override suspend fun insertLyrics(lyrics: TrackLyrics) {
+        trackDao.insertLyrics(lyrics)
+    }
+
+    override suspend fun updateInstrumental(instrumental: Boolean, trackId: Int) {
+        trackDao.updateInstrumental(instrumental, trackId)
+    }
+
+    override suspend fun getCachedLyrics(trackId: Int): TrackLyrics? {
+        return trackDao.getTrackLyrics(trackId)
+    }
 }

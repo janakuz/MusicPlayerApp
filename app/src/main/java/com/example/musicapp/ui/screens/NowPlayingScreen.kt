@@ -2,6 +2,10 @@ package com.example.musicapp.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,13 +29,20 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Loop
+import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Repeat
@@ -44,9 +55,11 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -55,6 +68,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
@@ -71,16 +85,73 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.Player
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.viewmodels.LoopState
+import com.example.musicapp.ui.viewmodels.LyricLine
+import com.example.musicapp.ui.viewmodels.LyricsUiState
+import com.example.musicapp.ui.viewmodels.LyricsViewModel
 import com.example.musicapp.ui.viewmodels.PlayerViewModel
 import com.example.musicapp.util.SlantedLeftShape
 import com.example.musicapp.util.SlantedRightShape
 import com.example.musicapp.util.formatDuration
 import java.util.Locale
+
+@Composable
+fun SyncedLyricsScroller(
+    lines: List<LyricLine>,
+    currentProgressMs: Long
+){
+    val listState = rememberLazyListState()
+
+    val activeIndex = remember(lines, currentProgressMs) {
+        val index = lines.indexOfLast { it.timestampMs <= currentProgressMs }
+        if (index == -1) 0 else index
+    }
+
+    LaunchedEffect(activeIndex) {
+        if (lines.isNotEmpty()) {
+            listState.animateScrollToItem(index = activeIndex, scrollOffset = -150)
+        }
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 120.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        itemsIndexed(lines) { index, line ->
+            val isActive = index == activeIndex
+
+            val textColor by animateColorAsState(
+                targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
+                label = "LyricColor"
+            )
+
+            val textSize = if (isActive) 22.sp else 18.sp
+            val fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+
+            Text(
+                text = line.text,
+                color = textColor,
+                fontSize = textSize,
+                fontWeight = fontWeight,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+        }
+    }
+}
+
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,8 +159,12 @@ import java.util.Locale
 fun NowPlayingView(
     playerViewModel: PlayerViewModel,
     onArtistClick: (Int) -> Unit,
-    onAlbumClick: (Int) -> Unit
-) {
+    onAlbumClick: (Int) -> Unit,
+    lyricsUiState: LyricsUiState,
+    onResetLyrics: () -> Unit,
+    onToggleLyrics: (TrackInfo) -> Unit,
+    onBack: () -> Unit,
+    ) {
     val trackState by playerViewModel.currentTrack.collectAsState()
     val isPlaying by playerViewModel.isPlaying.collectAsState()
     val position by playerViewModel.position.collectAsState()
@@ -106,6 +181,12 @@ fun NowPlayingView(
     val fractionA = if (duration > 0 && loopStart != null) loopStart!! / duration.toFloat() else 0f
     val fractionB = if (duration > 0 && loopEnd != null) loopEnd!! / duration.toFloat() else 0f
 
+    LaunchedEffect(trackState?.track?.trackId) {
+        if (lyricsUiState !is LyricsUiState.Hidden) {
+            onResetLyrics()
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -116,23 +197,114 @@ fun NowPlayingView(
         val track = trackState?.track
         val gradientColors = playerViewModel.albumColors
 
-        track?.let {
+        if (track != null) {
 //            playerViewModel.getAlbumColors(track.albumArt.toString())
 
-            AlbumDetailHeader(
-                image = track.albumArt.toString(),
-                title = track.title,
-                gradientColors = gradientColors
-            )
+            Box(modifier = Modifier.fillMaxWidth().height(350.dp)) {
+                ImageHeader(track.albumArt.toString())
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = lyricsUiState !is LyricsUiState.Hidden,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.75f))
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (val state = lyricsUiState) {
+                            is LyricsUiState.Loading -> CircularProgressIndicator()
+                            is LyricsUiState.NotFound -> Text("Lyrics not found.", color = Color.White.copy(alpha = 0.6f))
+                            is LyricsUiState.Instrumental -> Text("Instrumental Track", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+
+                            is LyricsUiState.Plain -> {
+                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                    Text(text = state.text, color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                                }
+                            }
+
+                            is LyricsUiState.Synced -> {
+                                SyncedLyricsScroller(
+                                    lines = state.lines,
+                                    currentProgressMs = position
+                                )
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+
+
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { onBack() },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBackIosNew,
+                            contentDescription = "Back"
+                        )
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { onToggleLyrics(track) },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = if (lyricsUiState !is LyricsUiState.Hidden)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    Color.Black.copy(alpha = 0.3f),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lyrics,
+                                contentDescription = "Toggle Lyrics",
+                                tint = if (lyricsUiState !is LyricsUiState.Hidden) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+
+
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
-                text = it.artistName,
+                text = track.title,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Text(
+                text = track.artistName,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
                     .clickable(onClick = { onArtistClick(track.artistId) })
             )
             Text(
-                text = it.albumTitle,
+                text = track.albumTitle,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
@@ -267,7 +439,6 @@ fun NowPlayingView(
                 currentSpeed = currentSpeed,
                 onClick = {showPlaybackSpeedDialog = true}
             )
-
 
             LoopControlGroup(
                 loopState = loopState,
@@ -604,19 +775,36 @@ fun NowPlayingWithQueue(
 
     val tracks by playerViewModel.queue.collectAsState()
 
+    val lyricsViewModel: LyricsViewModel = hiltViewModel()
+    val lyricsUiState by lyricsViewModel.lyricsUiState.collectAsState()
+
 
     BottomSheetScaffold(
         sheetPeekHeight = totalPeekHeight,
-        topBar = {
-            TopAppBar(
-                title = { Text("Now Playing") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
-                    }
-                }
-            )
-        },
+//        topBar = {
+//            TopAppBar(
+//                title = { Text("Now Playing") },
+//                navigationIcon = {
+//                    IconButton(onClick = onBack) {
+//                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
+//                    }
+//                },
+////                actions = {
+////                    if (trackState != null) {
+////                        val isLyricsVisible = lyricsUiState !is LyricsUiState.Hidden
+////                        IconButton(
+////                            onClick = { lyricsViewModel.toggleLyrics(trackState!!.track) }
+////                        ) {
+////                            Icon(
+////                                imageVector = Icons.Default.Lyrics,
+////                                contentDescription = "Toggle Lyrics",
+////                                tint = if (isLyricsVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+////                            )
+////                        }
+////                    }
+////                }
+//            )
+//        },
         scaffoldState = sheetState,
         sheetContent = {
             Box(
@@ -643,7 +831,11 @@ fun NowPlayingWithQueue(
             NowPlayingView(
                 playerViewModel = playerViewModel,
                 onArtistClick = onArtistClick,
-                onAlbumClick = onAlbumClick
+                onAlbumClick = onAlbumClick,
+                lyricsUiState = lyricsUiState,
+                onResetLyrics = { lyricsViewModel.resetLyrics() },
+                onToggleLyrics = { track -> lyricsViewModel.toggleLyrics(track) },
+                onBack = onBack
             )
         }
     )

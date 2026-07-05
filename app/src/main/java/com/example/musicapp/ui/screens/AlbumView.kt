@@ -110,18 +110,20 @@ fun AlbumDetailHeader(
     title: String,
     gradientColors: PlayerColors? = null,
 ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-    ImageHeader(image)
+        ImageHeader(image)
 
-    Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-    Text(
-        text = title,
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        color = MaterialTheme.colorScheme.onBackground
-    )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
 }
 
 

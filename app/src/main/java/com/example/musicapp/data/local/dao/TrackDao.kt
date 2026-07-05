@@ -34,8 +34,14 @@ interface TrackDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAllLyrics(trackLyrics: List<TrackLyrics>)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertLyrics(trackLyrics: TrackLyrics)
+
     @Query("SELECT trackId from track_lyrics")
     suspend fun getAllTracksWithLyrics(): List<Int>
+
+    @Query("SELECT * FROM track_lyrics WHERE trackId=:trackId")
+    suspend fun getTrackLyrics(trackId: Int): TrackLyrics?
 
 
     @Query(
@@ -208,6 +214,10 @@ interface TrackDao {
 
     @Query("UPDATE tracks SET instrumental=:newInstrumental, voice=:newVoice WHERE id in (:tracks)")
     suspend fun updateInstrumentalVoice(newInstrumental: Boolean?, newVoice: String?, tracks: List<Int>)
+
+    @Query("UPDATE tracks SET instrumental=:newInstrumental WHERE id=:trackId")
+    suspend fun updateInstrumental(newInstrumental: Boolean, trackId: Int)
+
 
     @Query(
         """

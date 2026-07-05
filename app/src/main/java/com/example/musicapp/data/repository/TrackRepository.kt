@@ -66,4 +66,11 @@ interface TrackRepository {
     suspend fun getLyrics(trackInfo: TrackInfo): LRCLibResponse?
 
     suspend fun insertAllLyrics(lyrics: List<TrackLyrics>)
+
+    suspend fun insertLyrics(lyrics: TrackLyrics)
+
+    suspend fun updateInstrumental(instrumental: Boolean, trackId: Int)
+
+
+    suspend fun getCachedLyrics(trackId: Int): TrackLyrics?
 }
