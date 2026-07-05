@@ -34,6 +34,7 @@ import com.example.musicapp.data.local.entity.QueueItem
 import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.local.entity.TrackMood
 
 @Database(
@@ -57,8 +58,9 @@ import com.example.musicapp.data.local.entity.TrackMood
         SimilarArtists::class,
         KeyCompatibility::class,
         SequencerBlock::class,
+        TrackLyrics::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

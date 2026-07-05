@@ -338,7 +338,6 @@ class LocalLibraryScanner @Inject constructor(
                             duration = entry.duration ?: 0L,
                             plays = 0,
                             mbId = null,
-                            lyrics = null,
                             trackNumber = normalizeTrackNumber(entry.trackNumber),
                             lastPlayed = null,
                             fileUri = trackUri,
