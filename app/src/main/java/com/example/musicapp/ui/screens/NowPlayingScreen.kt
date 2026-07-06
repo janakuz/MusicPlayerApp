@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.screens
 
 import android.annotation.SuppressLint
+import android.text.Layout
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -220,8 +221,25 @@ fun NowPlayingView(
                             is LyricsUiState.Instrumental -> Text("Instrumental Track", style = MaterialTheme.typography.headlineMedium, color = Color.White)
 
                             is LyricsUiState.Plain -> {
-                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                    Text(text = state.text, color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                                val lyricLines = remember(state.text) { state.text.lines() }
+
+                                Column(modifier = Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    lyricLines.forEach { lineText ->
+                                        if (lineText.isBlank()) {
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                        } else {
+                                            Text(
+                                                text = lineText,
+                                                color = Color.White.copy(alpha = 0.9f),
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontSize = 18.sp,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 24.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
@@ -265,13 +283,13 @@ fun NowPlayingView(
                     ) {
                         IconButton(
                             onClick = { onToggleLyrics(track) },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = if (lyricsUiState !is LyricsUiState.Hidden)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    Color.Black.copy(alpha = 0.3f),
-                                contentColor = Color.White
-                            )
+//                            colors = IconButtonDefaults.iconButtonColors(
+//                                containerColor = if (lyricsUiState !is LyricsUiState.Hidden)
+//                                    MaterialTheme.colorScheme.primary
+//                                else
+//                                    Color.Black.copy(alpha = 0.3f),
+//                                contentColor = Color.White
+//                            )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Lyrics,
