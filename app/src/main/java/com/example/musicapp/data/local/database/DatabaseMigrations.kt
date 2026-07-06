@@ -479,6 +479,12 @@ val MIGRATION_22_23 = object : Migration(22,23) {
 
 val MIGRATION_23_24 = object : Migration(23,24) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            DELETE FROM track_lyrics 
+            WHERE id NOT IN (
+                SELECT MAX(id) FROM track_lyrics GROUP BY trackId
+            )
+        """.trimIndent())
         db.execSQL("DROP INDEX IF EXISTS `index_track_lyrics_trackId`")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_track_lyrics_trackId` ON `track_lyrics` (`trackId`)")
 
