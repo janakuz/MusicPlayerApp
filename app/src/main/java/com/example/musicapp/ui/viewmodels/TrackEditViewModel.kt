@@ -63,6 +63,8 @@ class TrackEditViewModel @Inject constructor(
     private val _lyricsSearchState = MutableStateFlow<SearchSheetState>(SearchSheetState.Idle)
     val lyricsSearchState: StateFlow<SearchSheetState> = _lyricsSearchState.asStateFlow()
 
+    private val _cachedSearchResults = MutableStateFlow<List<LRCLibResponse>>(emptyList())
+
     private val _moodQuery = MutableStateFlow("")
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -201,7 +203,16 @@ class TrackEditViewModel @Inject constructor(
             _lyricsSearchState.value = SearchSheetState.Loading
             val results = trackRepository.searchLyrics(artist = _uiState.value.artist, track = _uiState.value.title)
             _lyricsSearchState.value = SearchSheetState.Results(results)
+            _cachedSearchResults.value = results
         }
+    }
+
+    fun onPreview(result: LRCLibResponse){
+        _lyricsSearchState.value = SearchSheetState.Preview(result)
+    }
+
+    fun onBackLyricsPreview(){
+        _lyricsSearchState.value = SearchSheetState.Results(_cachedSearchResults.value)
     }
 
     fun getPathFromUri(context: Context, uriString: String): String {
