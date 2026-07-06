@@ -14,4 +14,12 @@ interface LRCLibApiService {
         @Query("duration") durationSec: Long,
     ) : LRCLibResponse
 
+    @GET("api/get-cached")
+    suspend fun getLyricsCached(
+        @Query("track_name") trackName: String,
+        @Query("artist_name") artistName: String,
+        @Query("album_name") albumName: String,
+        @Query("duration") durationSec: Long,
+    ) : LRCLibResponse
+
 }

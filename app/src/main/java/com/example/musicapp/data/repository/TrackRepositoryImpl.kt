@@ -246,6 +246,20 @@ class TrackRepositoryImpl(
 
     }
 
+    override suspend fun getLyricsLRCLibCached(trackInfo: TrackInfo): LRCLibResponse? {
+        return try {
+            lyricsApi.getLyricsCached(
+                trackName = trackInfo.title,
+                albumName = trackInfo.albumTitle,
+                artistName = trackInfo.artistName,
+                durationSec = trackInfo.duration/1000
+            )
+        } catch (e: Exception) {
+            Log.e("lyrics search", e.message.toString())
+            null
+        }
+    }
+
     override suspend fun insertAllLyrics(lyrics: List<TrackLyrics>) {
         trackDao.insertAllLyrics(lyrics)
     }

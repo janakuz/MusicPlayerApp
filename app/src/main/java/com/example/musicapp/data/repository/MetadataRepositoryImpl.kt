@@ -863,7 +863,7 @@ class OfflineMetadataRepository(
 
             for (track in albumTracks) {
                 if (!done.contains(track.trackId)) {
-                    val response = trackRepository.getLyrics(track)
+                    val response = trackRepository.getLyricsLRCLibCached(track)
                     if (response != null) {
                         val newLyrics = TrackLyrics(
                             trackId = track.trackId,
