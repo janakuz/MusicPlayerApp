@@ -9,7 +9,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.remote.dto.LRCLibResponse
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
@@ -58,6 +60,9 @@ class TrackEditViewModel @Inject constructor(
         MutableStateFlow<AlbumArtistEditUiState>(AlbumArtistEditUiState.Idle)
     val workflowState = _workflowState.asStateFlow()
 
+    private val _lyricsSearchState = MutableStateFlow<SearchSheetState>(SearchSheetState.Idle)
+    val lyricsSearchState: StateFlow<SearchSheetState> = _lyricsSearchState.asStateFlow()
+
     private val _moodQuery = MutableStateFlow("")
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -86,12 +91,13 @@ class TrackEditViewModel @Inject constructor(
     private var initialVoice: String? = null
     private var initialBPM: Int? = null
     private var initialKey: String? = null
+    private var initialLyrics: TrackLyrics? = TrackLyrics(trackId = trackId, plainLyrics = "", syncedLyrics = "")
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges = state.draftTrackNumber != initialNumber || state.title != initialTitle
                 || state.draftMoods != initialMoods || state.album != initialAlbum || state.artist != initialArtist
                 || state.instrumental != initialInst || state.voice != initialVoice
-                || state.bpm != initialBPM || state.key != initialKey
+                || state.bpm != initialBPM || state.key != initialKey || state.currentLyrics != initialLyrics
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -103,6 +109,7 @@ class TrackEditViewModel @Inject constructor(
         viewModelScope.launch {
             val track = trackRepository.getTrackInfo(trackId).first()
             val moods = trackMoodRepository.getTrackMoods(trackId)
+            val lyrics = trackRepository.getCachedLyrics(trackId)
             initialAlbum = track.albumTitle
             initialArtist = track.artistName
             initialNumber = track.trackNum.toString()
@@ -112,6 +119,7 @@ class TrackEditViewModel @Inject constructor(
             initialVoice = track.voice
             initialBPM = track.bpm
             initialKey = track.key
+            initialLyrics = lyrics
             _uiState.update {
                 it.copy(
                     title = track.title,
@@ -125,7 +133,8 @@ class TrackEditViewModel @Inject constructor(
                     bpm = track.bpm,
                     key = track.key,
                     note = track.key?.split(" ")[0],
-                    scale = track.key?.split(" ")[1]
+                    scale = track.key?.split(" ")[1],
+                    currentLyrics = lyrics
                 )
             }
 
@@ -180,6 +189,19 @@ class TrackEditViewModel @Inject constructor(
 
     fun onBPMChange(newBPM: Int){
         _uiState.update { it.copy(bpm = newBPM) }
+    }
+
+    fun onLyricsChange(plainLyrics: String?, syncedLyrics: String?){
+        val newLyrics = TrackLyrics(trackId = trackId, plainLyrics = plainLyrics, syncedLyrics = syncedLyrics)
+        _uiState.update { it.copy(currentLyrics = newLyrics) }
+    }
+
+    fun onSearch(){
+        viewModelScope.launch {
+            _lyricsSearchState.value = SearchSheetState.Loading
+            val results = trackRepository.searchLyrics(artist = _uiState.value.artist, track = _uiState.value.title)
+            _lyricsSearchState.value = SearchSheetState.Results(results)
+        }
     }
 
     fun getPathFromUri(context: Context, uriString: String): String {
@@ -257,9 +279,9 @@ class TrackEditViewModel @Inject constructor(
             )
             trackRepository.update(newTrack)
             trackMoodRepository.updateTrackMoods(trackId, _uiState.value.draftMoods)
-
-            currentTrack.albumId
-
+            if (_uiState.value.currentLyrics != null) {
+                trackRepository.upsertLyrics(_uiState.value.currentLyrics!!)
+            }
 
             if (initialAlbum != _uiState.value.album) {
 //                    val track = trackRepository.getTrackInfo(trackId).first()
@@ -367,6 +389,7 @@ data class TrackEditUiState(
     val key: String? = null,
     val note: String? = null,
     val scale: String? = null,
+    val currentLyrics: TrackLyrics? = null,
     val isSaving: Boolean = false
 )
 
@@ -374,3 +397,11 @@ data class VoiceState(
     val instrumental: Boolean? = null,
     val voice: String? = null,
 )
+
+sealed interface SearchSheetState {
+    object Idle : SearchSheetState
+    object Loading : SearchSheetState
+    data class Results(val list: List<LRCLibResponse>) : SearchSheetState
+    data class Preview(val selected: LRCLibResponse) : SearchSheetState
+    data class Error(val message: String) : SearchSheetState
+}

@@ -15,7 +15,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         ),
     ],
-    indices = [Index("trackId")]
+    indices = [Index("trackId", unique = true)]
 )
 data class TrackLyrics(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

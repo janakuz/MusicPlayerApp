@@ -43,11 +43,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -350,6 +353,47 @@ fun TrackEditScreen(
                             }
                         }
                     }
+                }
+
+
+                item{
+                    var selectedTab by remember { mutableIntStateOf(0) }
+                    val tabs = listOf("Plain Lyrics", "Synced Lyrics")
+
+                    Column {
+                        TabRow(selectedTabIndex = selectedTab) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    text = { Text(title) }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        when (selectedTab) {
+                            0 -> OutlinedTextField(
+                                value = trackEditUiState.currentLyrics?.plainLyrics ?: "",
+                                onValueChange = { trackEditViewModel.onLyricsChange(it, trackEditUiState.currentLyrics?.syncedLyrics) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp),
+                                label = { Text("Edit Plain Lyrics") }
+                            )
+
+                            1 -> OutlinedTextField(
+                                value = trackEditUiState.currentLyrics?.syncedLyrics ?: "",
+                                onValueChange = { trackEditViewModel.onLyricsChange(trackEditUiState.currentLyrics?.plainLyrics, it) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp),
+                                label = { Text("Edit Synced Lyrics") }
+                            )
+                        }
+                    }
+
                 }
 
 

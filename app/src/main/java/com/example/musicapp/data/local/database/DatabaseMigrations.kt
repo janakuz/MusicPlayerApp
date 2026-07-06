@@ -477,6 +477,15 @@ val MIGRATION_22_23 = object : Migration(22,23) {
     }
 }
 
+val MIGRATION_23_24 = object : Migration(23,24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS `index_track_lyrics_trackId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_track_lyrics_trackId` ON `track_lyrics` (`trackId`)")
+
+    }
+}
+
+
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
     MIGRATION_5_6,
@@ -496,7 +505,8 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_19_20,
     MIGRATION_20_21,
     MIGRATION_21_22,
-    MIGRATION_22_23
+    MIGRATION_22_23,
+    MIGRATION_23_24
 )
 
 //fun getAllMigrations(context: Context): Array<Migration> {

@@ -272,6 +272,25 @@ class TrackRepositoryImpl(
         trackDao.updateInstrumental(instrumental, trackId)
     }
 
+    override suspend fun searchLyrics(
+        artist: String,
+        track: String
+    ): List<LRCLibResponse> {
+        return try {
+            lyricsApi.searchLyrics(
+                artistName = artist,
+                trackName = track
+            )
+        } catch (e: Exception) {
+            Log.e("lyrics search", e.message.toString())
+            emptyList()
+        }
+    }
+
+    override suspend fun upsertLyrics(lyrics: TrackLyrics) {
+        trackDao.saveLyrics(lyrics)
+    }
+
     override suspend fun getCachedLyrics(trackId: Int): TrackLyrics? {
         return trackDao.getTrackLyrics(trackId)
     }

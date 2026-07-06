@@ -1,12 +1,15 @@
 package com.example.musicapp.data.local.dao
 
+import android.util.Log
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.Transaction
 import androidx.room.Update
+import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackLyrics
@@ -37,12 +40,28 @@ interface TrackDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLyrics(trackLyrics: TrackLyrics)
 
+    @Update
+    suspend fun updateLyrics(trackLyrics: TrackLyrics)
+
     @Query("SELECT trackId from track_lyrics")
     suspend fun getAllTracksWithLyrics(): List<Int>
 
     @Query("SELECT * FROM track_lyrics WHERE trackId=:trackId")
     suspend fun getTrackLyrics(trackId: Int): TrackLyrics?
 
+    @Query("SELECT id FROM track_lyrics WHERE trackId = :trackId")
+    suspend fun getRowIdForTrack(trackId: Int): Int?
+
+    @Transaction
+    suspend fun saveLyrics(lyrics: TrackLyrics) {
+        val existingRowId = getRowIdForTrack(lyrics.trackId)
+
+        if (existingRowId != null) {
+            updateLyrics(lyrics.copy(id=existingRowId))
+        } else {
+            insertLyrics(lyrics)
+        }
+    }
 
     @Query(
         """

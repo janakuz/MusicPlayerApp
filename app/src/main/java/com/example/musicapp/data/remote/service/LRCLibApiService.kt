@@ -22,4 +22,13 @@ interface LRCLibApiService {
         @Query("duration") durationSec: Long,
     ) : LRCLibResponse
 
+    @GET("api/search")
+    suspend fun searchLyrics(
+        @Query("q") query: String? = null,
+        @Query("track_name") trackName: String,
+        @Query("artist_name") artistName: String? = null,
+        @Query("album_name") albumName: String? = null,
+    ) : List<LRCLibResponse>
+
+
 }
