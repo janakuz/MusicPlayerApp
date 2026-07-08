@@ -10,6 +10,8 @@ import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import com.example.musicapp.data.local.entity.Artist
+
 
 class AreaRepositoryImpl(
     private val areaDao: AreaDao
@@ -54,12 +56,11 @@ class AreaRepositoryImpl(
         }
     }
 
-    override fun getArtistsFromArea(
+    override fun getArtistsAndAlbumsFromArea(
         gid: String,
         countryCode: String,
         type: AreaType
     ): Flow<SearchResult> {
-        Log.d("area", type.name)
         val artistsFlow =
             when(type){
                 AreaType.CITY -> areaDao.getArtistsFromCity(gid)
@@ -84,6 +85,20 @@ class AreaRepositoryImpl(
                 artists, albums ->
             SearchResult(artists, albums)
         }
+    }
+
+    override fun getArtistsFromArea(
+        gid: String,
+        countryCode: String,
+        type: AreaType
+    ): Flow<List<Artist>> {
+        return when(type){
+            AreaType.CITY -> areaDao.getArtistsFromCity(gid)
+            AreaType.COUNTY -> areaDao.getArtistsFromCounty(gid)
+            AreaType.STATE -> areaDao.getArtistsFromState(gid)
+            AreaType.COUNTRY -> areaDao.getCountryArtists(countryCode)
+        }
+
     }
 
     override suspend fun getAreaName(gid: String): String {

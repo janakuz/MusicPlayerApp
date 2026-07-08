@@ -135,7 +135,16 @@ class PlaylistViewModel @Inject constructor(
             _createInfo.update { it.copy(name = tracks[0].albumTitle) }
             onAdd(trackIds)
         }
+    }
 
+
+    fun onAddToPlaylistPlaylist(playlistId: Int) {
+        viewModelScope.launch {
+            val tracks = playlistTracksRepository.getTracksInPlaylist(playlistId)
+            val trackIds = tracks.map { it.trackInfo.trackId }
+            _createInfo.update { it.copy(name = playlistRepository.getPlaylistById(playlistId).name) }
+            onAdd(trackIds)
+        }
     }
 
     fun onAdd(trackIds: List<Int>) {

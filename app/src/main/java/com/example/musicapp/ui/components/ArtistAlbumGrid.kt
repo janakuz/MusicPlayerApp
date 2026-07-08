@@ -34,6 +34,7 @@ fun Grid(
     showReleaseDate: Boolean = false,
     onClick: ((GridItem) -> Unit)? = null,
     header: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
     onDelete: (Int, String) -> Unit,
     onRefetch: (Int) -> Unit,
 ) {
@@ -80,6 +81,13 @@ fun Grid(
                 )
             }
         }
+
+        if (footer != null) {
+            item(span = {
+                GridItemSpan(maxLineSpan)
+            }) { footer() }
+        }
+
     }
 }
 

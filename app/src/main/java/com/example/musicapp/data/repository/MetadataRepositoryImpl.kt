@@ -1,10 +1,21 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
+import androidx.annotation.OptIn
+import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.transformer.Composition
+import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.Transformer
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.ArtistSummary
 import com.example.musicapp.data.remote.dto.DiscogsAlbumArtist
@@ -12,18 +23,27 @@ import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.remote.dto.Tag
 import com.example.musicapp.util.isSimilar
 import com.example.musicapp.util.normalizeForMatching
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import kotlin.collections.orEmpty
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class OfflineMetadataRepository(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val trackRepository: TrackRepository,
+    private val trackMoodRepository: TrackMoodRepository,
     private val albumArtistRepository: AlbumArtistRepository,
     private val albumGenreRepository: AlbumGenreRepository,
     private val artistGenreRepository: ArtistGenreRepository,
@@ -448,11 +468,22 @@ class OfflineMetadataRepository(
                 discogsId = new.discogsId,
                 image = new.image,
                 bio = new.bio,
+                countryCode = mbArtist.country,
+                country = Locale.Builder().setRegion(mbArtist.country).build().displayCountry,
+                homeCity = mbArtist.beginArea?.name,
+                homeAreaGid = mbArtist.beginArea?.id,
+                activeStartYear = mbArtist.lifeSpan?.begin,
+                activeEndYear = mbArtist.lifeSpan?.end,
+                isDefunct = mbArtist.lifeSpan?.ended == true,
                 enrichmentAttempted = true,
                 isEnriched = true
             )
 
             artistRepository.update(updated)
+
+            if (currentArtist.mbId != null)
+                artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+
         }
     }
 
@@ -783,6 +814,125 @@ class OfflineMetadataRepository(
         }
     }
 
+    override suspend fun backfillSimilar(): Flow<ScanProgress> = flow {
+        val allArtists = artistRepository.getAll()
+        var current = 0
+        val total = allArtists.size
+
+        for (artist in allArtists){
+            insertSimilarArtists(artist.id, artist.name)
+            delay(500)
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = artist.name
+            )
+
+            emit(progress)
+
+            current++
+        }
+    }
+
+
+    override suspend fun getLyrics(): Flow<ScanProgress> = flow {
+
+        val done = trackRepository.getTrackWithLyrics()
+        val albums = albumRepository.getAll()
+
+        var current = 0
+        val total = albums.size
+
+        for (album in albums) {
+
+            val albumTracks = trackRepository.getAlbumTracks(album.id)
+            val trackLyricsInsert = mutableListOf<TrackLyrics>()
+            val trackInstrumentalUpdate = mutableListOf<Track>()
+
+
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = album.title
+            )
+
+            emit(progress)
+
+            current++
+
+
+            for (track in albumTracks) {
+                if (!done.contains(track.trackId)) {
+                    val response = trackRepository.getLyricsLRCLibCached(track)
+                    if (response != null) {
+                        val newLyrics = TrackLyrics(
+                            trackId = track.trackId,
+                            plainLyrics = if (!response.instrumental) response.plainLyrics else "[Instrumental]",
+                            syncedLyrics = if (!response.instrumental) response.syncedLyrics else "[Instrumental]"
+                        )
+                        trackLyricsInsert.add(newLyrics)
+
+                        val tableTrack = trackRepository.getTrackByUri(track.fileUri)
+                        if (tableTrack != null) {
+                            val toUpdate = tableTrack.copy(
+                                instrumental = response.instrumental
+                            )
+                            trackInstrumentalUpdate.add(toUpdate)
+                        }
+                    }
+                }
+            }
+
+
+
+            trackRepository.insertAllLyrics(trackLyricsInsert)
+            trackRepository.updateAll(trackInstrumentalUpdate)
+        }
+    }
+
+
+
+
+
+    private suspend fun insertSimilarArtists(artistId: Int, artistName: String){
+        if (artistRepository.getAllSimilarArtists(artistId).isEmpty()){
+            val similar = artistRepository.getSimilarArtistsLastfm(artistName)
+
+            val existingSimilar = mutableListOf<SimilarArtists>()
+
+            for (similarArtist in similar){
+                val existingMbId = if (similarArtist.mbid != null) artistRepository.getArtistByMbid(similarArtist.mbid) else null
+                val existingName = artistRepository.getArtistByName(similarArtist.name.normalizeForMatching())
+
+
+                if (existingMbId != null || existingName.size == 1){
+                    val existing = existingMbId ?: existingName[0]
+                    existingSimilar.add(
+                        SimilarArtists(
+                            artist1Id = artistId,
+                            artist2Id = existing.id,
+                            similarityScore = similarArtist.match
+                        )
+                    )
+                }
+
+                else if (existingName.size > 1){
+                    for (existing in existingName){
+                        existingSimilar.add(
+                            SimilarArtists(
+                                artist1Id = artistId,
+                                artist2Id = existing.id,
+                                similarityScore = similarArtist.match
+                            )
+                        )
+
+                    }
+                }
+            }
+            artistRepository.insertSimilar(existingSimilar)
+        }
+    }
+
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
         val currentAlbumArtists =
             if (isManual) albumArtistRepository.getAllUnenriched() else albumArtistRepository.getAllUnattempted()
@@ -860,6 +1010,7 @@ class OfflineMetadataRepository(
                 currentArtist = currentArtist.copy(bio = bio)
                 toUpdate = true
             }
+
             if (toUpdate && !toInsert) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
 
@@ -869,6 +1020,9 @@ class OfflineMetadataRepository(
 
                 if (currentArtist.mbId != null)
                     artistGenreRepository.insertArtistGenres(currentArtist.id, artistGenresMB.get(currentArtist.mbId).orEmpty())
+
+                insertSimilarArtists(currentArtist.id, currentArtist.name)
+
                 artistRepository.update(currentArtist)
             } else if (toInsert) {
                 currentArtist = currentArtist.copy(enrichmentAttempted = true)
@@ -881,6 +1035,7 @@ class OfflineMetadataRepository(
                 if (currentArtist.mbId != null)
                     artistGenreRepository.insertArtistGenres(inserted, artistGenresMB.get(currentArtist.mbId).orEmpty())
 
+                insertSimilarArtists(inserted, currentArtist.name)
 
                 albumArtistRepository.updateAlbumArtist(
                     albumArtist.albumId,
@@ -894,8 +1049,14 @@ class OfflineMetadataRepository(
                 if (genres.isNotEmpty())
                     artistGenreRepository.insertArtistGenres(currentArtist.id, genres)
 
+
+                insertSimilarArtists(currentArtist.id, currentArtist.name)
+
                 artistRepository.update(currentArtist)
             }
+
+            if (!toUpdate && !toInsert)
+                delay(1000)
             Log.d("scan", "after artist $artistName")
 
             val progress = ScanProgress(
@@ -910,6 +1071,55 @@ class OfflineMetadataRepository(
         }
 
     }
+
+    override suspend fun extractAudioFeatures(context: Context): Flow<ScanProgress> = flow {
+        val allTracks = trackRepository.getAllUnEnriched()
+
+        var current = 0
+        val total = allTracks.size
+
+        for (track in allTracks){
+
+            val audioFeatures = trackRepository.getAudioFeatures(context, track)
+
+            if (audioFeatures != null) {
+                val updatedTrack = track.copy(
+                    loudness = audioFeatures.loudness,
+                    dynamicComplexity = audioFeatures.dynamicComplexity,
+                    approachability = audioFeatures.approachability,
+                    engagement = audioFeatures.engagement,
+                    danceability = audioFeatures.danceability,
+                    moodAggressive = audioFeatures.moodAggressive,
+                    moodHappy = audioFeatures.moodHappy,
+                    moodParty = audioFeatures.moodParty,
+                    moodRelaxed = audioFeatures.moodRelaxed,
+                    moodSad = audioFeatures.moodSad,
+                    instrumental = audioFeatures.instrumental, //only if currently null/not set by lrclib
+                    voice = audioFeatures.voice,
+                    bpm = audioFeatures.bpm.roundToInt(),
+                    key = "${audioFeatures.key.key} ${audioFeatures.key.scale}"
+                )
+
+                trackRepository.update(updatedTrack)
+
+                trackMoodRepository.addTrackMoods(track.id, audioFeatures.moods)
+
+            }
+
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = track.title
+            )
+
+            emit(progress)
+
+            current++
+
+
+        }
+    }
+
 
     private suspend fun fuzzyMatch(
         albumTitleLocal: String,

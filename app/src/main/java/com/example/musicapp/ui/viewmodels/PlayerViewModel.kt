@@ -191,7 +191,7 @@ class PlayerViewModel @Inject constructor(
                                 albumId = mediaItem?.mediaMetadata?.extras?.getInt("albumId") ?: 0,
                                 artistId = mediaItem?.mediaMetadata?.extras?.getInt("artistId")
                                     ?: 0,
-                                filePath = ""
+                                filePath = "",
                             )
                             _currentTrack.value = PlayQueueItemUUID(
                                 queueId = mediaItem?.mediaId ?: "",
@@ -337,6 +337,12 @@ class PlayerViewModel @Inject constructor(
             controller!!.play()
         }
 
+    }
+
+    fun pause() {
+        if (controller!!.isPlaying) {
+            controller!!.pause()
+        }
     }
 
 

@@ -56,7 +56,7 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         LibraryScreen.TRACKS ->
             listOf(SortField.NAME, SortField.DURATION)
 
-        LibraryScreen.ALBUM_DETAIL -> listOf(
+        LibraryScreen.ARTIST_DETAIL -> listOf(
             SortField.NAME,
             SortField.RELEASE_DATE,
             SortField.DURATION
@@ -82,6 +82,10 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
 
         LibraryScreen.LABELS -> listOf(
             SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
+        )
+
+        LibraryScreen.MOODS -> listOf(
+            SortField.NAME, SortField.TOTAL_COUNT
         )
 
         else -> emptyList()
@@ -150,8 +154,10 @@ fun SortMenu(
 fun RightMenu(
     screen: LibraryScreen,
     onSortSelected: (SortOption) -> Unit,
-    onImport: (() -> Unit)? = null
-) {
+    onImport: (() -> Unit)? = null,
+    onShowSimilar: (() -> Unit)? = null,
+    onOpenSequencer: (() -> Unit)? = null,
+    ) {
     var expanded by remember { mutableStateOf(false) }
     var menuPage by remember { mutableStateOf(MenuPage.MAIN) }
 
@@ -182,6 +188,26 @@ fun RightMenu(
                             }
                         )
                     }
+                    if (screen == LibraryScreen.ARTIST_DETAIL && onShowSimilar != null) {
+                        DropdownMenuItem(
+                            text = { Text("Add Similar Artist") },
+                            onClick = {
+                                expanded = false
+                                onShowSimilar()
+                            }
+                        )
+                    }
+                    if (screen == LibraryScreen.PLAYLIST_DETAIL && onOpenSequencer != null){
+                        DropdownMenuItem(
+                            text = { Text("Open Sequencing Helper") },
+                            onClick = {
+                                expanded = false
+                                onOpenSequencer()
+                            }
+                        )
+
+                    }
+
 
                     if (availableSortFields(screen).isNotEmpty()) {
 

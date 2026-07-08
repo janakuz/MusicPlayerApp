@@ -83,16 +83,39 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
-    fun backfillArtistMetadata(context: Context){
+    fun backfillArtistMetadata(){
         viewModelScope.launch {
             workerManagerRepository.startWorkerArtistMetadata()
 
         }
     }
 
-    fun backfillArtistArea(context: Context){
+    fun backfillArtistArea(){
         viewModelScope.launch {
             workerManagerRepository.startWorkerArtistArea()
+
+        }
+    }
+
+
+    fun backfillSimilar(){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerSimilarArtists()
+
+        }
+    }
+
+
+    fun getLyrics(){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerLyrics()
+
+        }
+    }
+
+    fun extractAudioFeatures(){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerTrackAudioFeatures()
 
         }
     }

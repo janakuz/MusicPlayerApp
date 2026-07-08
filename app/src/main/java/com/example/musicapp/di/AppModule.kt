@@ -24,13 +24,16 @@ import com.example.musicapp.data.local.dao.MoodDao
 import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
+import com.example.musicapp.data.local.dao.SequencerDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
+import com.example.musicapp.data.local.database.ALL_MIGRATIONS
 import com.example.musicapp.data.local.database.AppDatabase
-import com.example.musicapp.data.local.database.getAllMigrations
 import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
+import com.example.musicapp.data.remote.service.EssentiaApiService
+import com.example.musicapp.data.remote.service.LRCLibApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
 import com.example.musicapp.data.repository.AlbumArtistRepository
@@ -63,6 +66,8 @@ import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepositoryImpl
 import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.SearchRepositoryImpl
+import com.example.musicapp.data.repository.SequencerRepository
+import com.example.musicapp.data.repository.SequencerRepositoryImpl
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackMoodRepositoryImpl
 import com.example.musicapp.data.repository.TrackRepository
@@ -82,6 +87,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -99,12 +105,15 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class LaftfmClient
+    annotation class LastfmClient
 
-//    @Qualifier
-//    @Retention(AnnotationRetention.BINARY)
-//    annotation class SpotifyClient
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class EssentiaClient
 
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class LRCLibClient
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
@@ -120,12 +129,15 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
+    annotation class LRCLibRetrofit
+
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
     annotation class CoverArtArchiveRetrofit
 
-//    @Qualifier
-//    @Retention(AnnotationRetention.BINARY)
-//    annotation class SpotifyRetrofit
-
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class EssentiaRetrofit
 
     @Provides
     @Singleton
@@ -137,7 +149,7 @@ object AppModule {
             AppDatabase::class.java,
             "music_app_db"
         )
-            .addMigrations(*getAllMigrations(context))
+            .addMigrations(*ALL_MIGRATIONS)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
@@ -202,8 +214,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackRepository(trackDao: TrackDao): TrackRepository {
-        return TrackRepositoryImpl(trackDao)
+    fun provideTrackRepository(
+        trackDao: TrackDao,
+        audioFeaturesApi: EssentiaApiService,
+        lyricsApi: LRCLibApiService): TrackRepository {
+        return TrackRepositoryImpl(trackDao, audioFeaturesApi, lyricsApi)
     }
 
     @Provides
@@ -292,6 +307,8 @@ object AppModule {
         }
         .build()
 
+
+
     @Provides
     @DiscogsRetrofit
     @Singleton
@@ -326,6 +343,77 @@ object AppModule {
     fun provideLastfmApiService(@LastfmRetrofit retrofit: Retrofit): LastfmApiService {
         return retrofit.create(LastfmApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    @EssentiaClient
+    fun provideEssentiaOkHttpClient(
+        userAgentInterceptor: Interceptor,
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
+        .addInterceptor(loggingInterceptor)
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("X-API-KEY", BuildConfig.ESSENTIA_KEY)
+                .build()
+            chain.proceed(request)
+        }
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .build()
+
+    @Provides
+    @Singleton
+    @EssentiaRetrofit
+    fun provideEssentiaRetrofit(
+        @EssentiaClient okHttpClient: OkHttpClient
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("http://192.168.1.72:8000/")
+            .client(okHttpClient)
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEssentiaApiService(@EssentiaRetrofit retrofit: Retrofit): EssentiaApiService {
+        return retrofit.create(EssentiaApiService::class.java)
+    }
+
+
+    @Provides
+    @LRCLibClient
+    fun provideLRCLibOkHttpClient(
+        userAgentInterceptor: Interceptor,
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+
+    @Provides
+    @LRCLibRetrofit
+    @Singleton
+    fun provideLRCLIbRetrofit(@LRCLibClient okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://lrclib.net/")
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideLRCLibService(@LRCLibRetrofit retrofit: Retrofit): LRCLibApiService {
+        return retrofit.create(LRCLibApiService::class.java)
+    }
+
 
     @Provides
     @Singleton
@@ -442,8 +530,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao): FilterRepository {
-        return FilterRepositoryImpl(albumDao, artistDao)
+    fun provideFilterRepository(albumDao: AlbumDao, artistDao: ArtistDao, trackDao: TrackDao): FilterRepository {
+        return FilterRepositoryImpl(albumDao, artistDao, trackDao)
     }
 
     @Provides
@@ -538,6 +626,7 @@ object AppModule {
         albumRepository: AlbumRepository,
         artistRepository: ArtistRepository,
         trackRepository: TrackRepository,
+        trackMoodRepository: TrackMoodRepository,
         albumArtistRepository: AlbumArtistRepository,
         albumGenreRepository: AlbumGenreRepository,
         artistGenreRepository: ArtistGenreRepository
@@ -546,10 +635,21 @@ object AppModule {
             albumRepository,
             artistRepository,
             trackRepository,
+            trackMoodRepository,
             albumArtistRepository,
             albumGenreRepository,
             artistGenreRepository
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideSequencerDao(db: AppDatabase): SequencerDao = db.sequencerDao()
+
+    @Provides
+    @Singleton
+    fun provideSequencerRepository(sequencerDao: SequencerDao, playlistTracksDao: PlaylistTracksDao): SequencerRepository {
+        return SequencerRepositoryImpl(sequencerDao, playlistTracksDao)
     }
 
 

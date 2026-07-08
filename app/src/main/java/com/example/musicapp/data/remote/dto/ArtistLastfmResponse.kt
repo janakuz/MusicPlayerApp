@@ -6,7 +6,7 @@ data class ArtistLastfmResponse(
 
 data class ArtistInfoLastfm(
     val name: String,
-    val mbid: String,
+    val mbid: String?,
     val url: String,
     val tags: TagsWrapper,
     val similar: SimilarArtistsWrapper,
@@ -31,4 +31,20 @@ data class LastfmBio(
     val summary: String,
     val content: String
 
+)
+
+data class SimilarArtistsResponse(
+    val similarartists: SimilarArtistsResponseWrapper
+)
+
+data class SimilarArtistsResponseWrapper(
+    val artist: List<SimilarArtist>
+)
+
+
+data class SimilarArtist(
+    val name: String,
+    val mbid: String?,
+    val url: String,
+    val match: Double
 )

@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("artist1Id"), Index("artist2Id")]
+    indices = [Index("artist2Id"), Index(value=["artist1Id","artist2Id"], unique = true)]
 )
 data class SimilarArtists(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

@@ -55,7 +55,8 @@ fun ImageWithTextColumn(
     onClick: ((GridItem) -> Unit)? = null,
     onDelete: ((Int, String) -> Unit)? = null,
     onRefetch: ((Int) -> Unit)? = null,
-) {
+    onRemoveSimilar: ((Int) -> Unit)? = null,
+    ) {
     var expanded by remember { mutableStateOf(false) }
 
     Column(
@@ -151,6 +152,12 @@ fun ImageWithTextColumn(
         onRefetchMetadata =  if (onRefetch != null) {
             {
                 if (item != null) onRefetch(item.id)
+                expanded = false
+            }
+        } else null,
+        onRemoveSimilar =  if (onRemoveSimilar != null) {
+            {
+                if (item != null) onRemoveSimilar(item.id)
                 expanded = false
             }
         } else null

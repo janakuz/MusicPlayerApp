@@ -37,7 +37,7 @@ class AreaDetailViewModel@Inject constructor (
         else -> AreaType.COUNTRY
     }
 
-    val areaItems = areaRepository.getArtistsFromArea(gid, countryCode, areaType)
+    val areaItems = areaRepository.getArtistsAndAlbumsFromArea(gid, countryCode, areaType)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchResult())
 
     var areaName = ""

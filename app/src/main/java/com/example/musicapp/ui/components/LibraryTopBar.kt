@@ -38,7 +38,9 @@ fun LibraryTopBar(
     title: String? = "",
     showBack: Boolean,
     onBack: (() -> Unit)? = null,
-) {
+    onShowSimilar: (() -> Unit)? = null,
+    onOpenSequencer: (() -> Unit)? = null,
+    ) {
     TopAppBar(
         title = {
             Text(
@@ -66,7 +68,7 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            RightMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport)
+            RightMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport, onShowSimilar = onShowSimilar, onOpenSequencer = onOpenSequencer)
         }
     )
 }
@@ -87,6 +89,7 @@ fun SelectionTopBar(
     onMove: () -> Unit,
     moveEnabled: Boolean = false,
     onAddToPlaylist: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     TopAppBar(
         title = {
@@ -134,6 +137,10 @@ fun SelectionTopBar(
                     onDelete = {
                         onDelete()
                         onClear()
+                        expanded = false
+                    },
+                    onEdit = {
+                        onEdit()
                         expanded = false
                     },
                     onAddToPlaylist = {
