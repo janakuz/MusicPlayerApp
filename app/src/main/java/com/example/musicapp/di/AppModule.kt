@@ -105,12 +105,15 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class LaftfmClient
+    annotation class LastfmClient
 
-//    @Qualifier
-//    @Retention(AnnotationRetention.BINARY)
-//    annotation class SpotifyClient
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class EssentiaClient
 
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class LRCLibClient
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
@@ -134,7 +137,7 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class EssentiaApi
+    annotation class EssentiaRetrofit
 
     @Provides
     @Singleton
@@ -343,7 +346,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    @EssentiaApi
+    @EssentiaClient
     fun provideEssentiaOkHttpClient(
         userAgentInterceptor: Interceptor,
         loggingInterceptor: HttpLoggingInterceptor
@@ -363,9 +366,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    @EssentiaApi
+    @EssentiaRetrofit
     fun provideEssentiaRetrofit(
-        @EssentiaApi okHttpClient: OkHttpClient
+        @EssentiaClient okHttpClient: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("http://192.168.1.72:8000/")
@@ -377,15 +380,27 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideEssentiaApiService(@EssentiaApi retrofit: Retrofit): EssentiaApiService {
+    fun provideEssentiaApiService(@EssentiaRetrofit retrofit: Retrofit): EssentiaApiService {
         return retrofit.create(EssentiaApiService::class.java)
     }
 
 
     @Provides
+    @LRCLibClient
+    fun provideLRCLibOkHttpClient(
+        userAgentInterceptor: Interceptor,
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+
+    @Provides
     @LRCLibRetrofit
     @Singleton
-    fun provideLRCLIbRetrofit(@MusicBrainzClient okHttpClient: OkHttpClient): Retrofit =
+    fun provideLRCLIbRetrofit(@LRCLibClient okHttpClient: OkHttpClient): Retrofit =
         Retrofit.Builder()
             .baseUrl("https://lrclib.net/")
             .addConverterFactory(ScalarsConverterFactory.create())
