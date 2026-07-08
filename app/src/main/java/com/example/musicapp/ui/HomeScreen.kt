@@ -785,7 +785,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
                 composable("track/edit/{trackId}") {
                     TrackEditScreen(
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        onSync = { playerViewModel.pause() }
                     )
                 }
 

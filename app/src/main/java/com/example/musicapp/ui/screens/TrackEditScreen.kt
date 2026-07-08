@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.screens
 
+import android.R
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -82,10 +83,20 @@ import com.example.musicapp.ui.viewmodels.TrackEditViewModel
 import com.example.musicapp.ui.viewmodels.TrackMultiEditViewModel
 import com.example.musicapp.ui.viewmodels.VoiceState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.musicapp.data.remote.dto.LRCLibResponse
+import com.example.musicapp.ui.viewmodels.SyncableLine
+import com.example.musicapp.util.formatDuration
 import java.util.Locale
 
 
@@ -93,6 +104,7 @@ import java.util.Locale
 @Composable
 fun TrackEditScreen(
     onNavigateBack: () -> Unit,
+    onSync: () -> Unit,
 ) {
     val trackEditViewModel: TrackEditViewModel = hiltViewModel()
 
@@ -390,23 +402,83 @@ fun TrackEditScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                             )
 
-                            TextButton(
-                                onClick = {
-                                    showSearchSheet = true
-                                    trackEditViewModel.onSearch()
-                                },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Search LRCLib",
-                                    style = MaterialTheme.typography.labelLarge
-                                )
+
+
+                            Row {
+                                var showExistingSyncAlert by remember { mutableStateOf(false) }
+
+                                if (trackEditUiState.currentLyrics?.plainLyrics != null) {
+                                    TextButton(
+                                        onClick = {
+                                            if (trackEditUiState.currentLyrics?.syncedLyrics != null) {
+                                                showExistingSyncAlert = true
+                                            }
+                                            else {
+                                                showSearchSheet = true
+                                                onSync()
+                                                trackEditViewModel.startSyncingSession(
+                                                    trackEditUiState.currentLyrics?.plainLyrics!!
+                                                )
+                                            }
+                                        },
+                                        contentPadding = PaddingValues(
+                                            horizontal = 12.dp,
+                                            vertical = 4.dp
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "Sync Lyrics",
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
+
+                                    if (showExistingSyncAlert){
+                                        AlertDialog(
+                                            onDismissRequest = { showExistingSyncAlert = false},
+                                            confirmButton = { TextButton(
+                                                onClick = {
+                                                    showExistingSyncAlert = false
+                                                    showSearchSheet = true
+                                                    onSync()
+                                                    trackEditViewModel.startSyncingSession(trackEditUiState.currentLyrics?.plainLyrics!!)
+                                                }
+                                                ) { Text("OK")}
+                                            },
+                                            dismissButton = { TextButton(
+                                                onClick = { showExistingSyncAlert = false }
+                                            ) { Text("Cancel")}
+                                            },
+                                            text = {
+                                                Text(text = "Synced lyrics already exist. Proceeding might overwrite existing timestamps.")
+                                            }
+                                        )
+                                    }
+
+                                }
+
+
+
+                                TextButton(
+                                    onClick = {
+                                        showSearchSheet = true
+                                        trackEditViewModel.onSearch()
+                                    },
+                                    contentPadding = PaddingValues(
+                                        horizontal = 12.dp,
+                                        vertical = 4.dp
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Search LRCLib",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
                             }
                         }
 
@@ -457,6 +529,14 @@ fun TrackEditScreen(
                     onDismissRequest = { showSearchSheet = false },
                     dragHandle = { BottomSheetDefaults.DragHandle() }
                 ) {
+                    DisposableEffect(Unit) {
+                        trackEditViewModel.startSyncingSession(trackEditUiState.currentLyrics?.plainLyrics!!)
+
+                        onDispose {
+                            trackEditViewModel.releaseLocalPlayer()
+                        }
+                    }
+
                     AnimatedContent(
                         targetState = searchSheetState,
                         label = "SearchSheetTransition"
@@ -509,6 +589,27 @@ fun TrackEditScreen(
                                     Text(state.message, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
                                 }
                             }
+
+
+
+                            is SearchSheetState.Syncing -> {
+
+                                SyncingLayoutScreen(
+                                    lines = state.lines,
+                                    currentIndex = state.currentIndex,
+                                    isPlaying = trackEditViewModel.isLocalPlaying,
+                                    onTogglePlay = { trackEditViewModel.toggleLocalPlayback() },
+                                    onStampLine = { trackEditViewModel.stampCurrentLine() },
+                                    onUndo = { trackEditViewModel.undoLastStamp() },
+                                    onCancel = { trackEditViewModel.cancelSync() },
+                                    onSave = {
+                                        val generatedLrc = trackEditViewModel.finalizeSyncSession()
+                                        trackEditViewModel.onLyricsChange(trackEditUiState.currentLyrics?.plainLyrics, generatedLrc)
+                                    }
+                                )
+                            }
+
+
                             else -> {}
                         }
                     }
@@ -827,6 +928,201 @@ fun LyricsPreviewContainer(
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Apply Lyrics")
+            }
+        }
+    }
+}
+
+@Composable
+fun SyncingLayoutScreen(
+    lines: List<SyncableLine>,
+    currentIndex: Int,
+    isPlaying: Boolean,
+    onTogglePlay: () -> Unit,
+    onStampLine: () -> Unit,
+    onUndo: () -> Unit,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isFinished = currentIndex >= lines.size
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 600.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onCancel) {
+                Text("Cancel", color = MaterialTheme.colorScheme.error)
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onUndo, enabled = currentIndex > 0) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Undo last stamp")
+                }
+                FilledIconButton(onClick = onTogglePlay) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play"
+                    )
+                }
+            }
+
+            TextButton(onClick = onSave, enabled = isFinished || currentIndex > 0) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            onClick = { if (!isFinished && isPlaying) onStampLine() },
+            enabled = !isFinished && isPlaying,
+            colors = CardDefaults.cardColors(
+                containerColor = if (isPlaying && !isFinished) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.4f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (isFinished) {
+                        Text(
+                            text = "All lines stamped!",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Click Save at the top to commit changes.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    } else if (!isPlaying) {
+                        Text(
+                            text = "Press Play to begin tracking",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "TAP WHEN SUNG:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = lines[currentIndex].text,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+
+                        if (currentIndex + 1 < lines.size) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Next: ${lines[currentIndex + 1].text}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "TIMELINE PROGRESSION",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.Start).padding(bottom = 4.dp)
+        )
+
+        val scrollState = rememberScrollState()
+
+        LaunchedEffect(currentIndex) {
+            if (currentIndex > 0) {
+                scrollState.animateScrollTo(scrollState.maxValue)
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.6f)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                lines.forEachIndexed { idx, line ->
+                    val isActive = idx == currentIndex
+                    val isPassed = idx < currentIndex
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+                                shape = MaterialTheme.shapes.small
+                            )
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (line.timestampMs != null) {
+                                line.timestampMs.formatDuration()
+                            } else {
+                                "--:--"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (isPassed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.width(55.dp)
+                        )
+
+                        Text(
+                            text = line.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                            color = when {
+                                isActive -> MaterialTheme.colorScheme.primary
+                                isPassed -> MaterialTheme.colorScheme.onSurface
+                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            }
+                        )
+                    }
+                }
             }
         }
     }
