@@ -1,32 +1,41 @@
 package com.example.musicapp.ui.screens
 
+import android.R
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,16 +47,21 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,24 +69,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStoreOwner
 import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.AlbumArtistEditUiState
-import com.example.musicapp.ui.viewmodels.PlayerViewModel
+import com.example.musicapp.ui.viewmodels.SearchSheetState
 import com.example.musicapp.ui.viewmodels.TrackEditViewModel
 import com.example.musicapp.ui.viewmodels.TrackMultiEditViewModel
 import com.example.musicapp.ui.viewmodels.VoiceState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.currentComposer
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.musicapp.data.remote.dto.LRCLibResponse
+import com.example.musicapp.ui.viewmodels.SyncableLine
+import com.example.musicapp.util.formatDuration
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackEditScreen(
     onNavigateBack: () -> Unit,
+    onSync: () -> Unit,
 ) {
     val trackEditViewModel: TrackEditViewModel = hiltViewModel()
 
@@ -80,8 +112,10 @@ fun TrackEditScreen(
     val albumArtistEditWorkflowState by trackEditViewModel.workflowState.collectAsState()
     val canSave by trackEditViewModel.canSave.collectAsState()
     val suggestions by trackEditViewModel.moodSuggestions.collectAsState()
+    val searchSheetState by trackEditViewModel.lyricsSearchState.collectAsState()
 
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showSearchSheet by remember { mutableStateOf(false) }
 
 
     val handleBack = {
@@ -353,6 +387,233 @@ fun TrackEditScreen(
                 }
 
 
+                item{
+                    Column {
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Lyrics",
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+
+
+
+                            Row {
+                                var showExistingSyncAlert by remember { mutableStateOf(false) }
+
+                                if (trackEditUiState.currentLyrics?.plainLyrics != null) {
+                                    TextButton(
+                                        onClick = {
+                                            if (trackEditUiState.currentLyrics?.syncedLyrics != null) {
+                                                showExistingSyncAlert = true
+                                            }
+                                            else {
+                                                showSearchSheet = true
+                                                onSync()
+                                                trackEditViewModel.startSyncingSession(
+                                                    trackEditUiState.currentLyrics?.plainLyrics!!
+                                                )
+                                            }
+                                        },
+                                        contentPadding = PaddingValues(
+                                            horizontal = 12.dp,
+                                            vertical = 4.dp
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "Sync Lyrics",
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
+
+                                    if (showExistingSyncAlert){
+                                        AlertDialog(
+                                            onDismissRequest = { showExistingSyncAlert = false},
+                                            confirmButton = { TextButton(
+                                                onClick = {
+                                                    showExistingSyncAlert = false
+                                                    showSearchSheet = true
+                                                    onSync()
+                                                    trackEditViewModel.startSyncingSession(trackEditUiState.currentLyrics?.plainLyrics!!)
+                                                }
+                                                ) { Text("OK")}
+                                            },
+                                            dismissButton = { TextButton(
+                                                onClick = { showExistingSyncAlert = false }
+                                            ) { Text("Cancel")}
+                                            },
+                                            text = {
+                                                Text(text = "Synced lyrics already exist. Proceeding might overwrite existing timestamps.")
+                                            }
+                                        )
+                                    }
+
+                                }
+
+
+
+                                TextButton(
+                                    onClick = {
+                                        showSearchSheet = true
+                                        trackEditViewModel.onSearch()
+                                    },
+                                    contentPadding = PaddingValues(
+                                        horizontal = 12.dp,
+                                        vertical = 4.dp
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Search LRCLib",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+                        }
+
+
+
+                        var selectedTab by remember { mutableIntStateOf(0) }
+                        val tabs = listOf("Plain Lyrics", "Synced Lyrics")
+
+                        TabRow(selectedTabIndex = selectedTab) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    text = { Text(title) }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        when (selectedTab) {
+                            0 -> OutlinedTextField(
+                                value = trackEditUiState.currentLyrics?.plainLyrics ?: "",
+                                onValueChange = { trackEditViewModel.onLyricsChange(it, trackEditUiState.currentLyrics?.syncedLyrics) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp),
+                                label = { Text("Edit Plain Lyrics") }
+                            )
+
+                            1 -> OutlinedTextField(
+                                value = trackEditUiState.currentLyrics?.syncedLyrics ?: "",
+                                onValueChange = { trackEditViewModel.onLyricsChange(trackEditUiState.currentLyrics?.plainLyrics, it) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp),
+                                label = { Text("Edit Synced Lyrics") }
+                            )
+                        }
+                    }
+
+                }
+
+            }
+
+            if (showSearchSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showSearchSheet = false },
+                    dragHandle = { BottomSheetDefaults.DragHandle() }
+                ) {
+                    DisposableEffect(Unit) {
+                        trackEditViewModel.startSyncingSession(trackEditUiState.currentLyrics?.plainLyrics!!)
+
+                        onDispose {
+                            trackEditViewModel.releaseLocalPlayer()
+                        }
+                    }
+
+                    AnimatedContent(
+                        targetState = searchSheetState,
+                        label = "SearchSheetTransition"
+                    ) { state ->
+                        when (state) {
+                            is SearchSheetState.Loading -> {
+                                Box(modifier = Modifier.fillMaxWidth().height(250.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                            is SearchSheetState.Results -> {
+                                if (state.list.isEmpty()) {
+                                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                        Text("No lyrics found on LRCLib.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth().heightIn(max = 500.dp),
+                                        contentPadding = PaddingValues(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        item {
+                                            Text("Select a match to preview", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+                                        }
+                                        items(state.list) { result ->
+                                            ResultItemRow(
+                                                result = result,
+                                                onClick = { trackEditViewModel.onPreview(result) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            is SearchSheetState.Preview -> {
+
+                                LyricsPreviewContainer(
+                                    result = state.selected,
+                                    onBackClick = { trackEditViewModel.onBackLyricsPreview() },
+                                    onApplyClick = {
+                                                   plain, synced -> trackEditViewModel.onLyricsChange(plain, synced)
+                                                   showSearchSheet = false },
+                                )
+                            }
+                            is SearchSheetState.Error -> {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("Search failed", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleMedium)
+                                    Text(state.message, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                                }
+                            }
+
+
+
+                            is SearchSheetState.Syncing -> {
+
+                                SyncingLayoutScreen(
+                                    lines = state.lines,
+                                    currentIndex = state.currentIndex,
+                                    isPlaying = trackEditViewModel.isLocalPlaying,
+                                    onTogglePlay = { trackEditViewModel.toggleLocalPlayback() },
+                                    onStampLine = { trackEditViewModel.stampCurrentLine() },
+                                    onUndo = { trackEditViewModel.undoLastStamp() },
+                                    onCancel = { trackEditViewModel.cancelSync() },
+                                    onSave = {
+                                        val generatedLrc = trackEditViewModel.finalizeSyncSession()
+                                        trackEditViewModel.onLyricsChange(trackEditUiState.currentLyrics?.plainLyrics, generatedLrc)
+                                    }
+                                )
+                            }
+
+
+                            else -> {}
+                        }
+                    }
+                }
             }
 
             when (albumArtistEditWorkflowState) {
@@ -446,7 +707,7 @@ fun InstrumentalAndVoiceSection(
                 verticalArrangement = Arrangement.spacedBy(8.0.dp)
             ) {
                 Text(
-                    text = "Voice Type",
+                    text = "Vocals",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -497,5 +758,372 @@ fun TrackMultiEditScreen(
             onInstrumentalChange = {value -> trackMultiEditViewModel.onInstrumentalChange(value) },
             onVoiceChange = {voice -> trackMultiEditViewModel.onVoiceChange(voice)},
         )
+    }
+}
+
+
+@Composable
+fun ResultItemRow(
+    result: LRCLibResponse,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = result.trackName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${result.artistName} • ${result.albumName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val minutes = result.duration.toInt() / 60
+                val seconds = result.duration.toInt() % 60
+                Text(
+                    text = String.format(Locale.ROOT, "%d:%02d", minutes, seconds),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                val hasSynced = !result.syncedLyrics.isNullOrBlank()
+                val hasPlain = !result.plainLyrics.isNullOrBlank()
+
+                if (hasSynced) {
+                    LyricsFormatBadge(text = "LRC", isSynced = true)
+                }
+                if (hasPlain && !hasSynced) {
+                    LyricsFormatBadge(text = "TXT", isSynced = false)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LyricsFormatBadge(text: String, isSynced: Boolean) {
+    Surface(
+        color = if (isSynced) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = if (isSynced) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+
+
+@Composable
+fun LyricsPreviewContainer(
+    result: LRCLibResponse,
+    onBackClick: () -> Unit,
+    onApplyClick: (String?, String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var previewTab by remember { mutableIntStateOf(0) }
+
+    val hasPlain = !result.plainLyrics.isNullOrBlank()
+    val hasSynced = !result.syncedLyrics.isNullOrBlank()
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 550.dp)
+            .padding(16.dp)
+    ) {
+        Text(text = "Previewing: ${result.trackName}", style = MaterialTheme.typography.titleMedium)
+        Text(text = result.artistName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        TabRow(
+            selectedTabIndex = previewTab,
+            containerColor = Color.Transparent
+        ) {
+            Tab(
+                selected = previewTab == 0,
+                onClick = { previewTab = 0 },
+                text = { Text("Plain Preview") },
+                enabled = hasPlain
+            )
+            Tab(
+                selected = previewTab == 1,
+                onClick = { previewTab = 1 },
+                text = { Text("Synced (LRC) Preview") },
+                enabled = hasSynced
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(12.dp)
+        ) {
+            val textToDisplay = when (previewTab) {
+                0 -> if (hasPlain) result.plainLyrics else "No plain lyrics available."
+                1 -> if (hasSynced) result.syncedLyrics else "No timestamped LRC lyrics available."
+                else -> ""
+            }
+
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    text = textToDisplay,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = if (previewTab == 1) FontFamily.Monospace else FontFamily.Default
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onBackClick,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Back to List")
+            }
+
+            Button(
+                onClick = {
+                    onApplyClick(result.plainLyrics, result.syncedLyrics)
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Apply Lyrics")
+            }
+        }
+    }
+}
+
+@Composable
+fun SyncingLayoutScreen(
+    lines: List<SyncableLine>,
+    currentIndex: Int,
+    isPlaying: Boolean,
+    onTogglePlay: () -> Unit,
+    onStampLine: () -> Unit,
+    onUndo: () -> Unit,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isFinished = currentIndex >= lines.size
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 600.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onCancel) {
+                Text("Cancel", color = MaterialTheme.colorScheme.error)
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onUndo, enabled = currentIndex > 0) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Undo last stamp")
+                }
+                FilledIconButton(onClick = onTogglePlay) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play"
+                    )
+                }
+            }
+
+            TextButton(onClick = onSave, enabled = isFinished || currentIndex > 0) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            onClick = { if (!isFinished && isPlaying) onStampLine() },
+            enabled = !isFinished && isPlaying,
+            colors = CardDefaults.cardColors(
+                containerColor = if (isPlaying && !isFinished) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.4f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (isFinished) {
+                        Text(
+                            text = "All lines stamped!",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Click Save at the top to commit changes.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    } else if (!isPlaying) {
+                        Text(
+                            text = "Press Play to begin tracking",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "TAP WHEN SUNG:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = lines[currentIndex].text,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+
+                        if (currentIndex + 1 < lines.size) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Next: ${lines[currentIndex + 1].text}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "TIMELINE PROGRESSION",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.Start).padding(bottom = 4.dp)
+        )
+
+        val scrollState = rememberScrollState()
+
+        LaunchedEffect(currentIndex) {
+            if (currentIndex > 0) {
+                scrollState.animateScrollTo(scrollState.maxValue)
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.6f)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                lines.forEachIndexed { idx, line ->
+                    val isActive = idx == currentIndex
+                    val isPassed = idx < currentIndex
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+                                shape = MaterialTheme.shapes.small
+                            )
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (line.timestampMs != null) {
+                                line.timestampMs.formatDuration()
+                            } else {
+                                "--:--"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (isPassed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.width(55.dp)
+                        )
+
+                        Text(
+                            text = line.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                            color = when {
+                                isActive -> MaterialTheme.colorScheme.primary
+                                isPassed -> MaterialTheme.colorScheme.onSurface
+                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 }

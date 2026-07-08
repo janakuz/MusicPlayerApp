@@ -1,14 +1,18 @@
 package com.example.musicapp.data.local.dao
 
+import android.util.Log
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.Transaction
 import androidx.room.Update
+import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
@@ -24,8 +28,40 @@ interface TrackDao {
     @Update
     suspend fun update(track: Track)
 
+    @Update
+    suspend fun updateAll(tracks: List<Track>)
+
     @Delete
     suspend fun delete(track: Track)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllLyrics(trackLyrics: List<TrackLyrics>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertLyrics(trackLyrics: TrackLyrics)
+
+    @Update
+    suspend fun updateLyrics(trackLyrics: TrackLyrics)
+
+    @Query("SELECT trackId from track_lyrics")
+    suspend fun getAllTracksWithLyrics(): List<Int>
+
+    @Query("SELECT * FROM track_lyrics WHERE trackId=:trackId")
+    suspend fun getTrackLyrics(trackId: Int): TrackLyrics?
+
+    @Query("SELECT id FROM track_lyrics WHERE trackId = :trackId")
+    suspend fun getRowIdForTrack(trackId: Int): Int?
+
+    @Transaction
+    suspend fun saveLyrics(lyrics: TrackLyrics) {
+        val existingRowId = getRowIdForTrack(lyrics.trackId)
+
+        if (existingRowId != null) {
+            updateLyrics(lyrics.copy(id=existingRowId))
+        } else {
+            insertLyrics(lyrics)
+        }
+    }
 
     @Query(
         """
@@ -104,6 +140,22 @@ interface TrackDao {
     )
     fun getTrackInfo(id: Int): Flow<TrackInfo>
 
+
+    @Query(
+        """
+        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId,
+         t.instrumental, t.voice, t.bpm, t.`key`
+        FROM tracks t
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE t.id = :id
+        ORDER BY title ASC
+        """
+    )
+    suspend fun getTrackInfoSuspend(id: Int): TrackInfo
+
+
     @Query(
         """
         SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
@@ -181,6 +233,10 @@ interface TrackDao {
 
     @Query("UPDATE tracks SET instrumental=:newInstrumental, voice=:newVoice WHERE id in (:tracks)")
     suspend fun updateInstrumentalVoice(newInstrumental: Boolean?, newVoice: String?, tracks: List<Int>)
+
+    @Query("UPDATE tracks SET instrumental=:newInstrumental WHERE id=:trackId")
+    suspend fun updateInstrumental(newInstrumental: Boolean, trackId: Int)
+
 
     @Query(
         """

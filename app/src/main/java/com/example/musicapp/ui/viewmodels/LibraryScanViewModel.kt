@@ -105,6 +105,14 @@ class LibraryScanViewModel @Inject constructor(
         }
     }
 
+
+    fun getLyrics(){
+        viewModelScope.launch {
+            workerManagerRepository.startWorkerLyrics()
+
+        }
+    }
+
     fun extractAudioFeatures(){
         viewModelScope.launch {
             workerManagerRepository.startWorkerTrackAudioFeatures()

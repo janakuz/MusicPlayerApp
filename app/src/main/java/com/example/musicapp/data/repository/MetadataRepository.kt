@@ -20,6 +20,8 @@ interface MetadataRepository {
 
     suspend fun backfillSimilar(): Flow<ScanProgress>
 
+    suspend fun getLyrics(): Flow<ScanProgress>
+
     suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress>
 
     suspend fun extractAudioFeatures(context: Context): Flow<ScanProgress>

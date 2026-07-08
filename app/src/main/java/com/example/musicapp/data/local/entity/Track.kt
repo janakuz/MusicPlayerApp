@@ -32,7 +32,6 @@ data class Track(
     val duration: Long,
     val plays: Int = 0,
     val mbId: String?,
-    val lyrics: String?,
     val trackNumber: Int?,
     val lastPlayed: Long?,
     val fileUri: String,

@@ -2,8 +2,10 @@ package com.example.musicapp.data.repository
 
 import android.content.Context
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.remote.dto.AudioFeaturesResponse
+import com.example.musicapp.data.remote.dto.LRCLibResponse
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.ui.viewmodels.SelectSource
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +50,10 @@ interface TrackRepository {
 
     suspend fun update(track: Track)
 
+    suspend fun updateAll(tracks: List<Track>)
+
+    suspend fun getTrackWithLyrics(): List<Int>
+
     suspend fun delete(track: Track)
 
     suspend fun getAllUris(): List<String>
@@ -55,4 +61,21 @@ interface TrackRepository {
     suspend fun deleteByUri(uris: List<String>)
 
     suspend fun getAll(): List<Track>
+
+
+    suspend fun getLyrics(trackInfo: TrackInfo): LRCLibResponse?
+
+    suspend fun getLyricsLRCLibCached(trackInfo: TrackInfo): LRCLibResponse?
+
+    suspend fun insertAllLyrics(lyrics: List<TrackLyrics>)
+
+    suspend fun insertLyrics(lyrics: TrackLyrics)
+
+    suspend fun updateInstrumental(instrumental: Boolean, trackId: Int)
+
+    suspend fun searchLyrics(artist: String, track: String): List<LRCLibResponse>
+
+    suspend fun upsertLyrics(lyrics: TrackLyrics)
+
+    suspend fun getCachedLyrics(trackId: Int): TrackLyrics?
 }

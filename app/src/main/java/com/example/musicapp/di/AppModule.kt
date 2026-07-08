@@ -33,6 +33,7 @@ import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.EssentiaApiService
+import com.example.musicapp.data.remote.service.LRCLibApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
 import com.example.musicapp.data.repository.AlbumArtistRepository
@@ -104,12 +105,15 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class LaftfmClient
+    annotation class LastfmClient
 
-//    @Qualifier
-//    @Retention(AnnotationRetention.BINARY)
-//    annotation class SpotifyClient
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class EssentiaClient
 
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class LRCLibClient
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
@@ -125,11 +129,15 @@ object AppModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
+    annotation class LRCLibRetrofit
+
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
     annotation class CoverArtArchiveRetrofit
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class EssentiaApi
+    annotation class EssentiaRetrofit
 
     @Provides
     @Singleton
@@ -206,8 +214,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackRepository(trackDao: TrackDao, audioFeaturesApi: EssentiaApiService): TrackRepository {
-        return TrackRepositoryImpl(trackDao, audioFeaturesApi)
+    fun provideTrackRepository(
+        trackDao: TrackDao,
+        audioFeaturesApi: EssentiaApiService,
+        lyricsApi: LRCLibApiService): TrackRepository {
+        return TrackRepositoryImpl(trackDao, audioFeaturesApi, lyricsApi)
     }
 
     @Provides
@@ -335,7 +346,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    @EssentiaApi
+    @EssentiaClient
     fun provideEssentiaOkHttpClient(
         userAgentInterceptor: Interceptor,
         loggingInterceptor: HttpLoggingInterceptor
@@ -355,9 +366,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    @EssentiaApi
+    @EssentiaRetrofit
     fun provideEssentiaRetrofit(
-        @EssentiaApi okHttpClient: OkHttpClient
+        @EssentiaClient okHttpClient: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("http://192.168.1.72:8000/")
@@ -369,8 +380,38 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideEssentiaApiService(@EssentiaApi retrofit: Retrofit): EssentiaApiService {
+    fun provideEssentiaApiService(@EssentiaRetrofit retrofit: Retrofit): EssentiaApiService {
         return retrofit.create(EssentiaApiService::class.java)
+    }
+
+
+    @Provides
+    @LRCLibClient
+    fun provideLRCLibOkHttpClient(
+        userAgentInterceptor: Interceptor,
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+
+    @Provides
+    @LRCLibRetrofit
+    @Singleton
+    fun provideLRCLIbRetrofit(@LRCLibClient okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://lrclib.net/")
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideLRCLibService(@LRCLibRetrofit retrofit: Retrofit): LRCLibApiService {
+        return retrofit.create(LRCLibApiService::class.java)
     }
 
 

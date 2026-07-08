@@ -458,6 +458,40 @@ val MIGRATION_21_22 = object : Migration(21, 22) {
     }
 }
 
+val MIGRATION_22_23 = object : Migration(22,23) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `track_lyrics` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `trackId` INTEGER NOT NULL,
+                `plainLyrics` TEXT,
+                `syncedLyrics` TEXT,
+                FOREIGN KEY(`trackId`) REFERENCES `tracks`(`id`) ON DELETE CASCADE 
+            )
+        """
+        )
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_track_lyrics_trackId` ON `track_lyrics` (`trackId`)")
+        db.execSQL("ALTER TABLE tracks DROP COLUMN lyrics")
+    }
+}
+
+val MIGRATION_23_24 = object : Migration(23,24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            DELETE FROM track_lyrics 
+            WHERE id NOT IN (
+                SELECT MAX(id) FROM track_lyrics GROUP BY trackId
+            )
+        """.trimIndent())
+        db.execSQL("DROP INDEX IF EXISTS `index_track_lyrics_trackId`")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_track_lyrics_trackId` ON `track_lyrics` (`trackId`)")
+
+    }
+}
+
+
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
     MIGRATION_5_6,
@@ -476,7 +510,9 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_18_19,
     MIGRATION_19_20,
     MIGRATION_20_21,
-    MIGRATION_21_22
+    MIGRATION_21_22,
+    MIGRATION_22_23,
+    MIGRATION_23_24
 )
 
 //fun getAllMigrations(context: Context): Array<Migration> {

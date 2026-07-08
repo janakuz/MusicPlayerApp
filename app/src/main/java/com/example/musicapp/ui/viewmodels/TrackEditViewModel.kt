@@ -1,15 +1,24 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
+import com.example.musicapp.data.remote.dto.LRCLibResponse
 import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
@@ -34,7 +43,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
+import java.util.Locale
 import javax.inject.Inject
+import androidx.media3.common.Player
+
 
 @HiltViewModel
 class TrackEditViewModel @Inject constructor(
@@ -58,7 +70,21 @@ class TrackEditViewModel @Inject constructor(
         MutableStateFlow<AlbumArtistEditUiState>(AlbumArtistEditUiState.Idle)
     val workflowState = _workflowState.asStateFlow()
 
+    private val _lyricsSearchState = MutableStateFlow<SearchSheetState>(SearchSheetState.Idle)
+    val lyricsSearchState: StateFlow<SearchSheetState> = _lyricsSearchState.asStateFlow()
+
+    private val _cachedSearchResults = MutableStateFlow<List<LRCLibResponse>>(emptyList())
+
+    private var _activeSyncLines by mutableStateOf<List<SyncableLine>>(emptyList())
+
+    private var _currentSyncIndex by mutableIntStateOf(0)
+
     private val _moodQuery = MutableStateFlow("")
+
+    private var localPlayer: ExoPlayer? = null
+
+    var isLocalPlaying by mutableStateOf(false)
+        private set
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val moodSuggestions: StateFlow<List<String>> = _moodQuery
@@ -86,12 +112,13 @@ class TrackEditViewModel @Inject constructor(
     private var initialVoice: String? = null
     private var initialBPM: Int? = null
     private var initialKey: String? = null
+    private var initialLyrics: TrackLyrics? = TrackLyrics(trackId = trackId, plainLyrics = "", syncedLyrics = "")
 
     val canSave: StateFlow<Boolean> = _uiState.map { state ->
         val hasChanges = state.draftTrackNumber != initialNumber || state.title != initialTitle
                 || state.draftMoods != initialMoods || state.album != initialAlbum || state.artist != initialArtist
                 || state.instrumental != initialInst || state.voice != initialVoice
-                || state.bpm != initialBPM || state.key != initialKey
+                || state.bpm != initialBPM || state.key != initialKey || state.currentLyrics != initialLyrics
         hasChanges && !state.isSaving
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -103,6 +130,7 @@ class TrackEditViewModel @Inject constructor(
         viewModelScope.launch {
             val track = trackRepository.getTrackInfo(trackId).first()
             val moods = trackMoodRepository.getTrackMoods(trackId)
+            val lyrics = trackRepository.getCachedLyrics(trackId)
             initialAlbum = track.albumTitle
             initialArtist = track.artistName
             initialNumber = track.trackNum.toString()
@@ -112,6 +140,7 @@ class TrackEditViewModel @Inject constructor(
             initialVoice = track.voice
             initialBPM = track.bpm
             initialKey = track.key
+            initialLyrics = lyrics
             _uiState.update {
                 it.copy(
                     title = track.title,
@@ -119,13 +148,15 @@ class TrackEditViewModel @Inject constructor(
                     artist = track.artistName,
                     album = track.albumTitle,
                     filePath = getPathFromUri(context, track.fileUri),
+                    fileUri = track.fileUri,
                     draftMoods = moods,
                     instrumental = track.instrumental,
                     voice = track.voice,
                     bpm = track.bpm,
                     key = track.key,
                     note = track.key?.split(" ")[0],
-                    scale = track.key?.split(" ")[1]
+                    scale = track.key?.split(" ")[1],
+                    currentLyrics = lyrics
                 )
             }
 
@@ -181,6 +212,111 @@ class TrackEditViewModel @Inject constructor(
     fun onBPMChange(newBPM: Int){
         _uiState.update { it.copy(bpm = newBPM) }
     }
+
+    fun onLyricsChange(plainLyrics: String?, syncedLyrics: String?){
+        val newLyrics = TrackLyrics(trackId = trackId, plainLyrics = plainLyrics, syncedLyrics = syncedLyrics)
+        _uiState.update { it.copy(currentLyrics = newLyrics) }
+    }
+
+    fun onSearch(){
+        viewModelScope.launch {
+            _lyricsSearchState.value = SearchSheetState.Loading
+            val results = trackRepository.searchLyrics(artist = _uiState.value.artist, track = _uiState.value.title)
+            _lyricsSearchState.value = SearchSheetState.Results(results)
+            _cachedSearchResults.value = results
+        }
+    }
+
+    fun onPreview(result: LRCLibResponse){
+        _lyricsSearchState.value = SearchSheetState.Preview(result)
+    }
+
+    fun onBackLyricsPreview(){
+        _lyricsSearchState.value = SearchSheetState.Results(_cachedSearchResults.value)
+    }
+
+    fun initializeLocalPlayer() {
+        if (localPlayer != null) return
+
+        localPlayer = ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(_uiState.value.fileUri))
+            prepare()
+
+            addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    isLocalPlaying = isPlaying
+                }
+            })
+        }
+    }
+
+    fun stampCurrentLine() {
+        val player = localPlayer ?: return
+        val currentPlaybackMs = player.currentPosition
+
+        if (_currentSyncIndex >= _activeSyncLines.size) return
+
+        _activeSyncLines = _activeSyncLines.toMutableList().apply {
+            this[_currentSyncIndex] = this[_currentSyncIndex].copy(timestampMs = currentPlaybackMs)
+        }
+
+        _currentSyncIndex++
+        _lyricsSearchState.value = SearchSheetState.Syncing(_activeSyncLines, _currentSyncIndex)
+    }
+
+    fun toggleLocalPlayback() {
+        localPlayer?.let { if (it.isPlaying) it.pause() else it.play() }
+    }
+
+    fun seekLocalBackward(oldPos: Long) {
+        localPlayer?.seekTo(oldPos)
+    }
+
+    fun releaseLocalPlayer() {
+        localPlayer?.release()
+        localPlayer = null
+        isLocalPlaying = false
+    }
+
+    fun startSyncingSession(rawPlainLyrics: String) {
+        _activeSyncLines = rawPlainLyrics.lines()
+            .filter { it.isNotBlank() }
+            .map { SyncableLine(text = it.trim()) }
+
+        _currentSyncIndex = 0
+
+        _lyricsSearchState.value = SearchSheetState.Syncing(_activeSyncLines, _currentSyncIndex)
+        initializeLocalPlayer()
+    }
+
+
+    fun undoLastStamp() {
+        if (_currentSyncIndex == 0) return
+
+        _currentSyncIndex--
+
+        val oldPos = if (_currentSyncIndex > 0) _activeSyncLines[_currentSyncIndex-1].timestampMs else 0L
+
+        _activeSyncLines = _activeSyncLines.toMutableList().apply {
+            this[_currentSyncIndex] = this[_currentSyncIndex].copy(timestampMs = null)
+        }
+
+        _lyricsSearchState.value = SearchSheetState.Syncing(_activeSyncLines, _currentSyncIndex)
+
+        seekLocalBackward(oldPos ?: 0L)
+    }
+
+    fun finalizeSyncSession(): String {
+        releaseLocalPlayer()
+        _lyricsSearchState.value = SearchSheetState.Idle
+        return _activeSyncLines.joinToString(separator = "\n") { it.lrcLine }
+    }
+
+    fun cancelSync(){
+        releaseLocalPlayer()
+        _lyricsSearchState.value = SearchSheetState.Idle
+    }
+
 
     fun getPathFromUri(context: Context, uriString: String): String {
         val uri = uriString.toUri()
@@ -257,9 +393,9 @@ class TrackEditViewModel @Inject constructor(
             )
             trackRepository.update(newTrack)
             trackMoodRepository.updateTrackMoods(trackId, _uiState.value.draftMoods)
-
-            currentTrack.albumId
-
+            if (_uiState.value.currentLyrics != null) {
+                trackRepository.upsertLyrics(_uiState.value.currentLyrics!!)
+            }
 
             if (initialAlbum != _uiState.value.album) {
 //                    val track = trackRepository.getTrackInfo(trackId).first()
@@ -359,6 +495,7 @@ data class TrackEditUiState(
     val artist: String = "",
     val album: String = "",
     val filePath: String = "",
+    val fileUri: String = "",
     val draftTrackNumber: String = "",
     val draftMoods: List<String> = emptyList(),
     val instrumental: Boolean? = null,
@@ -367,6 +504,7 @@ data class TrackEditUiState(
     val key: String? = null,
     val note: String? = null,
     val scale: String? = null,
+    val currentLyrics: TrackLyrics? = null,
     val isSaving: Boolean = false
 )
 
@@ -374,3 +512,26 @@ data class VoiceState(
     val instrumental: Boolean? = null,
     val voice: String? = null,
 )
+
+sealed interface SearchSheetState {
+    object Idle : SearchSheetState
+    object Loading : SearchSheetState
+    data class Results(val list: List<LRCLibResponse>) : SearchSheetState
+    data class Preview(val selected: LRCLibResponse) : SearchSheetState
+    data class Syncing(val lines: List<SyncableLine>, val currentIndex: Int) : SearchSheetState
+    data class Error(val message: String) : SearchSheetState
+}
+
+data class SyncableLine(
+    val text: String,
+    val timestampMs: Long? = null
+) {
+    val lrcLine: String
+        get() {
+            if (timestampMs == null) return text
+            val minutes = (timestampMs / 1000) / 60
+            val seconds = (timestampMs / 1000) % 60
+            val hundredths = (timestampMs % 1000) / 10
+            return String.format(Locale.ROOT, "[%02d:%02d.%02d]%s", minutes, seconds, hundredths, text)
+        }
+}

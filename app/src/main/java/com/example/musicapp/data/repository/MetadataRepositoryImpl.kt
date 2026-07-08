@@ -15,6 +15,7 @@ import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.ArtistSummary
 import com.example.musicapp.data.remote.dto.DiscogsAlbumArtist
@@ -834,6 +835,63 @@ class OfflineMetadataRepository(
     }
 
 
+    override suspend fun getLyrics(): Flow<ScanProgress> = flow {
+
+        val done = trackRepository.getTrackWithLyrics()
+        val albums = albumRepository.getAll()
+
+        var current = 0
+        val total = albums.size
+
+        for (album in albums) {
+
+            val albumTracks = trackRepository.getAlbumTracks(album.id)
+            val trackLyricsInsert = mutableListOf<TrackLyrics>()
+            val trackInstrumentalUpdate = mutableListOf<Track>()
+
+
+            val progress = ScanProgress(
+                current = current + 1,
+                total = total,
+                currentAlbum = album.title
+            )
+
+            emit(progress)
+
+            current++
+
+
+            for (track in albumTracks) {
+                if (!done.contains(track.trackId)) {
+                    val response = trackRepository.getLyricsLRCLibCached(track)
+                    if (response != null) {
+                        val newLyrics = TrackLyrics(
+                            trackId = track.trackId,
+                            plainLyrics = if (!response.instrumental) response.plainLyrics else "[Instrumental]",
+                            syncedLyrics = if (!response.instrumental) response.syncedLyrics else "[Instrumental]"
+                        )
+                        trackLyricsInsert.add(newLyrics)
+
+                        val tableTrack = trackRepository.getTrackByUri(track.fileUri)
+                        if (tableTrack != null) {
+                            val toUpdate = tableTrack.copy(
+                                instrumental = response.instrumental
+                            )
+                            trackInstrumentalUpdate.add(toUpdate)
+                        }
+                    }
+                }
+            }
+
+
+
+            trackRepository.insertAllLyrics(trackLyricsInsert)
+            trackRepository.updateAll(trackInstrumentalUpdate)
+        }
+    }
+
+
+
 
 
     private suspend fun insertSimilarArtists(artistId: Int, artistName: String){
@@ -1036,7 +1094,7 @@ class OfflineMetadataRepository(
                     moodParty = audioFeatures.moodParty,
                     moodRelaxed = audioFeatures.moodRelaxed,
                     moodSad = audioFeatures.moodSad,
-                    instrumental = audioFeatures.instrumental,
+                    instrumental = audioFeatures.instrumental, //only if currently null/not set by lrclib
                     voice = audioFeatures.voice,
                     bpm = audioFeatures.bpm.roundToInt(),
                     key = "${audioFeatures.key.key} ${audioFeatures.key.scale}"
