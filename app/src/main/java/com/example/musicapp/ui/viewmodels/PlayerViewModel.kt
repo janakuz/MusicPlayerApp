@@ -610,34 +610,71 @@ class PlayerViewModel @Inject constructor(
         currentEntryId: Int? = null,
         entryIds: List<Int>? = null
     ) {
-        val queueTracks = tracks.mapIndexed { id, track ->
-            PlayQueueItemUUID(
-                track = track,
-                originalOrder = id,
-                playlistEntryId = entryIds?.get(id)
-            )
-        }
-
-        val mediaItems = queueTracks.map { track ->
-            toMediaItem(track)
-        }
-
-        val startIndex =
-            if (currentEntryId != null) queueTracks.indexOfFirst { it.playlistEntryId == currentEntryId }
-            else tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
-
-        controller!!.setMediaItems(mediaItems)
-        controller!!.prepare()
-        controller!!.seekTo(startIndex, 0L)
-        controller!!.play()
-
-        _isPlaying.value = true
-        _currentTrack.value = queueTracks[startIndex]
-        updateQueue(
-            queueTracks
-        )
 
         viewModelScope.launch {
+            val (queueTracks, startIndex) = withContext(Dispatchers.Default) {
+                val qTracks = tracks.mapIndexed { id, track ->
+                    PlayQueueItemUUID(
+                        track = track,
+                        originalOrder = id,
+                        playlistEntryId = entryIds?.getOrNull(id)
+                    )
+                }
+
+                val idx = if (currentEntryId != null) {
+                    qTracks.indexOfFirst { it.playlistEntryId == currentEntryId }
+                } else {
+                    tracks.indexOfFirst { it.trackId == selectedTrack.trackId }
+                }.coerceAtLeast(0)
+
+                Pair(qTracks, idx)
+            }
+
+            if (queueTracks.size > 100) {
+                val targetItem = queueTracks[startIndex]
+                val initialMediaItem = toMediaItem(targetItem)
+
+                controller!!.setMediaItems(listOf(initialMediaItem))
+                controller!!.prepare()
+                controller!!.play()
+
+                _isPlaying.value = true
+                _currentTrack.value = targetItem
+
+                val (itemsBefore, itemsAfter) = withContext(Dispatchers.Default) {
+                    val before = queueTracks.subList(0, startIndex).map { toMediaItem(it) }
+                    val after = queueTracks.subList(startIndex + 1, queueTracks.size)
+                        .map { toMediaItem(it) }
+                    Pair(before, after)
+                }
+
+                if (itemsBefore.isNotEmpty()) {
+                    controller!!.addMediaItems(0, itemsBefore)
+                }
+
+                if (itemsAfter.isNotEmpty()) {
+                    controller!!.addMediaItems(itemsAfter)
+                }
+
+                updateQueue(queueTracks)
+        } else {
+
+                val mediaItems = queueTracks.map { track ->
+                    toMediaItem(track)
+                }
+
+                controller!!.setMediaItems(mediaItems)
+                controller!!.prepare()
+                controller!!.seekTo(startIndex, 0L)
+                controller!!.play()
+
+                _isPlaying.value = true
+                _currentTrack.value = queueTracks[startIndex]
+                updateQueue(
+                    queueTracks
+                )
+            }
+
             playQueueRepository.updateShuffle(false)
         }
     }
