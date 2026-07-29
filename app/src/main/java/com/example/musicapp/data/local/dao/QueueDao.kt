@@ -6,7 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.example.musicapp.data.local.entity.QueueItem
-import com.example.musicapp.data.local.model.QueueItemFull
+import com.example.musicapp.data.local.model.PlayQueueItemFull
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -14,7 +14,7 @@ interface QueueDao {
 
     @Query(
         """
-        SELECT q.orderIndex, q.uuid, q.shuffledIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT q.orderIndex as originalOrder, q.uuid as queueId, q.shuffledIndex as shuffledOrder, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM play_queue q
         JOIN tracks t on q.trackId=t.id
@@ -22,11 +22,11 @@ interface QueueDao {
         JOIN albums al on t.albumId=al.id
         ORDER BY q.orderIndex ASC"""
     )
-    fun getQueue(): Flow<List<QueueItemFull>>
+    fun getQueue(): Flow<List<PlayQueueItemFull>>
 
     @Query(
         """
-        SELECT q.orderIndex, q.uuid, q.shuffledIndex, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+        SELECT q.orderIndex as originalOrder, q.uuid as queueId, q.shuffledIndex as shuffledOrder, t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
         al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
         FROM play_queue q
         JOIN tracks t on q.trackId=t.id
@@ -34,7 +34,7 @@ interface QueueDao {
         JOIN albums al on t.albumId=al.id
         ORDER BY q.shuffledIndex ASC"""
     )
-    fun getQueueShuffled(): Flow<List<QueueItemFull>>
+    fun getQueueShuffled(): Flow<List<PlayQueueItemFull>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveQueue(tracks: List<QueueItem>)

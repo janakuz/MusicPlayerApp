@@ -1,6 +1,5 @@
 package com.example.musicapp.data.repository
 
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -9,7 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import com.example.musicapp.data.local.dao.QueueDao
 import com.example.musicapp.data.local.entity.QueueItem
-import com.example.musicapp.data.local.model.QueueItemFull
+import com.example.musicapp.data.local.model.PlayQueueItemFull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -63,7 +62,7 @@ class OfflinePlayQueueRepository(
     }
 
 
-    override fun getCurrentQueue(shuffleOn: Boolean): Flow<List<QueueItemFull>> {
+    override fun getCurrentQueue(shuffleOn: Boolean): Flow<List<PlayQueueItemFull>> {
         if (shuffleOn) return queueDao.getQueueShuffled()
         else return queueDao.getQueue()
     }
@@ -83,22 +82,17 @@ class OfflinePlayQueueRepository(
     override suspend fun shuffleQueue(currentUUID: String) {
         val items = queueDao.getQueue().first().map { item ->
             QueueItem(
-                trackId = item.trackInfo.trackId,
-                orderIndex = item.orderIndex,
-                uuid = item.uuid,
-                shuffledIndex = item.shuffledIndex
+                trackId = item.track.trackId,
+                orderIndex = item.originalOrder,
+                uuid = item.queueId,
+                shuffledIndex = item.shuffledOrder
             )
         }
-
-        Log.d("shuffle", items.joinToString())
 
         val currentItem = items.find { it.uuid == currentUUID }
         val others = items.filter { it.uuid != currentUUID }.shuffled()
 
-        Log.d("shuffle", currentItem?.uuid ?: "")
-
         val updatedList = mutableListOf<QueueItem>()
-
 
         currentItem?.let {
             updatedList.add(it.copy(shuffledIndex = 0))
@@ -108,8 +102,6 @@ class OfflinePlayQueueRepository(
             val newIndex = if (currentItem != null) index + 1 else index
             updatedList.add(item.copy(shuffledIndex = newIndex))
         }
-
-        Log.d("shuffle", updatedList.joinToString())
 
         replaceQueue(updatedList)
     }

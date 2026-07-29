@@ -8,7 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.musicapp.data.local.model.PlayQueueItemUUID
+import com.example.musicapp.data.local.model.PlayQueueItemFull
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.ui.components.TrackList
@@ -18,7 +18,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun PlayQueueScreen(
-    tracks: List<PlayQueueItemUUID>,
+    tracks: List<PlayQueueItemFull>,
     onTrackClick: (VisualTrack) -> Unit,
     onPlayNext: (TrackInfo) -> Unit,
     onAddToQueue: (TrackInfo) -> Unit,
