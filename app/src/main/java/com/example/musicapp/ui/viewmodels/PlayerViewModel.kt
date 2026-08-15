@@ -820,7 +820,8 @@ class PlayerViewModel @Inject constructor(
     fun toggleShuffle() {
 
         viewModelScope.launch {
-            val currentPlayingId = queue.value[controller!!.currentMediaItemIndex].queueId
+            val currentPlayingControllerIndex = controller!!.currentMediaItemIndex
+            val currentPlayingId = queue.value[currentPlayingControllerIndex].queueId
             val newShuffleState = !isShuffleEnabled.value
             val freshQueue = withContext(Dispatchers.Default) {
                 playQueueRepository.updateShuffle(newShuffleState)
@@ -832,14 +833,25 @@ class PlayerViewModel @Inject constructor(
 
             val controller = controller ?: return@launch
 
-            freshQueue.forEachIndexed { newIndex, item ->
-                val oldIndex = findCurrentIndexInController(controller, item.queueId)
-                if (oldIndex != newIndex) {
-                    controller.moveMediaItem(oldIndex, newIndex)
-                }
-            }
+//            freshQueue.forEachIndexed { newIndex, item ->
+//                val oldIndex = findCurrentIndexInController(controller, item.queueId)
+//                if (oldIndex != newIndex) {
+//                    controller.moveMediaItem(oldIndex, newIndex)
+//                }
+//            }
             val startIndex = freshQueue.indexOfFirst { it.queueId == currentPlayingId }
+
+            val (itemsBefore, itemsAfter) = withContext(Dispatchers.Default) {
+                val before = freshQueue.subList(0,startIndex).map { toMediaItem(it) }
+                val after = freshQueue.subList(startIndex+1,freshQueue.size).map { toMediaItem(it) }
+                Pair(before, after)
+            }
+
             _currentTrack.value = freshQueue[startIndex]
+            controller.removeMediaItems(0, currentPlayingControllerIndex)
+            controller.removeMediaItems(1,freshQueue.size)
+            controller.addMediaItems(0, itemsBefore)
+            controller.addMediaItems(itemsAfter)
 
             updatePlaybackSession()
 
