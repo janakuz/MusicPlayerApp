@@ -12,7 +12,7 @@ interface PlayQueueRepository {
 
     val repeatMode: Flow<Int>
 
-    suspend fun saveSession(index: Int, position: Long)
+    suspend fun saveSession(id: String, position: Long)
 
     suspend fun updateShuffle(on: Boolean)
 
