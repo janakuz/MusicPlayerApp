@@ -16,10 +16,10 @@
 local.properties
 secrets.properties
 *.mp3
-*.jpg
+app/*.jpg
+app/*.gif
 *.jpeg
 *.png
-*.gif
 *.wav
 *.flac
 *.db

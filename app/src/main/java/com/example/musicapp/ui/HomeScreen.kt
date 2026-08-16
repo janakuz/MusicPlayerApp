@@ -520,7 +520,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         sortRequest = trackSort,
                         onClick = { track, tracks ->
                             playerViewModel.playTracks(tracks, track)
-                            navController.navigate("nowPlaying")
+//                            navController.navigate("nowPlaying")
                         },
                         onPlayNext = { track ->
                             playerViewModel.playNext(track)
@@ -611,10 +611,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onTrackClick = { track, tracks ->
                             if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
                                 playerViewModel.playTracks(tracks, track)
-                                navController.navigate("nowPlaying")
-                                {
-                                    launchSingleTop = true
-                                }
+//                                navController.navigate("nowPlaying")
+//                                {
+//                                    launchSingleTop = true
+//                                }
                             }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track) },
@@ -926,10 +926,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     PlaylistDetailScreen(
                         onTrackClick = { track, tracks, entryId, entryIds ->
                             playerViewModel.playTracks(tracks, track, entryId, entryIds)
-                            navController.navigate("nowPlaying")
-                            {
-                                launchSingleTop = true
-                            }
+//                            navController.navigate("nowPlaying")
+//                            {
+//                                launchSingleTop = true
+//                            }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
