@@ -1,41 +1,69 @@
-# MusicApp (Personal Android Music Player)
+# DIY Player (Android Music Player)
 
-A self-hosted, local-first Android music player focused on using your own files, rich metadata (Last.fm / MusicBrainz / Discogs), smart playlists, and a reorderable play queue. Built with Jetpack Compose, Room, Hilt, Media3/ExoPlayer, and offline-first design.
+An Android music player for local files. Features rich metadata from music metadata sources (Last.fm / MusicBrainz / Discogs / LRCLib), playlists, and advanced playback features. Built with Jetpack Compose, Room, Retrofit, Hilt, Media3/ExoPlayer, and offline-first design.
 
 > Currently intended for personal use only (APK side-loaded, not published).
 
-## Features (work-in-progress)
+## Features
 
 - Local library scanning (MediaStore / file URIs)
-- Artist / Album / Track data stored in Room with rich metadata
-- Reorderable play queue with persistence
-- Now playing screen with playback controls
-- DTOs and relations for efficient UI views
-- Hilt dependency injection
-- Scrobbling / metadata enrichment (planned)
-- Smart playlists, moods, and tagging (planned)
+- Rich metadata 
+	- bio, active years, similar artists
+	- extensive location tagging and hierarchy, allowing the display of artists from the same local scene
+	- record labels, genres
+- Reorderable play queue with persistence across app restarts
+- Now playing screen with playback controls (including A-B looping and playback speed control) and lyrics
+- Playlist management (create, update, delete, import/export)
+- Playlist sequencing helper using BPM, key compatibility (Camelot wheel), and perceived loudness
+- Mood and audio feature tagging (implemented as a [Python API](https://github.com/janakuz/essentia-api))
 
 ## Tech stack
 
-- Kotlin (preferred version in `libs.versions.toml`)
+- Kotlin
 - Jetpack Compose UI
 - Room for local database
+- Retrofit for API clients and networking
 - Hilt for dependency injection
 - Media3 / ExoPlayer for playback
 - Coil for image loading
 - Coroutines + Flow for reactive state
 - Navigation Compose for in-app navigation
 
+## Visual Showcase
+| Artist & Local Scenes | Album Details | Now Playing & Lyrics |
+
+|:---:|:---:|:---:|
+
+| <img src="Screenshots/artist_profile.gif" width="240" alt="Artist Profile"> | <img src="Screenshots/album_page.gif" width="240" alt="Album View"> | <img src="Screenshots/now_playing.gif" width="240" alt="Now Playing with Lyrics"> |
+
+  
+
+| Playlists | Playlist Sequencer Engine | Filters |
+
+|:---:|:---:|:---:|
+
+| <img src="Screenshots/playlist.jpg" width="240" alt="Playlist Overview"> | <img src="Screenshots/playlist_sequencer.png" width="240" alt="Sequencer Interface"> | <img src="Screenshots/filters.gif" width="240" alt="Filters"> |
+
+
+🎥 High-Speed Walkthrough
+
+[Screenshots/demonstration.mp4](Screenshots/demonstration.mp4)
+
 ## Getting Started
 
-### Prerequisites
+### Quick Install
+
+1. Download the latest `DIY Player.apk`
+2. Sideload and install the APK directly onto your Android device or emulator.
+### Local Development Setup
+#### Prerequisites
 
 - Android Studio (Giraffe or later recommended)
 - Android SDK matching `compileSdk` / `targetSdk` (see `build.gradle`)
 - Emulator or physical device (grant `READ_MEDIA_AUDIO` or legacy storage permission)
 - Git (for cloning)
 
-### Setup
+#### Setup
 
 1. Clone the repo:
    ```bash
@@ -51,10 +79,7 @@ A self-hosted, local-first Android music player focused on using your own files,
 	```
 
 4. Grant necessary runtime permissions on the device/emulator when prompted:
-	- On Android 13+: `READ_MEDIA_AUDIO`
-	- On older versions: `READ_EXTERNAL_STORAGE`
-	
-### Running
+#### Running
 
 - Build and run the app from Android Studio.
     
