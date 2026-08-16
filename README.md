@@ -31,18 +31,14 @@ An Android music player for local files. Features rich metadata from music metad
 
 ## Visual Showcase
 | Artist & Local Scenes | Album Details | Now Playing & Lyrics |
-
 |:---:|:---:|:---:|
-
 | <img src="Screenshots/artist_profile.gif" width="240" alt="Artist Profile"> | <img src="Screenshots/album_page.gif" width="240" alt="Album View"> | <img src="Screenshots/now_playing.gif" width="240" alt="Now Playing with Lyrics"> |
 
   
 
 | Playlists | Playlist Sequencer Engine | Filters |
-
 |:---:|:---:|:---:|
-
-| <img src="Screenshots/playlist.jpg" width="240" alt="Playlist Overview"> | <img src="Screenshots/playlist_sequencer.png" width="240" alt="Sequencer Interface"> | <img src="Screenshots/filters.gif" width="240" alt="Filters"> |
+| <img src="Screenshots/playlist.jpg" width="240" alt="Playlist Overview"> | <img src="Screenshots/playlist_sequencer.jpg" width="240" alt="Sequencer Interface"> | <img src="Screenshots/filters.gif" width="240" alt="Filters"> |
 
 
 🎥 High-Speed Walkthrough
