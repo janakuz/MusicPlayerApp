@@ -131,7 +131,7 @@ class TrackRepositoryImpl(
 
         val response = audioFeaturesApi.getAudioFeatures(file)
 
-        return response
+        return response.results
     }
 
 

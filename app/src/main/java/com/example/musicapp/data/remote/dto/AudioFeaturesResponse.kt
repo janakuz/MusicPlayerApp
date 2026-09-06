@@ -25,3 +25,8 @@ data class Key(
     val key: String?,
     val scale: String?
 )
+
+
+data class AudioFeaturesResponseWrapper(
+    val results: List<AudioFeaturesResponse>
+)

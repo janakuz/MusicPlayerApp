@@ -1,6 +1,7 @@
 package com.example.musicapp.data.remote.service
 
 import com.example.musicapp.data.remote.dto.AudioFeaturesResponse
+import com.example.musicapp.data.remote.dto.AudioFeaturesResponseWrapper
 import okhttp3.MultipartBody
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -10,6 +11,6 @@ interface EssentiaApiService {
 
     @Multipart
     @POST("/analyze-batch")
-    suspend fun getAudioFeatures(@Part audioFile: MultipartBody.Part): List<AudioFeaturesResponse>
+    suspend fun getAudioFeatures(@Part audioFile: MultipartBody.Part): AudioFeaturesResponseWrapper
 
 }
