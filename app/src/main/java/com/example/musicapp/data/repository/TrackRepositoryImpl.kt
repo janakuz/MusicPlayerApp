@@ -31,7 +31,11 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.util.concurrent.CountDownLatch
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.coroutines.resumeWithException
 
 class TrackRepositoryImpl(
@@ -88,31 +92,52 @@ class TrackRepositoryImpl(
         return trackDao.getAllUnenriched()
     }
 
-    override suspend fun getAudioFeatures(context: Context, track: Track): AudioFeaturesResponse? {
-        var tempFile: File? = null
-        var response: AudioFeaturesResponse? = null
-        try {
-            tempFile = trimAudio(context, track.fileUri.toUri(), track.duration)
 
-            val requestFile = tempFile.asRequestBody("audio/mpeg".toMediaTypeOrNull())
-            val file = MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
+    fun createAudioZip(audioFiles: List<File>, outputZipFile: File) {
+        ZipOutputStream(FileOutputStream(outputZipFile)).use { zipOut ->
+            for (file in audioFiles) {
+                FileInputStream(file).use { fileIn ->
+                    val zipEntry = ZipEntry(file.name)
+                    zipOut.putNextEntry(zipEntry)
 
-            response = audioFeaturesApi.getAudioFeatures(file)
-
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            tempFile?.delete()
+                    fileIn.copyTo(zipOut)
+                    zipOut.closeEntry()
+                }
+            }
         }
+    }
+
+    override suspend fun getAudioFeatures(context: Context, tracks: List<Track>): List<AudioFeaturesResponse> {
+
+        val audioFiles = mutableListOf<File>()
+
+        val zipFile = File(context.cacheDir, "upload.zip")
+
+
+        for (track in tracks) {
+            try {
+                val tempFile = trimAudio(context, track.fileUri.toUri(), track.duration, track.id)
+                audioFiles.add(tempFile)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        createAudioZip(audioFiles, zipFile)
+
+        val requestFile = zipFile.asRequestBody("application/zip".toMediaTypeOrNull())
+        val file = MultipartBody.Part.createFormData("file", zipFile.name, requestFile)
+
+        val response = audioFeaturesApi.getAudioFeatures(file)
 
         return response
     }
 
 
     @OptIn(UnstableApi::class)
-    private suspend fun trimAudio(context: Context, inputUri: Uri, duration: Long): File {
-        val outputCacheFile = File(context.cacheDir, "temp_trim_${System.currentTimeMillis()}.mp3")
+    private suspend fun trimAudio(context: Context, inputUri: Uri, duration: Long, trackId: Int): File {
+        val outputCacheFile = File(context.cacheDir, "$trackId.mp3")
 
 
         return suspendCancellableCoroutine { continuation ->

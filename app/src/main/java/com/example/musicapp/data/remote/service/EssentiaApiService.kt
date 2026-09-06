@@ -9,7 +9,7 @@ import retrofit2.http.Part
 interface EssentiaApiService {
 
     @Multipart
-    @POST("/analyze")
-    suspend fun getAudioFeatures(@Part audioFile: MultipartBody.Part): AudioFeaturesResponse
+    @POST("/analyze-batch")
+    suspend fun getAudioFeatures(@Part audioFile: MultipartBody.Part): List<AudioFeaturesResponse>
 
 }
