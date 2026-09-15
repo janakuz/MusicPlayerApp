@@ -9,6 +9,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
@@ -114,24 +115,33 @@ class TrackRepositoryImpl(
         val zipFile = File(context.cacheDir, "upload.zip")
 
 
-        for (track in tracks) {
-            try {
-                val tempFile = trimAudio(context, track.fileUri.toUri(), track.duration, track.id)
-                audioFiles.add(tempFile)
+        try {
+            for (track in tracks) {
+                try {
+                    val tempFile =
+                        trimAudio(context, track.fileUri.toUri(), track.duration, track.id)
+                    audioFiles.add(tempFile)
 
-            } catch (e: Exception) {
-                e.printStackTrace()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            createAudioZip(audioFiles, zipFile)
+
+            val requestFile = zipFile.asRequestBody("application/zip".toMediaTypeOrNull())
+            val file = MultipartBody.Part.createFormData("file", zipFile.name, requestFile)
+
+            val response = audioFeaturesApi.getAudioFeatures(file)
+
+            return response.results
+        }
+        finally {
+            if (zipFile.exists()) zipFile.delete()
+            for (file in audioFiles) {
+                if (file.exists()) file.delete()
             }
         }
-
-        createAudioZip(audioFiles, zipFile)
-
-        val requestFile = zipFile.asRequestBody("application/zip".toMediaTypeOrNull())
-        val file = MultipartBody.Part.createFormData("file", zipFile.name, requestFile)
-
-        val response = audioFeaturesApi.getAudioFeatures(file)
-
-        return response.results
     }
 
 
@@ -159,6 +169,10 @@ class TrackRepositoryImpl(
                 .setRemoveVideo(true)
                 .build()
 
+            val composition = Composition.Builder(EditedMediaItemSequence.Builder(editedMediaItem).build())
+                .setTransmuxAudio(true)
+                .build()
+
             val mainExecutor = context.mainExecutor
             mainExecutor.execute {
                 try {
@@ -184,7 +198,7 @@ class TrackRepositoryImpl(
                         }
                     })
 
-                    transformer.start(editedMediaItem, outputCacheFile.absolutePath)
+                    transformer.start(composition, outputCacheFile.absolutePath)
 
                     continuation.invokeOnCancellation {
                         transformer.cancel()
@@ -196,7 +210,8 @@ class TrackRepositoryImpl(
                     }
                 }
             }
-        }    }
+        }
+    }
 
 
     override suspend fun getAlbumTracks(albumId: Int): List<TrackInfo> {
