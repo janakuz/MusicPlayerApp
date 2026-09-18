@@ -31,6 +31,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okio.Path.Companion.toPath
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -118,8 +119,9 @@ class TrackRepositoryImpl(
         try {
             for (track in tracks) {
                 try {
+                    val extension = track.filePath.split(".").last()
                     val tempFile =
-                        trimAudio(context, track.fileUri.toUri(), track.duration, track.id)
+                        trimAudio(context, track.fileUri.toUri(), track.duration, track.id, extension)
                     audioFiles.add(tempFile)
 
                 } catch (e: Exception) {
@@ -129,12 +131,16 @@ class TrackRepositoryImpl(
 
             createAudioZip(audioFiles, zipFile)
 
-            val requestFile = zipFile.asRequestBody("application/zip".toMediaTypeOrNull())
-            val file = MultipartBody.Part.createFormData("file", zipFile.name, requestFile)
+            if (zipFile.length() > 1024) {
 
-            val response = audioFeaturesApi.getAudioFeatures(file)
+                val requestFile = zipFile.asRequestBody("application/zip".toMediaTypeOrNull())
+                val file = MultipartBody.Part.createFormData("file", zipFile.name, requestFile)
 
-            return response.results
+                val response = audioFeaturesApi.getAudioFeatures(file)
+
+                return response.results
+            }
+            return emptyList()
         }
         finally {
             if (zipFile.exists()) zipFile.delete()
@@ -146,8 +152,8 @@ class TrackRepositoryImpl(
 
 
     @OptIn(UnstableApi::class)
-    private suspend fun trimAudio(context: Context, inputUri: Uri, duration: Long, trackId: Int): File {
-        val outputCacheFile = File(context.cacheDir, "$trackId.mp3")
+    private suspend fun trimAudio(context: Context, inputUri: Uri, duration: Long, trackId: Int, extension: String): File {
+        val outputCacheFile = File(context.cacheDir, "$trackId.$extension")
 
 
         return suspendCancellableCoroutine { continuation ->
@@ -176,7 +182,7 @@ class TrackRepositoryImpl(
             val mainExecutor = context.mainExecutor
             mainExecutor.execute {
                 try {
-                    val transformer = Transformer.Builder(context).build()
+                    val transformer = Transformer.Builder(context).experimentalSetTrimOptimizationEnabled(true).build()
 
                     transformer.addListener(object : Transformer.Listener {
                         override fun onCompleted(composition: Composition, exportResult: ExportResult) {
