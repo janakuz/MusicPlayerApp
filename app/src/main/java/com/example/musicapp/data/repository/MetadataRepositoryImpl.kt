@@ -1082,7 +1082,7 @@ class OfflineMetadataRepository(
 
         val results = mutableListOf<Track>()
 
-        val BATCH_SIZE = 100
+        val BATCH_SIZE = 16
 
         allTracks.chunked(BATCH_SIZE).forEach { batch ->
             val audioFeatures = trackRepository.getAudioFeatures(context, batch)
@@ -1115,7 +1115,7 @@ class OfflineMetadataRepository(
 
             trackRepository.updateAll(results)
 
-            current += 100
+            current += BATCH_SIZE
 
             val progress = ScanProgress(
                 current = current,
