@@ -36,7 +36,7 @@ interface TrackRepository {
 
     suspend fun getAllUnEnriched(): List<Track>
 
-    suspend fun getAudioFeatures(context: Context, track: Track): AudioFeaturesResponse?
+    suspend fun getAudioFeatures(context: Context, tracks: List<Track>): List<AudioFeaturesResponse>
 
     suspend fun getAlbumTracks(albumId: Int): List<TrackInfo>
 

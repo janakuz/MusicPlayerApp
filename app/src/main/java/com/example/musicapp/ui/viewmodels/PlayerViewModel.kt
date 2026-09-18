@@ -731,6 +731,7 @@ class PlayerViewModel @Inject constructor(
             }
 
             playQueueRepository.updateShuffle(false)
+            controller!!.shuffleModeEnabled = false
         }
     }
 

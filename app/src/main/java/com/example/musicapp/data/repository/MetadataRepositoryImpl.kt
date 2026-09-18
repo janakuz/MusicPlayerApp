@@ -35,6 +35,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
+import kotlin.collections.chunked
 import kotlin.collections.orEmpty
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -1074,49 +1075,55 @@ class OfflineMetadataRepository(
 
     override suspend fun extractAudioFeatures(context: Context): Flow<ScanProgress> = flow {
         val allTracks = trackRepository.getAllUnEnriched()
+        val trackLookup = allTracks.associateBy { it.id }
 
         var current = 0
         val total = allTracks.size
 
-        for (track in allTracks){
+        val results = mutableListOf<Track>()
 
-            val audioFeatures = trackRepository.getAudioFeatures(context, track)
+        val BATCH_SIZE = 16
 
-            if (audioFeatures != null) {
-                val updatedTrack = track.copy(
-                    loudness = audioFeatures.loudness,
-                    dynamicComplexity = audioFeatures.dynamicComplexity,
-                    approachability = audioFeatures.approachability,
-                    engagement = audioFeatures.engagement,
-                    danceability = audioFeatures.danceability,
-                    moodAggressive = audioFeatures.moodAggressive,
-                    moodHappy = audioFeatures.moodHappy,
-                    moodParty = audioFeatures.moodParty,
-                    moodRelaxed = audioFeatures.moodRelaxed,
-                    moodSad = audioFeatures.moodSad,
-                    instrumental = audioFeatures.instrumental, //only if currently null/not set by lrclib
-                    voice = audioFeatures.voice,
-                    bpm = audioFeatures.bpm.roundToInt(),
-                    key = "${audioFeatures.key.key} ${audioFeatures.key.scale}"
-                )
+        allTracks.chunked(BATCH_SIZE).forEach { batch ->
+            val audioFeatures = trackRepository.getAudioFeatures(context, batch)
 
-                trackRepository.update(updatedTrack)
+            for (trackFeatures in audioFeatures) {
+                val track = trackLookup[trackFeatures.trackId]
+                if (track != null) {
+                    val updatedTrack = track.copy(
+                        loudness = trackFeatures.loudness,
+                        dynamicComplexity = trackFeatures.dynamicComplexity,
+                        approachability = trackFeatures.approachability,
+                        engagement = trackFeatures.engagement,
+                        danceability = trackFeatures.danceability,
+                        moodAggressive = trackFeatures.moodAggressive,
+                        moodHappy = trackFeatures.moodHappy,
+                        moodParty = trackFeatures.moodParty,
+                        moodRelaxed = trackFeatures.moodRelaxed,
+                        moodSad = trackFeatures.moodSad,
+                        instrumental = track.instrumental ?: trackFeatures.instrumental,
+                        voice = trackFeatures.voice,
+                        bpm = trackFeatures.bpm.roundToInt(),
+                        key = "${trackFeatures.key.key} ${trackFeatures.key.scale}"
+                    )
 
-                trackMoodRepository.addTrackMoods(track.id, audioFeatures.moods)
+                    trackMoodRepository.addTrackMoods(track.id, trackFeatures.moods)
 
+                    results.add(updatedTrack)
+                }
             }
 
+            trackRepository.updateAll(results)
+
+            current += BATCH_SIZE
+
             val progress = ScanProgress(
-                current = current + 1,
+                current = current,
                 total = total,
-                currentAlbum = track.title
+                currentAlbum = ""
             )
 
             emit(progress)
-
-            current++
-
-
         }
     }
 

@@ -3,6 +3,7 @@ package com.example.musicapp.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 data class AudioFeaturesResponse(
+    @SerializedName("track_id") val trackId: Int,
     val bpm: Double,
     val key: Key,
     val loudness: Double,
@@ -23,4 +24,9 @@ data class AudioFeaturesResponse(
 data class Key(
     val key: String?,
     val scale: String?
+)
+
+
+data class AudioFeaturesResponseWrapper(
+    val results: List<AudioFeaturesResponse>
 )
