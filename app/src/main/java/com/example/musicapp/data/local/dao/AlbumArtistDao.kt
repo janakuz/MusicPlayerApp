@@ -92,7 +92,7 @@ interface AlbumArtistDao {
     JOIN album_artists aa ON aa.albumId = a.id
     JOIN artists ar ON aa.artistId = ar.id
     WHERE ar.id = :artistId
-    ORDER BY a.releaseDate ASC
+    ORDER BY a.duration ASC
     """
     )
     fun getAlbumsByArtistDuration(artistId: Int): Flow<List<AlbumInfo>>
