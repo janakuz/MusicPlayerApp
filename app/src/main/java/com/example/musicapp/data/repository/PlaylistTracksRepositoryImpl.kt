@@ -5,6 +5,7 @@ import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
+import okio.`-DeprecatedOkio`
 
 class PlaylistTracksRepositoryImpl(
     private val playlistTracksDao: PlaylistTracksDao,
@@ -38,6 +39,27 @@ class PlaylistTracksRepositoryImpl(
         playlistTracksDao.insertTrackToPlaylist(entry)
         val playlist = playlistRepository.getPlaylistById(playlistId)
         playlistRepository.update(playlist)
+    }
+
+    override suspend fun removeDuplicates(deduplicated: List<PlaylistTracks>, playlistId: Int) {
+        val withPositions = deduplicated.mapIndexed { index, entry -> entry.copy(position = index) }
+        playlistTracksDao.replacePlaylistOrder(playlistId, withPositions)
+    }
+
+    override suspend fun findDuplicates(playlistId: Int): DuplicatesWithCount {
+        val current = playlistTracksDao.getAllEntries(playlistId)
+
+        val seenTrackIds = mutableSetOf<Int>()
+        val deduplicated = mutableListOf<PlaylistTracks>()
+
+        for (entry in current){
+            if (!seenTrackIds.contains(entry.trackId)) {
+                seenTrackIds.add(entry.trackId)
+                deduplicated.add(entry)
+            }
+        }
+
+        return DuplicatesWithCount(deduplicated = deduplicated, countDuplicates = current.size - deduplicated.size)
     }
 
     override fun getAllTracksInPlaylist(

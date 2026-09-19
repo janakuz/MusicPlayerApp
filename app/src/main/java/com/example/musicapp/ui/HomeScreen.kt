@@ -60,6 +60,7 @@ import com.example.musicapp.R
 import com.example.musicapp.data.repository.SearchResult
 import com.example.musicapp.ui.components.AddToPlaylistDialog
 import com.example.musicapp.ui.components.CreatePlaylistDialog
+import com.example.musicapp.ui.components.DeduplicatePlaylistDialog
 import com.example.musicapp.ui.components.DuplicateTracksDialog
 import com.example.musicapp.ui.components.FilterDrawerContent
 import com.example.musicapp.ui.components.LibraryTopBar
@@ -189,6 +190,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val addState by playlistViewModel.addToPlaylistState.collectAsState()
     val playlistUiStates by playlistViewModel.playlists.collectAsState()
     val playlistDuplicates by playlistViewModel.duplicateTracks.collectAsState()
+    val playlistDeduplicateState by playlistViewModel.deduplicateConfirmation.collectAsState()
 
     val filterViewModel: FilterViewModel = hiltViewModel()
 
@@ -385,6 +387,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     navBackStackEntry?.arguments?.getString("playlistId") ?: ""
 
                                 navController.navigate("sequencer?playlistId=$playlistId")
+                            },
+                            onDeduplicate = {
+                                val playlistId =
+                                    navBackStackEntry?.arguments?.getString("playlistId") ?: ""
+
+                                playlistViewModel.confirmDuplicates(playlistId.toInt())
                             }
                         )
                     }
@@ -1023,6 +1031,14 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         playlistViewModel.addToPlaylist(selectedTracks, addState.playlist!!, false)
                     },
                     onDismiss = { playlistViewModel.hideDuplicateDialog() }
+                )
+            }
+
+            if (playlistDeduplicateState.showConfirmDialog){
+                DeduplicatePlaylistDialog(
+                    state = playlistDeduplicateState,
+                    onConfirm = { playlistViewModel.removeDuplicates() },
+                    onDismiss = { playlistViewModel.onDismissDeduplicate() }
                 )
             }
 

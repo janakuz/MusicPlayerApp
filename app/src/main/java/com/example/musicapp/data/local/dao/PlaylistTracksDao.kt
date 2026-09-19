@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
@@ -75,6 +76,12 @@ interface PlaylistTracksDao {
     """
     )
     fun getALl(): Flow<List<PlaylistTrack>>
+
+    @Query("SELECT * " +
+            "FROM playlist_tracks " +
+            "WHERE playlistId = :playlistId " +
+            "ORDER BY position")
+    suspend fun getAllEntries(playlistId: Int): List<PlaylistTracks>
 
 
     @Query(

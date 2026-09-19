@@ -13,6 +13,10 @@ interface PlaylistTracksRepository {
 
     suspend fun insertTrackToPlaylist(playlistId: Int, trackId: Int)
 
+    suspend fun removeDuplicates(deduplicated: List<PlaylistTracks>, playlistId: Int)
+
+    suspend fun findDuplicates(playlistId: Int): DuplicatesWithCount
+
     fun getAllTracksInPlaylist(
         playlistId: Int,
         sortBy: String,
@@ -31,3 +35,8 @@ interface PlaylistTracksRepository {
 
     suspend fun getEntry(entryId: Int): PlaylistTracks?
 }
+
+data class DuplicatesWithCount(
+    val deduplicated: List<PlaylistTracks>,
+    val countDuplicates: Int
+)

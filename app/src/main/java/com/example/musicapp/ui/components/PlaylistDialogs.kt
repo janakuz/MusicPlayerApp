@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
+import com.example.musicapp.ui.viewmodels.DeduplicateState
 
 @Composable
 fun AddToPlaylistDialog(
@@ -239,6 +240,50 @@ fun DuplicateTracksDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun DeduplicatePlaylistDialog(
+    state: DeduplicateState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (state.duplicateCount > 0) "Remove Duplicates"
+                else "No Duplicates"
+            )
+        },
+        text = {
+            Text(
+                if (state.duplicateCount > 0) {
+                    "Found ${state.duplicateCount} duplicate ${if (state.duplicateCount == 1) "track" else "tracks"}. Remove them from this playlist?"
+                } else {
+                    "This playlist does not contain any duplicate tracks."
+                }
+            )
+        },
+        confirmButton = {
+            if (state.duplicateCount > 0) {
+                Button(onClick = onConfirm) {
+                    Text("Remove")
+                }
+            } else {
+                Button(onClick = onDismiss) {
+                    Text("OK")
+                }
+            }
+        },
+        dismissButton = {
+            if (state.duplicateCount > 0) {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
             }
         }
     )

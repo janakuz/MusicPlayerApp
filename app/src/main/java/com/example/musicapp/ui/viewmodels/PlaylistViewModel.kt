@@ -1,10 +1,10 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
@@ -48,6 +48,9 @@ class PlaylistViewModel @Inject constructor(
 
     private val _duplicateTracks = MutableStateFlow<List<TrackInfo>>(emptyList())
     val duplicateTracks = _duplicateTracks.asStateFlow()
+
+    private val _deduplicateConfirmation = MutableStateFlow(DeduplicateState())
+    val deduplicateConfirmation = _deduplicateConfirmation.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val playlists: StateFlow<List<PlaylistUiModel>> = userPreferencesRepository.playlistsSortOption
@@ -139,6 +142,29 @@ class PlaylistViewModel @Inject constructor(
             }
             hideAddDialog()
         }
+    }
+
+    fun confirmDuplicates(playlistId: Int){
+        viewModelScope.launch {
+            val unique = playlistTracksRepository.findDuplicates(playlistId)
+            _deduplicateConfirmation.update { it.copy(
+                showConfirmDialog = true,
+                playlistId = playlistId,
+                duplicateCount = unique.countDuplicates,
+                unique = unique.deduplicated)
+            }
+        }
+    }
+
+    fun removeDuplicates(){
+        viewModelScope.launch {
+            playlistTracksRepository.removeDuplicates(_deduplicateConfirmation.value.unique, _deduplicateConfirmation.value.playlistId)
+            _deduplicateConfirmation.value = DeduplicateState()
+        }
+    }
+
+    fun onDismissDeduplicate(){
+        _deduplicateConfirmation.value = DeduplicateState()
     }
 
     fun onAddToPlaylistArtist(artistId: Int) {
@@ -248,3 +274,10 @@ data class AddToPlaylistState(
     val isShowing: Boolean,
     val playlist: Playlist? = null,
     val checkedDuplicates: Boolean = false)
+
+data class DeduplicateState(
+    val showConfirmDialog: Boolean = false,
+    val unique: List<PlaylistTracks> = emptyList(),
+    val duplicateCount: Int = 0,
+    val playlistId: Int = -1
+)
