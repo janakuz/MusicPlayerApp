@@ -191,12 +191,6 @@ fun DuplicateTracksDialog(
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Checkbox(
-                                checked = isChecked,
-                                onCheckedChange = { checked ->
-                                    checkedStates = checkedStates + (track.trackId to checked)
-                                }
-                            )
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
@@ -209,13 +203,20 @@ fun DuplicateTracksDialog(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = track.artistName,
+                                    text = "${track.artistName} • ${track.albumTitle}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+                            Checkbox(
+                                checked = isChecked,
+                                onCheckedChange = { checked ->
+                                    checkedStates = checkedStates + (track.trackId to checked)
+                                }
+                            )
+
                         }
                     }
                 }
