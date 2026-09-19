@@ -60,6 +60,7 @@ import com.example.musicapp.R
 import com.example.musicapp.data.repository.SearchResult
 import com.example.musicapp.ui.components.AddToPlaylistDialog
 import com.example.musicapp.ui.components.CreatePlaylistDialog
+import com.example.musicapp.ui.components.DuplicateTracksDialog
 import com.example.musicapp.ui.components.FilterDrawerContent
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.components.NowPlayingBar
@@ -187,6 +188,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val allPlaylists by playlistViewModel.playlistsForAdd.collectAsState()
     val addState by playlistViewModel.addToPlaylistState.collectAsState()
     val playlistUiStates by playlistViewModel.playlists.collectAsState()
+    val playlistDuplicates by playlistViewModel.duplicateTracks.collectAsState()
 
     val filterViewModel: FilterViewModel = hiltViewModel()
 
@@ -1011,6 +1013,16 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     onConfirm = {
                         playlistViewModel.createPlaylistAndAdd(addState.trackIds)
                     }
+                )
+            }
+
+            if (playlistDuplicates.isNotEmpty() && addState.playlist != null){
+                DuplicateTracksDialog(
+                    duplicateCandidates = playlistDuplicates,
+                    onConfirmAddDuplicates = { selectedTracks ->
+                        playlistViewModel.addToPlaylist(selectedTracks, addState.playlist!!, false)
+                    },
+                    onDismiss = { playlistViewModel.hideDuplicateDialog() }
                 )
             }
 

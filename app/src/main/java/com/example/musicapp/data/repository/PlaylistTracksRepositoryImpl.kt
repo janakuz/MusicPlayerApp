@@ -3,6 +3,7 @@ package com.example.musicapp.data.repository
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
+import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
 
 class PlaylistTracksRepositoryImpl(
@@ -67,6 +68,13 @@ class PlaylistTracksRepositoryImpl(
         playlistTracksDao.insertAll(entries)
         val playlist = playlistRepository.getPlaylistById(playlistId)
         playlistRepository.update(playlist)
+    }
+
+    override suspend fun getDuplicates(
+        playlistId: Int,
+        trackIds: List<Int>
+    ): List<TrackInfo> {
+        return playlistTracksDao.getDuplicates(playlistId, trackIds)
     }
 
     override fun getAll(): Flow<List<PlaylistTrack>> {

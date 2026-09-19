@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
+import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -74,6 +75,21 @@ interface PlaylistTracksDao {
     """
     )
     fun getALl(): Flow<List<PlaylistTrack>>
+
+
+    @Query(
+        """
+        SELECT DISTINCT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
+            al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, 
+            t.filePath as filePath, t.albumId as albumId, t.artistId as artistId
+        FROM playlist_tracks pt
+        JOIN tracks t on pt.trackId=t.id
+        JOIN artists ar on t.artistId=ar.id
+        JOIN albums al on t.albumId=al.id
+        WHERE pt.playlistId = :playlistId AND pt.trackId in (:trackIds)
+        """
+    )
+    suspend fun getDuplicates(playlistId: Int, trackIds: List<Int>): List<TrackInfo>
 
 
     @Query(

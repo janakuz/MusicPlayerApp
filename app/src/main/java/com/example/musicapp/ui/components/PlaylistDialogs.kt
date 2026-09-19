@@ -2,6 +2,7 @@ package com.example.musicapp.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -23,11 +26,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.ui.viewmodels.CreatePlaylistState
 
 @Composable
@@ -135,6 +145,94 @@ fun CreatePlaylistDialog(
                 enabled = isNameValid
             ) {
                 Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
+@Composable
+fun DuplicateTracksDialog(
+    duplicateCandidates: List<TrackInfo>,
+    onConfirmAddDuplicates: (List<Int>) -> Unit,
+    onDismiss: () -> Unit
+) {
+
+    var checkedStates by remember(duplicateCandidates) {
+        mutableStateOf(duplicateCandidates.associate { it.trackId to true })
+    }
+
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Duplicate Tracks") },
+        text = {
+            Column {
+                Text(
+                    text = "Found duplicate tracks in this playlist. Unique tracks were added. " +
+                            "Choose which duplicates to keep:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn {
+                    items(duplicateCandidates) { track ->
+                        val isChecked = checkedStates[track.trackId] != false
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    checkedStates = checkedStates + (track.trackId to !isChecked)
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = isChecked,
+                                onCheckedChange = { checked ->
+                                    checkedStates = checkedStates + (track.trackId to checked)
+                                }
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 8.dp)
+                            ) {
+                                Text(
+                                    text = track.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = track.artistName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val approvedDuplicates = duplicateCandidates.filter { checkedStates[it.trackId] == true }
+                    if (approvedDuplicates.isNotEmpty()) {
+                        onConfirmAddDuplicates(approvedDuplicates.map { it.trackId })
+                    }
+                    onDismiss()
+                }
+            ) {
+                val checkedCount = checkedStates.values.count { it }
+                Text("Add Selected ($checkedCount)")
             }
         },
         dismissButton = {

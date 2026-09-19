@@ -2,6 +2,7 @@ package com.example.musicapp.data.repository
 
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
+import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
 
 interface PlaylistTracksRepository {
@@ -21,6 +22,8 @@ interface PlaylistTracksRepository {
     suspend fun getTracksInPlaylist(playlistId: Int): List<PlaylistTrack>
 
     suspend fun addTracksToPlaylist(playlistId: Int, trackIds: List<Int>)
+
+    suspend fun getDuplicates(playlistId: Int, trackIds: List<Int>): List<TrackInfo>
 
     fun getAll(): Flow<List<PlaylistTrack>>
 
