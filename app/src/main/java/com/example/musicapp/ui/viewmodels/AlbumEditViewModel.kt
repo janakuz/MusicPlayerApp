@@ -126,7 +126,7 @@ class AlbumEditViewModel @Inject constructor(
                     draftReleaseDate = album.releaseDate ?: "",
                     draftImageUrl = album.image ?: "",
                     draftLabel = album.label ?: "",
-                    availableImages = if (album.image != null) listOf(
+                    availableImages = if (!album.image.isNullOrEmpty()) listOf(
                         ImageOption(
                             url = album.image,
                             source = ""
@@ -170,6 +170,20 @@ class AlbumEditViewModel @Inject constructor(
         _uiState.update { it.copy(draftImageUrl = newImageUrl, newlyUploaded = uploaded, availableImages = newOptions) }
     }
 
+    fun onClearImage(){
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.availableImages)
+        if (!newOptions.contains(ImageOption("NO_SELECTION", "None"))) {
+            newOptions.add(0, ImageOption("NO_SELECTION", "None"))
+
+            _uiState.update { it.copy(draftImageUrl = "", availableImages = newOptions) }
+        }
+    }
+
+    fun resetImage(){
+        _uiState.update { it.copy(draftImageUrl = initialImageUrl ?: "") }
+    }
+
     fun onLabelChange(newLabel: String) {
         _uiState.update { it.copy(draftLabel = newLabel) }
     }
@@ -187,6 +201,8 @@ class AlbumEditViewModel @Inject constructor(
     suspend fun getAllImageOptions(mbId: String?) {
         val options = mutableListOf<ImageOption>()
         val albumTracks = trackRepository.getAlbumTracks(albumId)
+
+        if (initialImageUrl.isNullOrEmpty()) options.add(0, ImageOption(url = "NO_SELECTION", source = "None"))
 
         val customImages = albumRepository.getCustomImages(albumId)
         val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }
@@ -211,9 +227,6 @@ class AlbumEditViewModel @Inject constructor(
 
         }
 
-        if (_uiState.value.draftImageUrl.isNotEmpty() && options.none { it.url == _uiState.value.draftImageUrl }) {
-            options.add(0, ImageOption(url = _uiState.value.draftImageUrl, source = "Custom"))
-        }
         if (options.isNotEmpty()) {
             // if draft image url not in options, set draft to options[0]
             val current = options.find { it.url == _uiState.value.draftImageUrl }
@@ -372,6 +385,7 @@ data class AlbumEditUiState(
     val draftReleaseDate: String = "",
     val draftImageUrl: String = "",
     val newlyUploaded: List<String> = emptyList<String>(),
+    val currentSelectionEmpty: Boolean = false,
     val availableImages: List<ImageOption> = emptyList(),
     val draftLabel: String = "",
     val draftGenres: List<String> = emptyList(),

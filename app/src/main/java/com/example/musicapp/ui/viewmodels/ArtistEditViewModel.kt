@@ -154,6 +154,7 @@ class ArtistEditViewModel @Inject constructor(
                     draftBio = artist.bio ?: "",
                     draftImageUrl = artist.image ?: "",
                     imageOptions = getCustomImages(),
+                    currentSelectionEmpty = initialImageUrl.isNullOrEmpty(),
                     draftGenres = genres,
                     draftIsDefunct = artist.isDefunct,
                     draftCountry = artist.country ?: "",
@@ -216,6 +217,10 @@ class ArtistEditViewModel @Inject constructor(
         _uiState.update { it.copy(draftImageUrl = newImageUrl) }
     }
 
+    fun resetImage(){
+        _uiState.update { it.copy(draftImageUrl = initialImageUrl ?: "") }
+    }
+
     fun onCustomImageSelect(newImageUrl: String) {
         val newOptions = mutableListOf<ImageOption>()
         newOptions.addAll(_uiState.value.imageOptions)
@@ -241,9 +246,21 @@ class ArtistEditViewModel @Inject constructor(
 
     suspend fun getCustomImages(): List<ImageOption> {
         val customImages = artistRepository.getCustomImages(artistId)
-        val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }
+        val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }.toMutableList()
+        if (initialImageUrl.isNullOrEmpty()) customImageOptions.add(0, ImageOption(url = "NO_SELECTION", source = "None"))
         return customImageOptions
     }
+
+    fun onClearImage(){
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.imageOptions)
+        if (!newOptions.contains(ImageOption("NO_SELECTION", "None"))) {
+            newOptions.add(0, ImageOption("NO_SELECTION", "None"))
+
+            _uiState.update { it.copy(draftImageUrl = "", imageOptions = newOptions) }
+        }
+    }
+
 
     suspend fun getLastfmInfo(mbId: String?, name: String) {
         val lastFm = artistRepository.getArtistBio(mbId, name)
@@ -408,6 +425,7 @@ data class ArtistEditUiState(
     val draftBio: String = "",
     val draftImageUrl: String = "",
     val newlyUploaded: List<String> = emptyList<String>(),
+    val currentSelectionEmpty: Boolean = false,
     val imageOptions: List<ImageOption> = emptyList(),
     val draftGenres: List<String> = emptyList(),
     val draftCountry: String = "",

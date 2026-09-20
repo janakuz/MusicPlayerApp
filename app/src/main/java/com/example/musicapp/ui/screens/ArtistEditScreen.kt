@@ -487,8 +487,11 @@ fun ArtistEditScreen(
                     ImagePicker(
                         images = images,
                         currentSelection = artistEditUiState.draftImageUrl,
+                        currentSavedEmpty = artistEditUiState.currentSelectionEmpty,
                         onImageSelected = { selected -> artistEditViewModel.onImageChange(selected) },
-                        onCustomImageSelected = { selected -> artistEditViewModel.onCustomImageSelect(selected) }
+                        onCustomImageSelected = { selected -> artistEditViewModel.onCustomImageSelect(selected) },
+                        onClearImage = { artistEditViewModel.onClearImage() },
+                        onResetImage = { artistEditViewModel.resetImage() }
                     )
                 }
 
