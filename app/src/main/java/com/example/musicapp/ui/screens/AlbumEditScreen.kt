@@ -156,7 +156,7 @@ fun ImagePicker(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Clear artwork (use default)",
+                        text = "Clear image (use default)",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
