@@ -180,8 +180,21 @@ class AlbumEditViewModel @Inject constructor(
         }
     }
 
-    fun resetImage(){
-        _uiState.update { it.copy(draftImageUrl = initialImageUrl ?: "") }
+    fun deleteCustomImage(path: String){
+        viewModelScope.launch {
+            albumRepository.deleteCustomImage(path)
+            _uiState.update { state ->
+                val updatedImages = state.availableImages.filter { it.url != path }
+
+                if (state.draftImageUrl == path) onClearImage()
+                val newDraft = if (state.draftImageUrl == path) "" else state.draftImageUrl
+
+                state.copy(
+                    availableImages = updatedImages,
+                    draftImageUrl = newDraft
+                )
+            }
+        }
     }
 
     fun onLabelChange(newLabel: String) {
@@ -385,7 +398,6 @@ data class AlbumEditUiState(
     val draftReleaseDate: String = "",
     val draftImageUrl: String = "",
     val newlyUploaded: List<String> = emptyList<String>(),
-    val currentSelectionEmpty: Boolean = false,
     val availableImages: List<ImageOption> = emptyList(),
     val draftLabel: String = "",
     val draftGenres: List<String> = emptyList(),

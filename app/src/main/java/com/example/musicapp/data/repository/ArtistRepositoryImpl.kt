@@ -231,6 +231,10 @@ class ArtistRepositoryImpl(
         return imageStorageManager.getCustomImagesForEntity(ImageTarget.ARTIST, artistId)
     }
 
+    override suspend fun deleteCustomImage(path: String) {
+        imageStorageManager.deleteImageFile(path)
+    }
+
     override suspend fun insertAllString(names: List<String>) {
         val artists = names.map { Artist(name = it, searchKey = it.normalizeForMatching()) }
         artistDao.insertAll(artists)

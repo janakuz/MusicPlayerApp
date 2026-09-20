@@ -154,7 +154,6 @@ class ArtistEditViewModel @Inject constructor(
                     draftBio = artist.bio ?: "",
                     draftImageUrl = artist.image ?: "",
                     imageOptions = getCustomImages(),
-                    currentSelectionEmpty = initialImageUrl.isNullOrEmpty(),
                     draftGenres = genres,
                     draftIsDefunct = artist.isDefunct,
                     draftCountry = artist.country ?: "",
@@ -217,10 +216,6 @@ class ArtistEditViewModel @Inject constructor(
         _uiState.update { it.copy(draftImageUrl = newImageUrl) }
     }
 
-    fun resetImage(){
-        _uiState.update { it.copy(draftImageUrl = initialImageUrl ?: "") }
-    }
-
     fun onCustomImageSelect(newImageUrl: String) {
         val newOptions = mutableListOf<ImageOption>()
         newOptions.addAll(_uiState.value.imageOptions)
@@ -258,6 +253,23 @@ class ArtistEditViewModel @Inject constructor(
             newOptions.add(0, ImageOption("NO_SELECTION", "None"))
 
             _uiState.update { it.copy(draftImageUrl = "", imageOptions = newOptions) }
+        }
+    }
+
+    fun deleteCustomImage(path: String){
+        viewModelScope.launch {
+            artistRepository.deleteCustomImage(path)
+            _uiState.update { state ->
+                val updatedImages = state.imageOptions.filter { it.url != path }
+
+                if (state.draftImageUrl == path) onClearImage()
+                val newDraft = if (state.draftImageUrl == path) "" else state.draftImageUrl
+
+                state.copy(
+                    imageOptions = updatedImages,
+                    draftImageUrl = newDraft
+                )
+            }
         }
     }
 
@@ -425,7 +437,6 @@ data class ArtistEditUiState(
     val draftBio: String = "",
     val draftImageUrl: String = "",
     val newlyUploaded: List<String> = emptyList<String>(),
-    val currentSelectionEmpty: Boolean = false,
     val imageOptions: List<ImageOption> = emptyList(),
     val draftGenres: List<String> = emptyList(),
     val draftCountry: String = "",

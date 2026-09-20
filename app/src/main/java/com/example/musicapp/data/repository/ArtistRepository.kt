@@ -86,4 +86,6 @@ interface ArtistRepository {
 
     suspend fun getCustomImages(artistId: Int): List<String>
 
+    suspend fun deleteCustomImage(path: String)
+
 }

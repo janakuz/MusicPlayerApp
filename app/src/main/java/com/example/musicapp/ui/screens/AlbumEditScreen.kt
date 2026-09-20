@@ -1,9 +1,12 @@
 package com.example.musicapp.ui.screens
 
+import android.text.Layout
+import android.widget.GridLayout
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,6 +36,7 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.ImageNotSupported
 import androidx.compose.material.icons.filled.Public
@@ -45,6 +50,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
@@ -91,11 +97,10 @@ import kotlin.math.absoluteValue
 fun ImagePicker(
     images: List<ImageOption>,
     currentSelection: String,
-    currentSavedEmpty: Boolean,
     onImageSelected: (String) -> Unit,
     onCustomImageSelected: (String) -> Unit,
     onClearImage: () -> Unit,
-    onResetImage: () -> Unit,
+    onDeleteCustomImage: (String) -> Unit,
 ) {
     val carouselImages = remember(images) {
         images + ImageOption(url = "ACTION_CUSTOM_PICK", source = "Custom")
@@ -106,23 +111,15 @@ fun ImagePicker(
 
     val deletedOption = ImageOption("NO_SELECTION", "None")
 
+    var hasScrolledToInitial by remember { mutableStateOf(false) }
 
 
-    LaunchedEffect(images, initialPage) {
-        if (images.isNotEmpty() && carouselImages[pagerState.currentPage].url != "ACTION_CUSTOM_PICK") {
+
+    LaunchedEffect(images) {
+        if (!hasScrolledToInitial && images.isNotEmpty() &&
+            carouselImages[pagerState.currentPage].url != "ACTION_CUSTOM_PICK") {
             pagerState.scrollToPage(initialPage)
-        }
-    }
-
-    LaunchedEffect(pagerState.currentPage) {
-        if (carouselImages[pagerState.currentPage].url == "NO_SELECTION") {
-            onImageSelected("")
-        }
-        else if (carouselImages[pagerState.currentPage].url == "ACTION_CUSTOM_PICK"){
-            onResetImage()
-        }
-        else if (carouselImages.isNotEmpty()) {
-            onImageSelected(carouselImages[pagerState.currentPage].url)
+            hasScrolledToInitial = true
         }
     }
 
@@ -205,6 +202,9 @@ fun ImagePicker(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                 )
                             }
+                            else if (carouselImages[page].url != "NO_SELECTION"){
+                                onImageSelected(carouselImages[page].url)
+                            }
                         }
                     ),
                 shape = RoundedCornerShape(16.dp)
@@ -248,15 +248,55 @@ fun ImagePicker(
                     }
 
                 } else {
-                    AsyncImage(
-                        model = carouselImages[page].url,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(R.drawable.baseline_image_24),
-                        error = painterResource(R.drawable.baseline_broken_image_24),
-                        filterQuality = FilterQuality.Low,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AsyncImage(
+                            model = carouselImages[page].url,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.baseline_image_24),
+                            error = painterResource(R.drawable.baseline_broken_image_24),
+                            filterQuality = FilterQuality.Low,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        if (carouselImages[page].url == currentSelection) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.padding(4.dp).size(16.dp)
+                                )
+                            }
+                        }
+
+                        if (carouselImages[page].source == "Custom") {
+                            IconButton(
+                                onClick = { onDeleteCustomImage(carouselImages[page].url) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                        shape = CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete custom image",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -267,7 +307,6 @@ fun ImagePicker(
                           else pagerState.currentPage + 1
 
             val maxSize = if (images.contains(deletedOption)) images.size - 1 else images.size
-//            val current = if (!hasEmpty) pagerState.currentPage + 1 else pagerState.currentPage
             Text(
                 text = if (current <= maxSize) "$current / ${maxSize}" else "Add new...",
                 style = MaterialTheme.typography.labelSmall,
@@ -481,11 +520,10 @@ fun AlbumEditScreen(
                     ImagePicker(
                         images = images,
                         currentSelection = albumEditUiState.draftImageUrl,
-                        currentSavedEmpty = albumEditUiState.currentSelectionEmpty,
                         onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) },
                         onCustomImageSelected = { selected -> albumEditViewModel.onCustomImageSelect(selected) },
                         onClearImage = { albumEditViewModel.onClearImage() },
-                        onResetImage = { albumEditViewModel.resetImage() }
+                        onDeleteCustomImage = { path -> albumEditViewModel.deleteCustomImage(path) }
                     )
                 }
 

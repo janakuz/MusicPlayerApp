@@ -236,4 +236,8 @@ class AlbumRepositoryImpl(
     override suspend fun getCustomImages(albumId: Int): List<String> {
         return imageStorageManager.getCustomImagesForEntity(ImageTarget.ALBUM, albumId)
     }
+
+    override suspend fun deleteCustomImage(path: String) {
+        imageStorageManager.deleteImageFile(path)
+    }
 }
