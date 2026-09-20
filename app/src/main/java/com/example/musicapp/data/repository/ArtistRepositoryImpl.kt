@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import android.net.Uri
 import android.util.Log
 import com.example.musicapp.data.local.dao.ArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
@@ -17,6 +18,8 @@ import com.example.musicapp.data.remote.dto.SimilarArtistsResponse
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.LastfmApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
+import com.example.musicapp.service.ImageStorageManager
+import com.example.musicapp.service.ImageTarget
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.util.normalizeForMatching
@@ -28,7 +31,8 @@ class ArtistRepositoryImpl(
     private val trackDao: TrackDao,
     private val musicbrainzApiService: MusicbrainzApiService,
     private val discogsApiService: DiscogsApiService,
-    private val lastfmApiService: LastfmApiService
+    private val lastfmApiService: LastfmApiService,
+    private val imageStorageManager: ImageStorageManager
 ) : ArtistRepository {
 
     override fun getAllArtists(): Flow<List<Artist>> {
@@ -214,6 +218,13 @@ class ArtistRepositoryImpl(
 
     override suspend fun getTrackUrisByArtist(artistId: Int): List<String> {
         return trackDao.getTrackUrisByArtist(artistId)
+    }
+
+    override suspend fun saveCustomImage(
+        uri: Uri,
+        artistId: Int
+    ): String? {
+        return imageStorageManager.saveCustomArtwork(uri, ImageTarget.ARTIST, artistId)
     }
 
     override suspend fun insertAllString(names: List<String>) {

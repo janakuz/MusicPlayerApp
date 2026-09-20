@@ -198,14 +198,16 @@ object AppModule {
         trackDao: TrackDao,
         musicbrainzApiService: MusicbrainzApiService,
         discogsApiService: DiscogsApiService,
-        lastfmApiService: LastfmApiService
+        lastfmApiService: LastfmApiService,
+        imageStorageManager: ImageStorageManager
     ): ArtistRepository {
         return ArtistRepositoryImpl(
             artistDao,
             trackDao,
             musicbrainzApiService,
             discogsApiService,
-            lastfmApiService
+            lastfmApiService,
+            imageStorageManager
         )
     }
 
@@ -423,14 +425,16 @@ object AppModule {
         trackDao: TrackDao,
         musicbrainzApiService: MusicbrainzApiService,
         coverArtArchiveApiService: CoverArtArchiveApiService,
-        discogsApiService: DiscogsApiService
+        discogsApiService: DiscogsApiService,
+        imageStorageManager: ImageStorageManager
     ): AlbumRepository {
         return AlbumRepositoryImpl(
             albumDao,
             trackDao,
             musicbrainzApiService,
             coverArtArchiveApiService,
-            discogsApiService
+            discogsApiService,
+            imageStorageManager
         )
     }
 

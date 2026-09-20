@@ -110,7 +110,6 @@ class PlaylistRepositoryImpl(
 
 
     override suspend fun savePlaylistImage(
-        context: Context,
         uri: Uri,
         playlistId: Int,
     ): String? {

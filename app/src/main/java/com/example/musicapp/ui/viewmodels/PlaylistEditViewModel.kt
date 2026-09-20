@@ -109,7 +109,6 @@ class PlaylistEditViewModel @Inject constructor(
 
                 val newPath =
                     if (_uiState.value.draftImageUrl != null && _uiState.value.draftImageUrl != initialImage) playlistRepository.savePlaylistImage(
-                        context,
                         _uiState.value.draftImageUrl!!.toUri(),
                         playlistId
                     )
