@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import android.net.Uri
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.model.ArtistWithArea
@@ -80,4 +81,11 @@ interface ArtistRepository {
     suspend fun moveTracks(oldArtistId: Int, newArtistId: Int, tracks: List<Int>? = emptyList())
 
     suspend fun getTrackUrisByArtist(artistId: Int): List<String>
+
+    suspend fun saveCustomImage(uri: Uri, artistId: Int): String?
+
+    suspend fun getCustomImages(artistId: Int): List<String>
+
+    suspend fun deleteCustomImage(path: String)
+
 }

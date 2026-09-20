@@ -1,5 +1,7 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.LabelInfo
@@ -74,4 +76,10 @@ interface AlbumRepository {
     suspend fun moveTracks(oldAlbumId: Int, newAlbumId: Int, tracks: List<Int>? = emptyList())
 
     suspend fun getAlbumByMbid(mbid: String): Album?
+
+    suspend fun saveCustomImage(uri: Uri, albumId: Int): String?
+
+    suspend fun getCustomImages(albumId: Int): List<String>
+
+    suspend fun deleteCustomImage(path: String)
 }
