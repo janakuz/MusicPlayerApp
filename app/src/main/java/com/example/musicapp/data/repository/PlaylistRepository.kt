@@ -29,7 +29,7 @@ interface PlaylistRepository {
 
     suspend fun getPlaylistImages(playlistId: Int): List<String>
 
-    fun savePlaylistImage(context: Context, uri: Uri): String?
+    suspend fun savePlaylistImage(context: Context, uri: Uri, playlistId: Int): String?
 
     suspend fun importPlaylist(file: Uri)
 

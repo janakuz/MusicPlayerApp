@@ -76,6 +76,7 @@ import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.UserPreferencesRepositoryImpl
 import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.repository.WorkerManagerRepositoryImpl
+import com.example.musicapp.service.ImageStorageManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -585,6 +586,13 @@ object AppModule {
     @Singleton
     fun providePlaylistTracksDao(db: AppDatabase): PlaylistTracksDao = db.playlistTracksDao()
 
+    @Provides
+    @Singleton
+    fun provideImageStorageManager(
+        @ApplicationContext context: Context
+    ): ImageStorageManager {
+        return ImageStorageManager(context)
+    }
 
     @Provides
     @Singleton
@@ -592,9 +600,10 @@ object AppModule {
         playlistDao: PlaylistDao,
         playlistTracksDao: PlaylistTracksDao,
         db: AppDatabase,
+        imageStorageManager: ImageStorageManager,
         @ApplicationContext context: Context
     ): PlaylistRepository {
-        return PlaylistRepositoryImpl(playlistDao, playlistTracksDao, db, context)
+        return PlaylistRepositoryImpl(playlistDao, playlistTracksDao, db, imageStorageManager, context)
     }
 
     @Provides
