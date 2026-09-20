@@ -159,6 +159,9 @@ class PlaylistViewModel @Inject constructor(
     fun removeDuplicates(){
         viewModelScope.launch {
             playlistTracksRepository.removeDuplicates(_deduplicateConfirmation.value.unique, _deduplicateConfirmation.value.playlistId)
+            _eventChannel.send("Removed ${_deduplicateConfirmation.value.duplicateCount} " +
+                    if (_deduplicateConfirmation.value.duplicateCount > 1) "duplicates" else "duplicate"
+            )
             _deduplicateConfirmation.value = DeduplicateState()
         }
     }

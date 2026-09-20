@@ -234,7 +234,7 @@ fun DuplicateTracksDialog(
                 }
             ) {
                 val checkedCount = checkedStates.values.count { it }
-                Text("Add Selected ($checkedCount)")
+                Text("Add Selected $checkedCount Tracks Anyway")
             }
         },
         dismissButton = {
