@@ -621,9 +621,9 @@ class PlayerViewModel @Inject constructor(
 
 
     fun playTrack(queueId: String) {
-        val trackIndex = queue.value.indexOfFirst { it.queueId == queueId }
-        _currentTrack.value = queue.value[trackIndex]
-        controller!!.seekTo(trackIndex, 0L)
+        val track = queue.value.first {it.queueId == queueId}
+        _currentTrack.value = track
+        controller!!.seekTo(track.originalOrder, 0L)
         controller!!.play()
     }
 
