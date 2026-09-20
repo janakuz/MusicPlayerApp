@@ -1,12 +1,12 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
-import com.example.musicapp.data.local.model.FullArea
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.DiscogsImage
 import com.example.musicapp.data.repository.AreaRepository
@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.collections.map
 
 @HiltViewModel
 class ArtistEditViewModel @Inject constructor(
@@ -152,6 +153,7 @@ class ArtistEditViewModel @Inject constructor(
                     name = artist.name,
                     draftBio = artist.bio ?: "",
                     draftImageUrl = artist.image ?: "",
+                    imageOptions = getCustomImages(),
                     draftGenres = genres,
                     draftIsDefunct = artist.isDefunct,
                     draftCountry = artist.country ?: "",
@@ -163,8 +165,6 @@ class ArtistEditViewModel @Inject constructor(
                     draftActiveEndYear = artist.activeEndYear ?: "",
                     )
             }
-
-
             if (artist.discogsId != null) getDiscogsInfo(artist.discogsId)
             getLastfmInfo(artist.mbId, artist.name)
         }
@@ -213,17 +213,33 @@ class ArtistEditViewModel @Inject constructor(
 
 
     fun onImageChange(newImageUrl: String) {
-        _uiState.update { it.copy(draftImageUrl = newImageUrl) }
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = false) }
     }
+
+    fun onCustomImageSelect(newImageUrl: String) {
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.imageOptions)
+        newOptions.add(ImageOption(newImageUrl, "Custom"))
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = true, imageOptions = newOptions) }
+    }
+
 
 
     suspend fun getDiscogsInfo(discogsId: String) {
         val discogs = artistRepository.getArtistDiscogsInfo(discogsId)
         if (discogs != null) {
+            val images = discogs.images ?: emptyList()
+            val imageOptions = images.map { ImageOption(url = it.resourceUrl, source = "Web") }
             _uiState.update {
-                it.copy(discogsBio = discogs.profile, discogsImages = discogs.images ?: emptyList())
+                it.copy(discogsBio = discogs.profile, imageOptions = _uiState.value.imageOptions + imageOptions)
             }
         }
+    }
+
+    suspend fun getCustomImages(): List<ImageOption> {
+        val customImages = artistRepository.getCustomImages(artistId)
+        val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }
+        return customImageOptions
     }
 
     suspend fun getLastfmInfo(mbId: String?, name: String) {
@@ -241,7 +257,7 @@ class ArtistEditViewModel @Inject constructor(
 
             val newArtist = currentArtist.copy(
                 bio = _uiState.value.draftBio,
-                image = _uiState.value.draftImageUrl,
+                image = if (!_uiState.value.isImageCustom) _uiState.value.draftImageUrl else artistRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), artistId),
                 homeCity = _uiState.value.draftHomeCity,
                 homeAreaGid = _uiState.value.draftHomeCityId,
                 currentCity = _uiState.value.draftCurrentCity,
@@ -386,7 +402,8 @@ data class ArtistEditUiState(
     val name: String = "",
     val draftBio: String = "",
     val draftImageUrl: String = "",
-    val discogsImages: List<DiscogsImage> = emptyList(),
+    val isImageCustom: Boolean = false,
+    val imageOptions: List<ImageOption> = emptyList(),
     val draftGenres: List<String> = emptyList(),
     val draftCountry: String = "",
     val draftCountryCode: String = "",

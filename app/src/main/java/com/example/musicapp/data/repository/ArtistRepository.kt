@@ -84,4 +84,6 @@ interface ArtistRepository {
 
     suspend fun saveCustomImage(uri: Uri, artistId: Int): String?
 
+    suspend fun getCustomImages(artistId: Int): List<String>
+
 }

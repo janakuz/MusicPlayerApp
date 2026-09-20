@@ -227,6 +227,10 @@ class ArtistRepositoryImpl(
         return imageStorageManager.saveCustomArtwork(uri, ImageTarget.ARTIST, artistId)
     }
 
+    override suspend fun getCustomImages(artistId: Int): List<String> {
+        return imageStorageManager.getCustomImagesForEntity(ImageTarget.ARTIST, artistId)
+    }
+
     override suspend fun insertAllString(names: List<String>) {
         val artists = names.map { Artist(name = it, searchKey = it.normalizeForMatching()) }
         artistDao.insertAll(artists)

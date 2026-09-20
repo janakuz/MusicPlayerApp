@@ -66,7 +66,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -86,7 +85,7 @@ import kotlin.math.absoluteValue
 
 
 @Composable
-fun AlbumImagePicker(
+fun ImagePicker(
     images: List<ImageOption>,
     currentSelection: String,
     onImageSelected: (String) -> Unit,
@@ -412,7 +411,7 @@ fun AlbumEditScreen(
 
             LazyColumn(modifier = Modifier.padding(padding)) {
                 item {
-                    AlbumImagePicker(
+                    ImagePicker(
                         images = images,
                         currentSelection = albumEditUiState.draftImageUrl,
                         onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) },
