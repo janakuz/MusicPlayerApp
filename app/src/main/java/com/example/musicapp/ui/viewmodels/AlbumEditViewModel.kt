@@ -2,6 +2,7 @@ package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -156,7 +157,14 @@ class AlbumEditViewModel @Inject constructor(
 
 
     fun onImageChange(newImageUrl: String) {
-        _uiState.update { it.copy(draftImageUrl = newImageUrl) }
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = false) }
+    }
+
+    fun onCustomImageSelect(newImageUrl: String) {
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.availableImages)
+        newOptions.add(ImageOption(newImageUrl, "Custom"))
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = true, availableImages = newOptions) }
     }
 
     fun onLabelChange(newLabel: String) {
@@ -177,6 +185,11 @@ class AlbumEditViewModel @Inject constructor(
         val options = mutableListOf<ImageOption>()
         val albumTracks = trackRepository.getAlbumTracks(albumId)
 
+        val customImages = albumRepository.getCustomImages(albumId)
+        val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }
+
+        options.addAll(customImageOptions)
+
         val localImages =
             if (albumTracks.isNotEmpty())
                 localLibraryScanner.findAllAlbumArtOptions(context, albumTracks[0].filePath)
@@ -193,6 +206,10 @@ class AlbumEditViewModel @Inject constructor(
 
             options.addAll(caaOptions)
 
+        }
+
+        if (_uiState.value.draftImageUrl.isNotEmpty() && options.none { it.url == _uiState.value.draftImageUrl }) {
+            options.add(0, ImageOption(url = _uiState.value.draftImageUrl, source = "Custom"))
         }
         if (options.isNotEmpty()) {
             // if draft image url not in options, set draft to options[0]
@@ -242,7 +259,7 @@ class AlbumEditViewModel @Inject constructor(
 
             val newAlbum = currentAlbum.copy(
                 releaseDate = _uiState.value.draftReleaseDate,
-                image = _uiState.value.draftImageUrl,
+                image = if (!_uiState.value.isImageCustom) _uiState.value.draftImageUrl else albumRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), albumId),
                 label = _uiState.value.draftLabel
             )
             albumRepository.update(newAlbum)
@@ -349,6 +366,7 @@ data class AlbumEditUiState(
     val artist: String = "",
     val draftReleaseDate: String = "",
     val draftImageUrl: String = "",
+    val isImageCustom: Boolean = false,
     val availableImages: List<ImageOption> = emptyList(),
     val draftLabel: String = "",
     val draftGenres: List<String> = emptyList(),

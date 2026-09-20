@@ -78,4 +78,6 @@ interface AlbumRepository {
     suspend fun getAlbumByMbid(mbid: String): Album?
 
     suspend fun saveCustomImage(uri: Uri, albumId: Int): String?
+
+    suspend fun getCustomImages(albumId: Int): List<String>
 }

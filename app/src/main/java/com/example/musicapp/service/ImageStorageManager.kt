@@ -40,6 +40,22 @@ class ImageStorageManager(private val context: Context) {
         )
     }
 
+    suspend fun getCustomImagesForEntity(
+        target: ImageTarget,
+        id: Int
+    ): List<String> = withContext(Dispatchers.IO) {
+        val directory = File(context.filesDir, target.folderName)
+        if (!directory.exists() || !directory.isDirectory) {
+            return@withContext emptyList()
+        }
+
+        val prefix = "${target.folderName}_${id}_"
+
+        directory.listFiles { file ->
+            file.isFile && file.name.startsWith(prefix) && file.name.endsWith(".jpg")
+        }?.map { it.absolutePath } ?: emptyList()
+    }
+
     suspend fun deleteImageFile(filePath: String?): Boolean = withContext(Dispatchers.IO) {
         if (filePath.isNullOrEmpty()) return@withContext false
         runCatching {

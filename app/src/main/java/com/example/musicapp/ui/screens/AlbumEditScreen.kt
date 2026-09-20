@@ -1,7 +1,11 @@
 package com.example.musicapp.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
@@ -61,6 +66,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -83,10 +89,17 @@ import kotlin.math.absoluteValue
 fun AlbumImagePicker(
     images: List<ImageOption>,
     currentSelection: String,
-    onImageSelected: (String) -> Unit
+    onImageSelected: (String) -> Unit,
+    onCustomImageSelected: (String) -> Unit,
 ) {
-    val initialPage = images.indexOfFirst { it.url == currentSelection }.coerceAtLeast(0)
-    val pagerState = rememberPagerState(initialPage = initialPage) { images.size }
+    val carouselImages = remember(images) {
+        images + ImageOption(url = "ACTION_CUSTOM_PICK", source = "Custom")
+    }
+
+    val initialPage = carouselImages.indexOfFirst { it.url == currentSelection }.coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = initialPage) { carouselImages.size }
+
+    var showMenu by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(images, initialPage) {
         if (images.isNotEmpty()) {
@@ -95,10 +108,19 @@ fun AlbumImagePicker(
     }
 
     LaunchedEffect(pagerState.currentPage) {
-        if (images.isNotEmpty()) {
-            onImageSelected(images[pagerState.currentPage].url)
+        if (carouselImages.isNotEmpty() && carouselImages[pagerState.currentPage].url != "ACTION_CUSTOM_PICK") {
+            onImageSelected(carouselImages[pagerState.currentPage].url)
         }
     }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onCustomImageSelected(uri.toString())
+        }
+    }
+
 
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -130,36 +152,70 @@ fun AlbumImagePicker(
                             fraction = 1f - pageOffset.coerceIn(0f, 1f)
                         )
                     }
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .combinedClickable(
+                        onClick = {
+                            if (carouselImages[page].url == "ACTION_CUSTOM_PICK") {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            } else {
+                                showMenu = page
+                            }
+                        }
+                    ),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                AsyncImage(
-                    model = images[page].url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(R.drawable.baseline_image_24),
-                    error = painterResource(R.drawable.baseline_broken_image_24),
-                    filterQuality = FilterQuality.Low,
-                    modifier = Modifier.fillMaxSize()
-                )
+
+                if (carouselImages[page].url == "ACTION_CUSTOM_PICK") {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Select from device...",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                } else {
+
+
+                    AsyncImage(
+                        model = carouselImages[page].url,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.baseline_image_24),
+                        error = painterResource(R.drawable.baseline_broken_image_24),
+                        filterQuality = FilterQuality.Low,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
 
         Row {
             Text(
-                text = "${pagerState.currentPage + 1} / ${images.size}",
+                text = if (pagerState.currentPage + 1 <= images.size) "${pagerState.currentPage + 1} / ${images.size}" else "Add new...",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
 
-            if (images.isNotEmpty()) {
+            if (carouselImages.isNotEmpty()) {
                 Icon(
-                    imageVector = when (images[pagerState.currentPage].source) {
-                        "Local" -> Icons.Default.Folder
+                    imageVector = when (carouselImages[pagerState.currentPage].source) {
+                        "Local", "Custom" -> Icons.Default.Folder
                         "Web" -> Icons.Default.Public
                         else -> Icons.Default.QuestionMark
                     },
-                    contentDescription = images[pagerState.currentPage].source,
+                    contentDescription = carouselImages[pagerState.currentPage].source,
                     modifier = Modifier
                         .padding(6.dp)
                         .size(18.dp),
@@ -167,7 +223,6 @@ fun AlbumImagePicker(
                 )
             }
         }
-
     }
 }
 
@@ -360,7 +415,8 @@ fun AlbumEditScreen(
                     AlbumImagePicker(
                         images = images,
                         currentSelection = albumEditUiState.draftImageUrl,
-                        onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) }
+                        onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) },
+                        onCustomImageSelected = { selected -> albumEditViewModel.onCustomImageSelect(selected) }
                     )
                 }
 
