@@ -40,6 +40,7 @@ fun LibraryTopBar(
     onBack: (() -> Unit)? = null,
     onShowSimilar: (() -> Unit)? = null,
     onOpenSequencer: (() -> Unit)? = null,
+    onDeduplicate: (() -> Unit)? = null,
     ) {
     TopAppBar(
         title = {
@@ -68,7 +69,13 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            RightMenu(screen = currentScreen, onSortSelected = onSortClick, onImport = onImport, onShowSimilar = onShowSimilar, onOpenSequencer = onOpenSequencer)
+            RightMenu(
+                screen = currentScreen,
+                onSortSelected = onSortClick,
+                onImport = onImport,
+                onShowSimilar = onShowSimilar,
+                onOpenSequencer = onOpenSequencer,
+                onDeduplicate = onDeduplicate)
         }
     )
 }
