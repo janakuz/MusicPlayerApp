@@ -157,14 +157,17 @@ class AlbumEditViewModel @Inject constructor(
 
 
     fun onImageChange(newImageUrl: String) {
-        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = false) }
+        _uiState.update { it.copy(draftImageUrl = newImageUrl) }
     }
 
     fun onCustomImageSelect(newImageUrl: String) {
         val newOptions = mutableListOf<ImageOption>()
         newOptions.addAll(_uiState.value.availableImages)
         newOptions.add(ImageOption(newImageUrl, "Custom"))
-        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = true, availableImages = newOptions) }
+        val uploaded = mutableListOf<String>()
+        uploaded.addAll(_uiState.value.newlyUploaded)
+        uploaded.add(newImageUrl)
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, newlyUploaded = uploaded, availableImages = newOptions) }
     }
 
     fun onLabelChange(newLabel: String) {
@@ -259,7 +262,9 @@ class AlbumEditViewModel @Inject constructor(
 
             val newAlbum = currentAlbum.copy(
                 releaseDate = _uiState.value.draftReleaseDate,
-                image = if (!_uiState.value.isImageCustom) _uiState.value.draftImageUrl else albumRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), albumId),
+                image = if (_uiState.value.newlyUploaded.contains(_uiState.value.draftImageUrl))
+                    albumRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), albumId)
+                        else _uiState.value.draftImageUrl,
                 label = _uiState.value.draftLabel
             )
             albumRepository.update(newAlbum)
@@ -366,7 +371,7 @@ data class AlbumEditUiState(
     val artist: String = "",
     val draftReleaseDate: String = "",
     val draftImageUrl: String = "",
-    val isImageCustom: Boolean = false,
+    val newlyUploaded: List<String> = emptyList<String>(),
     val availableImages: List<ImageOption> = emptyList(),
     val draftLabel: String = "",
     val draftGenres: List<String> = emptyList(),

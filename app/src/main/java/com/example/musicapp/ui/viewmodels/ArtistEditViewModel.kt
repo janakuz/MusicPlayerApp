@@ -213,14 +213,17 @@ class ArtistEditViewModel @Inject constructor(
 
 
     fun onImageChange(newImageUrl: String) {
-        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = false) }
+        _uiState.update { it.copy(draftImageUrl = newImageUrl) }
     }
 
     fun onCustomImageSelect(newImageUrl: String) {
         val newOptions = mutableListOf<ImageOption>()
         newOptions.addAll(_uiState.value.imageOptions)
         newOptions.add(ImageOption(newImageUrl, "Custom"))
-        _uiState.update { it.copy(draftImageUrl = newImageUrl, isImageCustom = true, imageOptions = newOptions) }
+        val uploaded = mutableListOf<String>()
+        uploaded.addAll(_uiState.value.newlyUploaded)
+        uploaded.add(newImageUrl)
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, newlyUploaded = uploaded, imageOptions = newOptions) }
     }
 
 
@@ -257,7 +260,9 @@ class ArtistEditViewModel @Inject constructor(
 
             val newArtist = currentArtist.copy(
                 bio = _uiState.value.draftBio,
-                image = if (!_uiState.value.isImageCustom) _uiState.value.draftImageUrl else artistRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), artistId),
+                image = if (_uiState.value.newlyUploaded.contains(_uiState.value.draftImageUrl))
+                    artistRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), artistId)
+                        else _uiState.value.draftImageUrl,
                 homeCity = _uiState.value.draftHomeCity,
                 homeAreaGid = _uiState.value.draftHomeCityId,
                 currentCity = _uiState.value.draftCurrentCity,
@@ -402,7 +407,7 @@ data class ArtistEditUiState(
     val name: String = "",
     val draftBio: String = "",
     val draftImageUrl: String = "",
-    val isImageCustom: Boolean = false,
+    val newlyUploaded: List<String> = emptyList<String>(),
     val imageOptions: List<ImageOption> = emptyList(),
     val draftGenres: List<String> = emptyList(),
     val draftCountry: String = "",
