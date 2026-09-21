@@ -246,15 +246,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-//    private fun toQueueItem(item: QueueItemFull): PlayQueueItemUUID {
-//        return PlayQueueItemUUID(
-//            originalOrder = item.orderIndex,
-//            shuffledOrder = item.shuffledIndex ?: -1,
-//            queueId = item.uuid,
-//            track = item.trackInfo
-//        )
-//    }
-
     fun updateSpeed(speed: Float){
         _currentSpeed.value = speed
         controller!!.setPlaybackSpeed(speed)
@@ -833,27 +824,71 @@ class PlayerViewModel @Inject constructor(
 
             val controller = controller ?: return@launch
 
-//            freshQueue.forEachIndexed { newIndex, item ->
-//                val oldIndex = findCurrentIndexInController(controller, item.queueId)
-//                if (oldIndex != newIndex) {
-//                    controller.moveMediaItem(oldIndex, newIndex)
-//                }
-//            }
             val startIndex = freshQueue.indexOfFirst { it.queueId == currentPlayingId }
 
-            val (itemsBefore, itemsAfter) = withContext(Dispatchers.Default) {
-                val before = freshQueue.subList(0,startIndex).map { toMediaItem(it) }
-                val after = freshQueue.subList(startIndex+1,freshQueue.size).map { toMediaItem(it) }
-                Pair(before, after)
+            val (lazyBefore, lazyAfter, remainingBefore, remainingAfter) = withContext(Dispatchers.Default) {
+                val startOfBeforeWindow = maxOf(0, startIndex - 30)
+                val endOfAfterWindow = minOf(startIndex + 31, freshQueue.size)
+
+                val beforeWindow = freshQueue.subList(startOfBeforeWindow, startIndex).map { toMediaItem(it) }
+                val afterWindow = freshQueue.subList(startIndex + 1, endOfAfterWindow).map { toMediaItem(it) }
+
+                val farBefore = freshQueue.subList(0, startOfBeforeWindow).map { toMediaItem(it) }
+                val farAfter = freshQueue.subList(endOfAfterWindow, freshQueue.size).map { toMediaItem(it) }
+
+                ShuffledChunks(beforeWindow, afterWindow, farBefore, farAfter)
             }
 
-            _currentTrack.value = freshQueue[startIndex]
             controller.removeMediaItems(0, currentPlayingControllerIndex)
             controller.removeMediaItems(1,freshQueue.size)
-            controller.addMediaItems(0, itemsBefore)
-            controller.addMediaItems(itemsAfter)
+
+//            var totalItems = controller.mediaItemCount
+//
+//            while (totalItems > currentPlayingControllerIndex + 1) {
+//                val itemsLeftAfter = totalItems - (currentPlayingControllerIndex + 1)
+//                val batchToRemove = minOf(500, itemsLeftAfter)
+//                controller.removeMediaItems(currentPlayingControllerIndex + 1, currentPlayingControllerIndex + 1 + batchToRemove)
+//                totalItems -= batchToRemove
+//            }
+//
+//            var itemsLeftBefore = currentPlayingControllerIndex
+//            while (itemsLeftBefore > 0) {
+//                val batchToRemove = minOf(500, itemsLeftBefore)
+//                controller.removeMediaItems(0, batchToRemove)
+//                itemsLeftBefore -= batchToRemove
+//            }
+
+            controller.addMediaItems(0, lazyBefore)
+            controller.addMediaItems(lazyAfter)
 
             updatePlaybackSession()
+
+            launch(Dispatchers.Default) {
+                if (remainingBefore.isNotEmpty() || remainingAfter.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        if (remainingBefore.isNotEmpty()) {
+                            controller.addMediaItems(0, remainingBefore)
+                        }
+                        if (remainingAfter.isNotEmpty()) {
+                            controller.addMediaItems(controller.mediaItemCount, remainingAfter)
+                        }
+                    }
+                }
+            }
+
+//            val (itemsBefore, itemsAfter) = withContext(Dispatchers.Default) {
+//                val before = freshQueue.subList(0,startIndex).map { toMediaItem(it) }
+//                val after = freshQueue.subList(startIndex+1,freshQueue.size).map { toMediaItem(it) }
+//                Pair(before, after)
+//            }
+//
+//            _currentTrack.value = freshQueue[startIndex]
+//            controller.removeMediaItems(0, currentPlayingControllerIndex)
+//            controller.removeMediaItems(1,freshQueue.size)
+//            controller.addMediaItems(0, itemsBefore)
+//            controller.addMediaItems(itemsAfter)
+//
+//            updatePlaybackSession()
 
         }
     }
@@ -888,3 +923,10 @@ enum class LoopState {
     A_SET,
     ACTIVE
 }
+
+data class ShuffledChunks(
+    val lazyBefore: List<MediaItem>,
+    val lazyAfter: List<MediaItem>,
+    val remainingBefore: List<MediaItem>,
+    val remainingAfter: List<MediaItem>
+)
