@@ -157,6 +157,7 @@ fun RightMenu(
     onImport: (() -> Unit)? = null,
     onShowSimilar: (() -> Unit)? = null,
     onOpenSequencer: (() -> Unit)? = null,
+    onDeduplicate: (() -> Unit)? = null,
     ) {
     var expanded by remember { mutableStateOf(false) }
     var menuPage by remember { mutableStateOf(MenuPage.MAIN) }
@@ -205,8 +206,19 @@ fun RightMenu(
                                 onOpenSequencer()
                             }
                         )
+                    }
+
+                    if (screen == LibraryScreen.PLAYLIST_DETAIL && onDeduplicate != null){
+                        DropdownMenuItem(
+                            text = { Text("Remove Duplicates") },
+                            onClick = {
+                                expanded = false
+                                onDeduplicate()
+                            }
+                        )
 
                     }
+
 
 
                     if (availableSortFields(screen).isNotEmpty()) {

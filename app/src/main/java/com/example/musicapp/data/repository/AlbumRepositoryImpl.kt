@@ -1,5 +1,7 @@
 package com.example.musicapp.data.repository
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.TrackDao
@@ -13,6 +15,8 @@ import com.example.musicapp.data.remote.dto.ReleaseSearchResponse
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
 import com.example.musicapp.data.remote.service.MusicbrainzApiService
+import com.example.musicapp.service.ImageStorageManager
+import com.example.musicapp.service.ImageTarget
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import com.example.musicapp.util.normalizeForMatching
@@ -25,7 +29,8 @@ class AlbumRepositoryImpl(
     private val trackDao: TrackDao,
     private val musicbrainzApiService: MusicbrainzApiService,
     private val coverArtArchiveApiService: CoverArtArchiveApiService,
-    private val discogsApiService: DiscogsApiService
+    private val discogsApiService: DiscogsApiService,
+    private val imageStorageManager: ImageStorageManager
 ) : AlbumRepository {
 
     override fun getAllAlbumsByName(): Flow<List<Album>> =
@@ -219,5 +224,20 @@ class AlbumRepositoryImpl(
 
     override suspend fun getAlbumByMbid(mbid: String): Album? {
         return albumDao.getAlbumByMbid(mbid)
+    }
+
+    override suspend fun saveCustomImage(
+        uri: Uri,
+        albumId: Int
+    ): String? {
+        return imageStorageManager.saveCustomArtwork(uri, ImageTarget.ALBUM, albumId)
+    }
+
+    override suspend fun getCustomImages(albumId: Int): List<String> {
+        return imageStorageManager.getCustomImagesForEntity(ImageTarget.ALBUM, albumId)
+    }
+
+    override suspend fun deleteCustomImage(path: String) {
+        imageStorageManager.deleteImageFile(path)
     }
 }

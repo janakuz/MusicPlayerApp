@@ -2,6 +2,7 @@ package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -125,7 +126,7 @@ class AlbumEditViewModel @Inject constructor(
                     draftReleaseDate = album.releaseDate ?: "",
                     draftImageUrl = album.image ?: "",
                     draftLabel = album.label ?: "",
-                    availableImages = if (album.image != null) listOf(
+                    availableImages = if (!album.image.isNullOrEmpty()) listOf(
                         ImageOption(
                             url = album.image,
                             source = ""
@@ -159,6 +160,43 @@ class AlbumEditViewModel @Inject constructor(
         _uiState.update { it.copy(draftImageUrl = newImageUrl) }
     }
 
+    fun onCustomImageSelect(newImageUrl: String) {
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.availableImages)
+        newOptions.add(ImageOption(newImageUrl, "Custom"))
+        val uploaded = mutableListOf<String>()
+        uploaded.addAll(_uiState.value.newlyUploaded)
+        uploaded.add(newImageUrl)
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, newlyUploaded = uploaded, availableImages = newOptions) }
+    }
+
+    fun onClearImage(){
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.availableImages)
+        if (!newOptions.contains(ImageOption("NO_SELECTION", "None"))) {
+            newOptions.add(0, ImageOption("NO_SELECTION", "None"))
+
+            _uiState.update { it.copy(draftImageUrl = "", availableImages = newOptions) }
+        }
+    }
+
+    fun deleteCustomImage(path: String){
+        viewModelScope.launch {
+            albumRepository.deleteCustomImage(path)
+            _uiState.update { state ->
+                val updatedImages = state.availableImages.filter { it.url != path }
+
+                if (state.draftImageUrl == path) onClearImage()
+                val newDraft = if (state.draftImageUrl == path) "" else state.draftImageUrl
+
+                state.copy(
+                    availableImages = updatedImages,
+                    draftImageUrl = newDraft
+                )
+            }
+        }
+    }
+
     fun onLabelChange(newLabel: String) {
         _uiState.update { it.copy(draftLabel = newLabel) }
     }
@@ -177,6 +215,13 @@ class AlbumEditViewModel @Inject constructor(
         val options = mutableListOf<ImageOption>()
         val albumTracks = trackRepository.getAlbumTracks(albumId)
 
+        if (initialImageUrl.isNullOrEmpty()) options.add(0, ImageOption(url = "NO_SELECTION", source = "None"))
+
+        val customImages = albumRepository.getCustomImages(albumId)
+        val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }
+
+        options.addAll(customImageOptions)
+
         val localImages =
             if (albumTracks.isNotEmpty())
                 localLibraryScanner.findAllAlbumArtOptions(context, albumTracks[0].filePath)
@@ -194,6 +239,7 @@ class AlbumEditViewModel @Inject constructor(
             options.addAll(caaOptions)
 
         }
+
         if (options.isNotEmpty()) {
             // if draft image url not in options, set draft to options[0]
             val current = options.find { it.url == _uiState.value.draftImageUrl }
@@ -242,7 +288,9 @@ class AlbumEditViewModel @Inject constructor(
 
             val newAlbum = currentAlbum.copy(
                 releaseDate = _uiState.value.draftReleaseDate,
-                image = _uiState.value.draftImageUrl,
+                image = if (_uiState.value.newlyUploaded.contains(_uiState.value.draftImageUrl))
+                    albumRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), albumId)
+                        else _uiState.value.draftImageUrl,
                 label = _uiState.value.draftLabel
             )
             albumRepository.update(newAlbum)
@@ -349,6 +397,7 @@ data class AlbumEditUiState(
     val artist: String = "",
     val draftReleaseDate: String = "",
     val draftImageUrl: String = "",
+    val newlyUploaded: List<String> = emptyList<String>(),
     val availableImages: List<ImageOption> = emptyList(),
     val draftLabel: String = "",
     val draftGenres: List<String> = emptyList(),

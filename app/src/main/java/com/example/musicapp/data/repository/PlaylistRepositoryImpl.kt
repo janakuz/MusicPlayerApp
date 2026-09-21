@@ -12,6 +12,8 @@ import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.PlaylistWithArt
 import com.example.musicapp.data.local.model.PlaylistWithStats
+import com.example.musicapp.service.ImageStorageManager
+import com.example.musicapp.service.ImageTarget
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +27,7 @@ class PlaylistRepositoryImpl(
     private val playlistDao: PlaylistDao,
     private val playlistTracksDao: PlaylistTracksDao,
     private val db: AppDatabase,
+    private val imageStorageManager: ImageStorageManager,
     @ApplicationContext private val context: Context
 ) : PlaylistRepository {
 
@@ -106,26 +109,11 @@ class PlaylistRepositoryImpl(
     }
 
 
-    override fun savePlaylistImage(
-        context: Context,
-        uri: Uri
+    override suspend fun savePlaylistImage(
+        uri: Uri,
+        playlistId: Int,
     ): String? {
-        return try {
-            val directory = File(context.filesDir, "playlist_covers")
-            if (!directory.exists()) directory.mkdirs()
-
-            val file = File(directory, "playlist_${UUID.randomUUID()}.jpg")
-
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                file.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            file.absolutePath
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        return imageStorageManager.saveCustomArtwork(uri, ImageTarget.PLAYLIST, playlistId)
     }
 
     private fun readFile(context: Context, file: Uri): List<String> {

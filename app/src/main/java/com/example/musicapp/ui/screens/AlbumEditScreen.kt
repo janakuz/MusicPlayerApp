@@ -1,7 +1,14 @@
 package com.example.musicapp.ui.screens
 
+import android.text.Layout
+import android.widget.GridLayout
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,16 +23,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.ImageNotSupported
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.AlertDialog
@@ -37,6 +50,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
@@ -80,28 +94,78 @@ import kotlin.math.absoluteValue
 
 
 @Composable
-fun AlbumImagePicker(
+fun ImagePicker(
     images: List<ImageOption>,
     currentSelection: String,
-    onImageSelected: (String) -> Unit
+    onImageSelected: (String) -> Unit,
+    onCustomImageSelected: (String) -> Unit,
+    onClearImage: () -> Unit,
+    onDeleteCustomImage: (String) -> Unit,
 ) {
-    val initialPage = images.indexOfFirst { it.url == currentSelection }.coerceAtLeast(0)
-    val pagerState = rememberPagerState(initialPage = initialPage) { images.size }
+    val carouselImages = remember(images) {
+        images + ImageOption(url = "ACTION_CUSTOM_PICK", source = "Custom")
+    }
 
-    LaunchedEffect(images, initialPage) {
-        if (images.isNotEmpty()) {
+    val initialPage = carouselImages.indexOfFirst { it.url == currentSelection }.coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = initialPage) { carouselImages.size }
+
+    val deletedOption = ImageOption("NO_SELECTION", "None")
+
+    var hasScrolledToInitial by remember { mutableStateOf(false) }
+
+
+
+    LaunchedEffect(images) {
+        if (!hasScrolledToInitial && images.isNotEmpty() &&
+            carouselImages[pagerState.currentPage].url != "ACTION_CUSTOM_PICK") {
             pagerState.scrollToPage(initialPage)
+            hasScrolledToInitial = true
         }
     }
 
-    LaunchedEffect(pagerState.currentPage) {
-        if (images.isNotEmpty()) {
-            onImageSelected(images[pagerState.currentPage].url)
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onCustomImageSelected(uri.toString())
         }
     }
+
 
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clickable(onClick = onClearImage)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.ImageNotSupported,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Clear image (use default)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -130,36 +194,133 @@ fun AlbumImagePicker(
                             fraction = 1f - pageOffset.coerceIn(0f, 1f)
                         )
                     }
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .combinedClickable(
+                        onClick = {
+                            if (carouselImages[page].url == "ACTION_CUSTOM_PICK") {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
+                            else if (carouselImages[page].url != "NO_SELECTION"){
+                                onImageSelected(carouselImages[page].url)
+                            }
+                        }
+                    ),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                AsyncImage(
-                    model = images[page].url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(R.drawable.baseline_image_24),
-                    error = painterResource(R.drawable.baseline_broken_image_24),
-                    filterQuality = FilterQuality.Low,
-                    modifier = Modifier.fillMaxSize()
-                )
+
+                if (carouselImages[page].url == "ACTION_CUSTOM_PICK") {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(100.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Select from device...",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                } else if (carouselImages[page].url == "NO_SELECTION"){
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BrokenImage,
+                            contentDescription = null,
+                            modifier = Modifier.size(200.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "No image selected",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+
+                } else {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AsyncImage(
+                            model = carouselImages[page].url,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.baseline_image_24),
+                            error = painterResource(R.drawable.baseline_broken_image_24),
+                            filterQuality = FilterQuality.Low,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        if (carouselImages[page].url == currentSelection) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.padding(4.dp).size(16.dp)
+                                )
+                            }
+                        }
+
+                        if (carouselImages[page].source == "Custom") {
+                            IconButton(
+                                onClick = { onDeleteCustomImage(carouselImages[page].url) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                        shape = CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete custom image",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
         Row {
+            val current = if (carouselImages[pagerState.currentPage].url == "NO_SELECTION") 0
+                          else if (carouselImages.contains(deletedOption)) pagerState.currentPage
+                          else pagerState.currentPage + 1
+
+            val maxSize = if (images.contains(deletedOption)) images.size - 1 else images.size
             Text(
-                text = "${pagerState.currentPage + 1} / ${images.size}",
+                text = if (current <= maxSize) "$current / ${maxSize}" else "Add new...",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
 
-            if (images.isNotEmpty()) {
+            if (carouselImages.isNotEmpty()) {
                 Icon(
-                    imageVector = when (images[pagerState.currentPage].source) {
-                        "Local" -> Icons.Default.Folder
+                    imageVector = when (carouselImages[pagerState.currentPage].source) {
+                        "Local", "Custom" -> Icons.Default.Folder
                         "Web" -> Icons.Default.Public
                         else -> Icons.Default.QuestionMark
                     },
-                    contentDescription = images[pagerState.currentPage].source,
+                    contentDescription = carouselImages[pagerState.currentPage].source,
                     modifier = Modifier
                         .padding(6.dp)
                         .size(18.dp),
@@ -167,7 +328,6 @@ fun AlbumImagePicker(
                 )
             }
         }
-
     }
 }
 
@@ -357,10 +517,13 @@ fun AlbumEditScreen(
 
             LazyColumn(modifier = Modifier.padding(padding)) {
                 item {
-                    AlbumImagePicker(
+                    ImagePicker(
                         images = images,
                         currentSelection = albumEditUiState.draftImageUrl,
-                        onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) }
+                        onImageSelected = { selected -> albumEditViewModel.onImageChange(selected) },
+                        onCustomImageSelected = { selected -> albumEditViewModel.onCustomImageSelect(selected) },
+                        onClearImage = { albumEditViewModel.onClearImage() },
+                        onDeleteCustomImage = { path -> albumEditViewModel.deleteCustomImage(path) }
                     )
                 }
 

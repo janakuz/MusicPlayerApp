@@ -68,13 +68,11 @@ import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.musicapp.data.local.entity.AreaHierarchy
-import com.example.musicapp.data.local.model.FullArea
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.ui.components.EditTopBar
 import com.example.musicapp.ui.viewmodels.ArtistEditViewModel
 import com.example.musicapp.ui.viewmodels.CountryProvider
 import com.example.musicapp.ui.viewmodels.NameEditUiState
-import com.example.musicapp.util.toTitleCase
 import kotlin.math.absoluteValue
 import kotlin.text.trim
 
@@ -426,7 +424,7 @@ fun ArtistEditScreen(
 
     val artistEditUiState by artistEditViewModel.uiState.collectAsState()
     val nameEditWorkflowState by artistEditViewModel.workflowState.collectAsState()
-    val images = artistEditUiState.discogsImages.map { it.resourceUrl }
+    val images = artistEditUiState.imageOptions
     val canSave by artistEditViewModel.canSave.collectAsState()
     val suggestions by artistEditViewModel.genreSuggestions.collectAsState()
     val citySuggestions by artistEditViewModel.citySuggestions.collectAsState()
@@ -486,10 +484,13 @@ fun ArtistEditScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(modifier = Modifier.padding(padding)) {
                 item {
-                    ArtistImagePicker(
+                    ImagePicker(
                         images = images,
                         currentSelection = artistEditUiState.draftImageUrl,
-                        onImageSelected = { selected -> artistEditViewModel.onImageChange(selected) }
+                        onImageSelected = { selected -> artistEditViewModel.onImageChange(selected) },
+                        onCustomImageSelected = { selected -> artistEditViewModel.onCustomImageSelect(selected) },
+                        onClearImage = { artistEditViewModel.onClearImage() },
+                        onDeleteCustomImage = { path -> artistEditViewModel.deleteCustomImage(path) }
                     )
                 }
 

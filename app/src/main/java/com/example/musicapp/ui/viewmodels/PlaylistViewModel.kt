@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.data.local.entity.PlaylistTracks
+import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.TrackRepository
@@ -44,6 +46,11 @@ class PlaylistViewModel @Inject constructor(
     private val _eventChannel = Channel<String>(Channel.BUFFERED)
     val events = _eventChannel.receiveAsFlow()
 
+    private val _duplicateTracks = MutableStateFlow<List<TrackInfo>>(emptyList())
+    val duplicateTracks = _duplicateTracks.asStateFlow()
+
+    private val _deduplicateConfirmation = MutableStateFlow(DeduplicateState())
+    val deduplicateConfirmation = _deduplicateConfirmation.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val playlists: StateFlow<List<PlaylistUiModel>> = userPreferencesRepository.playlistsSortOption
@@ -106,17 +113,61 @@ class PlaylistViewModel @Inject constructor(
     }
 
 
-    fun addToPlaylist(tracks: List<Int>, playlist: Playlist) {
+    fun addToPlaylist(tracks: List<Int>, playlist: Playlist, checkDuplicates: Boolean = true) {
         viewModelScope.launch {
-            playlistTracksRepository.addTracksToPlaylist(playlist.id, tracks)
+            _addToPlaylistState.update { it.copy(playlist = playlist) }
+            val toAdd = if (checkDuplicates) {
+                val duplicates = playlistTracksRepository.getDuplicates(playlist.id, tracks)
 
-            if (tracks.size > 1) _eventChannel.send("Added ${tracks.size} tracks to ${playlist.name}")
-            else {
-                val trackInfo = trackRepository.getTracksByIds(tracks)
+                if (duplicates.isNotEmpty()) {
+                    _duplicateTracks.value = duplicates
+                }
+                _addToPlaylistState.update { it.copy(checkedDuplicates = true) }
+
+                val duplicateIds = duplicates.map { it.trackId }
+                tracks.filterNot { duplicateIds.contains(it) }
+
+            } else tracks
+
+            if (_addToPlaylistState.value.checkedDuplicates || !checkDuplicates) {
+                playlistTracksRepository.addTracksToPlaylist(playlist.id, toAdd)
+            }
+
+            if (toAdd.size > 1) _eventChannel.send("Added ${toAdd.size} tracks to ${playlist.name}")
+
+
+            else if (toAdd.size == 1) {
+                val trackInfo = trackRepository.getTracksByIds(toAdd)
                 _eventChannel.send("Added ${trackInfo[0].title} to ${playlist.name}")
             }
-            hideCreateDialog()
+            hideAddDialog()
         }
+    }
+
+    fun confirmDuplicates(playlistId: Int){
+        viewModelScope.launch {
+            val unique = playlistTracksRepository.findDuplicates(playlistId)
+            _deduplicateConfirmation.update { it.copy(
+                showConfirmDialog = true,
+                playlistId = playlistId,
+                duplicateCount = unique.countDuplicates,
+                unique = unique.deduplicated)
+            }
+        }
+    }
+
+    fun removeDuplicates(){
+        viewModelScope.launch {
+            playlistTracksRepository.removeDuplicates(_deduplicateConfirmation.value.unique, _deduplicateConfirmation.value.playlistId)
+            _eventChannel.send("Removed ${_deduplicateConfirmation.value.duplicateCount} " +
+                    if (_deduplicateConfirmation.value.duplicateCount > 1) "duplicates" else "duplicate"
+            )
+            _deduplicateConfirmation.value = DeduplicateState()
+        }
+    }
+
+    fun onDismissDeduplicate(){
+        _deduplicateConfirmation.value = DeduplicateState()
     }
 
     fun onAddToPlaylistArtist(artistId: Int) {
@@ -153,6 +204,11 @@ class PlaylistViewModel @Inject constructor(
 
     fun hideAddDialog() {
         _addToPlaylistState.update { it.copy(isShowing = false) }
+    }
+
+    fun hideDuplicateDialog(){
+        _duplicateTracks.value = emptyList<TrackInfo>()
+        _addToPlaylistState.update { it.copy(playlist = null, checkedDuplicates = false) }
     }
 
     fun showCreate() {
@@ -216,4 +272,15 @@ data class PlaylistUiModel(
     val totalDuration: Long
 )
 
-data class AddToPlaylistState(val trackIds: List<Int>, val isShowing: Boolean)
+data class AddToPlaylistState(
+    val trackIds: List<Int>,
+    val isShowing: Boolean,
+    val playlist: Playlist? = null,
+    val checkedDuplicates: Boolean = false)
+
+data class DeduplicateState(
+    val showConfirmDialog: Boolean = false,
+    val unique: List<PlaylistTracks> = emptyList(),
+    val duplicateCount: Int = 0,
+    val playlistId: Int = -1
+)

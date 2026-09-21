@@ -1,12 +1,12 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
-import com.example.musicapp.data.local.model.FullArea
 import com.example.musicapp.data.remote.dto.ArtistSearchInfo
 import com.example.musicapp.data.remote.dto.DiscogsImage
 import com.example.musicapp.data.repository.AreaRepository
@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.collections.map
 
 @HiltViewModel
 class ArtistEditViewModel @Inject constructor(
@@ -152,6 +153,7 @@ class ArtistEditViewModel @Inject constructor(
                     name = artist.name,
                     draftBio = artist.bio ?: "",
                     draftImageUrl = artist.image ?: "",
+                    imageOptions = getCustomImages(),
                     draftGenres = genres,
                     draftIsDefunct = artist.isDefunct,
                     draftCountry = artist.country ?: "",
@@ -163,8 +165,6 @@ class ArtistEditViewModel @Inject constructor(
                     draftActiveEndYear = artist.activeEndYear ?: "",
                     )
             }
-
-
             if (artist.discogsId != null) getDiscogsInfo(artist.discogsId)
             getLastfmInfo(artist.mbId, artist.name)
         }
@@ -216,15 +216,63 @@ class ArtistEditViewModel @Inject constructor(
         _uiState.update { it.copy(draftImageUrl = newImageUrl) }
     }
 
+    fun onCustomImageSelect(newImageUrl: String) {
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.imageOptions)
+        newOptions.add(ImageOption(newImageUrl, "Custom"))
+        val uploaded = mutableListOf<String>()
+        uploaded.addAll(_uiState.value.newlyUploaded)
+        uploaded.add(newImageUrl)
+        _uiState.update { it.copy(draftImageUrl = newImageUrl, newlyUploaded = uploaded, imageOptions = newOptions) }
+    }
+
+
 
     suspend fun getDiscogsInfo(discogsId: String) {
         val discogs = artistRepository.getArtistDiscogsInfo(discogsId)
         if (discogs != null) {
+            val images = discogs.images ?: emptyList()
+            val imageOptions = images.map { ImageOption(url = it.resourceUrl, source = "Web") }
             _uiState.update {
-                it.copy(discogsBio = discogs.profile, discogsImages = discogs.images ?: emptyList())
+                it.copy(discogsBio = discogs.profile, imageOptions = _uiState.value.imageOptions + imageOptions)
             }
         }
     }
+
+    suspend fun getCustomImages(): List<ImageOption> {
+        val customImages = artistRepository.getCustomImages(artistId)
+        val customImageOptions = customImages.map { ImageOption(url = it, source = "Custom") }.toMutableList()
+        if (initialImageUrl.isNullOrEmpty()) customImageOptions.add(0, ImageOption(url = "NO_SELECTION", source = "None"))
+        return customImageOptions
+    }
+
+    fun onClearImage(){
+        val newOptions = mutableListOf<ImageOption>()
+        newOptions.addAll(_uiState.value.imageOptions)
+        if (!newOptions.contains(ImageOption("NO_SELECTION", "None"))) {
+            newOptions.add(0, ImageOption("NO_SELECTION", "None"))
+
+            _uiState.update { it.copy(draftImageUrl = "", imageOptions = newOptions) }
+        }
+    }
+
+    fun deleteCustomImage(path: String){
+        viewModelScope.launch {
+            artistRepository.deleteCustomImage(path)
+            _uiState.update { state ->
+                val updatedImages = state.imageOptions.filter { it.url != path }
+
+                if (state.draftImageUrl == path) onClearImage()
+                val newDraft = if (state.draftImageUrl == path) "" else state.draftImageUrl
+
+                state.copy(
+                    imageOptions = updatedImages,
+                    draftImageUrl = newDraft
+                )
+            }
+        }
+    }
+
 
     suspend fun getLastfmInfo(mbId: String?, name: String) {
         val lastFm = artistRepository.getArtistBio(mbId, name)
@@ -241,7 +289,9 @@ class ArtistEditViewModel @Inject constructor(
 
             val newArtist = currentArtist.copy(
                 bio = _uiState.value.draftBio,
-                image = _uiState.value.draftImageUrl,
+                image = if (_uiState.value.newlyUploaded.contains(_uiState.value.draftImageUrl))
+                    artistRepository.saveCustomImage(_uiState.value.draftImageUrl.toUri(), artistId)
+                        else _uiState.value.draftImageUrl,
                 homeCity = _uiState.value.draftHomeCity,
                 homeAreaGid = _uiState.value.draftHomeCityId,
                 currentCity = _uiState.value.draftCurrentCity,
@@ -386,7 +436,8 @@ data class ArtistEditUiState(
     val name: String = "",
     val draftBio: String = "",
     val draftImageUrl: String = "",
-    val discogsImages: List<DiscogsImage> = emptyList(),
+    val newlyUploaded: List<String> = emptyList<String>(),
+    val imageOptions: List<ImageOption> = emptyList(),
     val draftGenres: List<String> = emptyList(),
     val draftCountry: String = "",
     val draftCountryCode: String = "",
