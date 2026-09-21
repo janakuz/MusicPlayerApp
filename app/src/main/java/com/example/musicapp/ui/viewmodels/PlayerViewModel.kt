@@ -820,9 +820,11 @@ class PlayerViewModel @Inject constructor(
     fun removeTrackAt(index: Int) {
         val currentList = queue.value.toMutableList()
         if (index in currentList.indices) {
-            controller!!.removeMediaItem(index)
+            val current = currentList[index]
+            controller!!.removeMediaItem(current.originalOrder)
             currentList.removeAt(index)
-            _currentTrack.value = currentList[controller!!.currentMediaItemIndex]
+            val playingId = controller!!.currentMediaItem?.mediaId
+            _currentTrack.value = currentList.first { it.queueId ==  playingId}
 
             val originalOrderLookup = currentList
                 .sortedBy { it.originalOrder }
