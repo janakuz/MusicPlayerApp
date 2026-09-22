@@ -11,6 +11,7 @@ import com.example.musicapp.service.LocalLibraryScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -87,6 +88,7 @@ class LibraryScanViewModel @Inject constructor(
                 .onSuccess {
                     _backupUiState.value = BackupUiState.Success
                     _eventChannel.send("Import successful. Restarting app...")
+                    delay(1500)
                     onImportSuccess()
                 }
                 .onFailure { error ->

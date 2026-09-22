@@ -7,6 +7,7 @@ import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.service.DatabaseBackupManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -78,6 +79,7 @@ class SettingsViewModel @Inject constructor(
                 .onSuccess {
                     _backupUiState.value = BackupUiState.Success
                     _eventChannel.send("Import successful. Restarting app...")
+                    delay(1500)
                     onImportSuccess()
                 }
                 .onFailure { error ->
