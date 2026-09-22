@@ -1,12 +1,14 @@
 package com.example.musicapp.ui.screens
 
 import android.Manifest
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -39,11 +42,12 @@ import com.example.musicapp.ui.viewmodels.Phase
 
 @Composable
 fun ScanLibraryScreen(
-    viewModel: LibraryScanViewModel = hiltViewModel(),
     isInitial: Boolean = false
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val workflowState by viewModel.workflowState.collectAsState()
+    val libraryScanViewModel: LibraryScanViewModel = hiltViewModel()
+
+    val uiState by libraryScanViewModel.uiState.collectAsState()
+    val workflowState by libraryScanViewModel.workflowState.collectAsState()
 
 
     //TEMP BUTTON
@@ -145,7 +149,7 @@ fun ScanLibraryScreen(
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = { granted ->
                         if (granted) {
-                            viewModel.startScan(context)
+                            libraryScanViewModel.startScan(context)
                         } else {
                             Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
                         }
@@ -158,7 +162,42 @@ fun ScanLibraryScreen(
                     contentPadding = PaddingValues(vertical = 16.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Start Import")
+                    Text("Start Scanning")
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "OR",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                }
+
+                val importLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.OpenDocument()
+                ) { uri: Uri? ->
+                    uri?.let { sourceUri ->
+                        libraryScanViewModel.importDatabase(sourceUri) {
+                            restartApp(context)
+                        }
+                    }
+                }
+
+                Button(
+                    onClick = { importLauncher.launch(arrayOf("*/*")) },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Import Existing Data")
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -175,7 +214,7 @@ fun ScanLibraryScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Button(
-                        onClick = { viewModel.getLyrics() },
+                        onClick = { libraryScanViewModel.getLyrics() },
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(vertical = 16.dp),
                         shape = RoundedCornerShape(16.dp)
@@ -186,7 +225,7 @@ fun ScanLibraryScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Button(
-                        onClick = { viewModel.extractAudioFeatures() },
+                        onClick = { libraryScanViewModel.extractAudioFeatures() },
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(vertical = 16.dp),
                         shape = RoundedCornerShape(16.dp)

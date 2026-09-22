@@ -76,6 +76,7 @@ import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.UserPreferencesRepositoryImpl
 import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.repository.WorkerManagerRepositoryImpl
+import com.example.musicapp.service.DatabaseBackupManager
 import com.example.musicapp.service.ImageStorageManager
 import dagger.Module
 import dagger.Provides
@@ -597,6 +598,16 @@ object AppModule {
     ): ImageStorageManager {
         return ImageStorageManager(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideDatabaseBackupManager(
+        @ApplicationContext context: Context,
+        db: AppDatabase,
+    ): DatabaseBackupManager {
+        return DatabaseBackupManager(context, db)
+    }
+
 
     @Provides
     @Singleton

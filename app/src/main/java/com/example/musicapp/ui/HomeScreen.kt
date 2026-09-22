@@ -226,7 +226,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
         playlistViewModel.events.collect { message ->
             snackbarHostState.showSnackbar(message)
         }
-
     }
 
     ModalNavigationDrawer(

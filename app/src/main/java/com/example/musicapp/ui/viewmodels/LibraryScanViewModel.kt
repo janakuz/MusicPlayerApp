@@ -1,18 +1,22 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import com.example.musicapp.data.repository.WorkerManagerRepository
+import com.example.musicapp.service.DatabaseBackupManager
 import com.example.musicapp.service.LocalLibraryScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,10 +40,17 @@ sealed class Phase {
 @HiltViewModel
 class LibraryScanViewModel @Inject constructor(
     private val scanner: LocalLibraryScanner,
-    private val workerManagerRepository: WorkerManagerRepository
-) : ViewModel() {
+    private val workerManagerRepository: WorkerManagerRepository,
+    private val databaseBackupManager: DatabaseBackupManager,
+    ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
+
+    private val _backupUiState = MutableStateFlow<BackupUiState>(BackupUiState.Idle)
+    val backupUiState = _backupUiState.asStateFlow()
+
+    private val _eventChannel = Channel<String>(Channel.BUFFERED)
+    val events = _eventChannel.receiveAsFlow()
 
     private val _workflowState = MutableStateFlow<Phase>(Phase.Idle)
     val workflowState = _workflowState.asStateFlow()
@@ -68,6 +79,23 @@ class LibraryScanViewModel @Inject constructor(
             }
         }
     }
+
+    fun importDatabase(sourceUri: Uri, onImportSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _backupUiState.value = BackupUiState.Loading
+            databaseBackupManager.importDatabase(sourceUri)
+                .onSuccess {
+                    _backupUiState.value = BackupUiState.Success
+                    _eventChannel.send("Import successful. Restarting app...")
+                    onImportSuccess()
+                }
+                .onFailure { error ->
+                    _backupUiState.value = BackupUiState.Error
+                    _eventChannel.send("Import failed: ${error.localizedMessage}")
+                }
+        }
+    }
+
 
     fun backfillLocalGenres(context: Context){
         viewModelScope.launch {

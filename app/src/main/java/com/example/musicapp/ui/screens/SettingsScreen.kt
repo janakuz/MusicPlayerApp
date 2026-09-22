@@ -1,5 +1,9 @@
 package com.example.musicapp.ui.screens
 
+import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +17,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import android.net.Uri
+import androidx.compose.material3.Button
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +44,8 @@ fun SettingsScreen(
 ) {
 
     val settingViewModel: SettingsViewModel = hiltViewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
+
 
     val skipSilenceEnabled by settingViewModel.skipSilenceEnabled.collectAsState()
     val minSimilarityScore by settingViewModel.minSimilarityScore.collectAsState()
@@ -70,8 +80,53 @@ fun SettingsScreen(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.surfaceVariant
         )
+
+        val context = LocalContext.current
+
+        val exportLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/x-sqlite3")
+        ) { uri: Uri? ->
+            uri?.let { settingViewModel.exportDatabase(it) }
+        }
+
+        val importLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument()
+        ) { uri: Uri? ->
+            uri?.let { sourceUri ->
+                settingViewModel.importDatabase(sourceUri) {
+                    restartApp(context)
+                }
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            settingViewModel.events.collect { message ->
+                snackbarHostState.showSnackbar(message)
+            }
+
+        }
+
+
+        Column {
+            Button(onClick = { exportLauncher.launch("music_app_backup.db") }) {
+                Text("Export Database")
+            }
+
+            Button(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
+                Text("Import Database")
+            }
+        }
      }
 
+}
+
+fun restartApp(context: Context) {
+    val packageManager = context.packageManager
+    val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+    val componentName = intent?.component
+    val mainIntent = Intent.makeRestartActivityTask(componentName)
+    context.startActivity(mainIntent)
+    Runtime.getRuntime().exit(0)
 }
 
 @Composable
@@ -138,7 +193,6 @@ fun SettingsSliderRow(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        // Label section mirroring the standard row look
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
