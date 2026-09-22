@@ -152,20 +152,6 @@ object AppModule {
             "music_app_db"
         )
             .addMigrations(*ALL_MIGRATIONS)
-            .addCallback(object : RoomDatabase.Callback() {
-                override fun onOpen(db: SupportSQLiteDatabase) {
-                    super.onOpen(db)
-
-                    val cursor = db.query("SELECT COUNT(*) FROM area_hierarchy")
-                    cursor.moveToFirst()
-                    val count = cursor.getInt(0)
-                    cursor.close()
-
-                    if (count == 0) {
-                        populateMetadataFromAsset(context, db)
-                    }
-                }
-            })
             .build()
     }
 
@@ -653,7 +639,9 @@ object AppModule {
         trackMoodRepository: TrackMoodRepository,
         albumArtistRepository: AlbumArtistRepository,
         albumGenreRepository: AlbumGenreRepository,
-        artistGenreRepository: ArtistGenreRepository
+        artistGenreRepository: ArtistGenreRepository,
+        db: AppDatabase,
+        @ApplicationContext context: Context
     ): MetadataRepository {
         return OfflineMetadataRepository(
             albumRepository,
@@ -662,7 +650,9 @@ object AppModule {
             trackMoodRepository,
             albumArtistRepository,
             albumGenreRepository,
-            artistGenreRepository
+            artistGenreRepository,
+            db,
+            context
         )
     }
 

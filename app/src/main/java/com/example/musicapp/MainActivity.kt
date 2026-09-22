@@ -1,6 +1,9 @@
 package com.example.musicapp
 
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -16,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -79,8 +83,10 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(lifecycleOwner) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_RESUME) {
-                            scope.launch {
-                                backgroundScanViewModel.runSync(context)
+                            if (hasAudioPermission(context) && isLibraryInitialized.value) {
+                                scope.launch {
+                                    backgroundScanViewModel.runSync(context)
+                                }
                             }
                         }
                     }
@@ -96,7 +102,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    fun hasAudioPermission(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_MEDIA_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 
 
 }
-
