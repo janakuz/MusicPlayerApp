@@ -124,7 +124,7 @@ fun SettingsScreen(
                 title = "Export Database",
                 description = "Save a copy of your library metadata, playlists, and settings to external storage.",
                 buttonText = "Export",
-                onClick = { exportLauncher.launch("music_app_backup.db") }
+                onClick = { exportLauncher.launch("music_app_backup.zip") }
             )
 
             SettingsActionRow(
