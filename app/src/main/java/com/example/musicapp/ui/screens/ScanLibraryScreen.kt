@@ -1,12 +1,15 @@
 package com.example.musicapp.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,13 +21,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,14 +46,22 @@ import com.example.musicapp.ui.viewmodels.LibraryScanViewModel
 import com.example.musicapp.ui.viewmodels.Phase
 
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ScanLibraryScreen(
-    viewModel: LibraryScanViewModel = hiltViewModel(),
     isInitial: Boolean = false
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val workflowState by viewModel.workflowState.collectAsState()
+    val libraryScanViewModel: LibraryScanViewModel = hiltViewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    val uiState by libraryScanViewModel.uiState.collectAsState()
+    val workflowState by libraryScanViewModel.workflowState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        libraryScanViewModel.events.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     //TEMP BUTTON
 //    val context = LocalContext.current
@@ -66,135 +83,177 @@ fun ScanLibraryScreen(
 //    )
 
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.LibraryMusic,
-            contentDescription = null,
+    Scaffold(snackbarHost = {
+        SnackbarHost(
+            snackbarHostState,
+        )
+    }) {
+        Column(
             modifier = Modifier
-                .size(120.dp)
-                .alpha(0.8f),
-            tint = MaterialTheme.colorScheme.primary
-        )
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.LibraryMusic,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(120.dp)
+                    .alpha(0.8f),
+                tint = MaterialTheme.colorScheme.primary
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        if (isInitial) {
-            Text("Welcome to MusicApp", style = MaterialTheme.typography.headlineMedium)
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            "Press the button below to scan your music",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-
-        Spacer(Modifier.height(8.dp))
-
-
-        Spacer(Modifier.height(32.dp))
-
-        when (workflowState) {
-            is Phase.Scanning -> {
-                LinearProgressIndicator(
-                    progress = { uiState.scanProgress / 100f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(CircleShape)
-                )
-                Text("Importing ${(uiState.scanProgress).toInt()}%")
-
+            if (isInitial) {
+                Text("Welcome to MusicApp", style = MaterialTheme.typography.headlineMedium)
             }
 
-            is Phase.Enriching -> {
-                Text("Tracks imported! Retrieving metadata...")
+            Spacer(Modifier.height(8.dp))
 
-                Spacer(Modifier.height(8.dp))
+            Text(
+                "Press the button below to scan your music",
+                style = MaterialTheme.typography.bodyMedium
+            )
 
-                LinearProgressIndicator(
-                    progress = { uiState.enrichmentProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(CircleShape)
-                )
 
-                Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
-                Text("${uiState.statusMessage}")
-            }
 
-            is Phase.Error -> {
-                Text((workflowState as Phase.Error).error)
-            }
+            Spacer(Modifier.height(32.dp))
 
-            is Phase.Idle -> {
-                val context = LocalContext.current
-                val permission =
-                    Manifest.permission.READ_MEDIA_AUDIO
+            when (workflowState) {
+                is Phase.Scanning -> {
+                    LinearProgressIndicator(
+                        progress = { uiState.scanProgress / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(CircleShape)
+                    )
+                    Text("Importing ${(uiState.scanProgress).toInt()}%")
 
-                val launcher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission(),
-                    onResult = { granted ->
-                        if (granted) {
-                            viewModel.startScan(context)
-                        } else {
-                            Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                )
-
-                Button(
-                    onClick = { launcher.launch(permission) },
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 16.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Start Import")
                 }
 
-                Spacer(Modifier.height(8.dp))
+                is Phase.Enriching -> {
+                    Text("Tracks imported! Retrieving metadata...")
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "Scanning for the following features (lyrics and audio features) takes a " +
-                                "significant amount of time (potentially a few hours for large libraries). " +
-                                "You can leave the scan running safely in the background.",
-                        color = Color.Yellow,
-                        style = MaterialTheme.typography.labelSmall
+                    Spacer(Modifier.height(8.dp))
+
+                    LinearProgressIndicator(
+                        progress = { uiState.enrichmentProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(CircleShape)
                     )
 
                     Spacer(Modifier.height(8.dp))
 
+                    Text("${uiState.statusMessage}")
+                }
+
+                is Phase.Error -> {
+                    Text((workflowState as Phase.Error).error)
+                }
+
+                is Phase.Idle -> {
+                    val context = LocalContext.current
+                    val permission =
+                        Manifest.permission.READ_MEDIA_AUDIO
+
+                    val launcher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission(),
+                        onResult = { granted ->
+                            if (granted) {
+                                libraryScanViewModel.startScan(context)
+                            } else {
+                                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }
+                    )
+
                     Button(
-                        onClick = { viewModel.getLyrics() },
+                        onClick = { launcher.launch(permission) },
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(vertical = 16.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Get Lyrics")
+                        Text("Start Scanning")
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "OR",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                    }
+
+                    val importLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.OpenDocument()
+                    ) { uri: Uri? ->
+                        uri?.let { sourceUri ->
+                            libraryScanViewModel.importDatabase(sourceUri) {
+                                restartApp(context)
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = { importLauncher.launch(arrayOf("*/*")) },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(vertical = 16.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Import Existing Data")
                     }
 
                     Spacer(Modifier.height(8.dp))
 
-                    Button(
-                        onClick = { viewModel.extractAudioFeatures() },
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(vertical = 16.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text("Get Audio Features")
-                    }
-                }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Scanning for the following features (lyrics and audio features) takes a " +
+                                    "significant amount of time (potentially a few hours for large libraries). " +
+                                    "You can leave the scan running safely in the background.",
+                            color = Color.Yellow,
+                            style = MaterialTheme.typography.labelSmall
+                        )
 
+                        Spacer(Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { libraryScanViewModel.getLyrics() },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Get Lyrics")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { libraryScanViewModel.extractAudioFeatures() },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Get Audio Features")
+                        }
+                    }
+
+                }
             }
         }
     }

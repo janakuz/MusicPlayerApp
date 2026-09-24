@@ -76,6 +76,7 @@ import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.UserPreferencesRepositoryImpl
 import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.repository.WorkerManagerRepositoryImpl
+import com.example.musicapp.service.DatabaseBackupManager
 import com.example.musicapp.service.ImageStorageManager
 import dagger.Module
 import dagger.Provides
@@ -151,20 +152,6 @@ object AppModule {
             "music_app_db"
         )
             .addMigrations(*ALL_MIGRATIONS)
-            .addCallback(object : RoomDatabase.Callback() {
-                override fun onOpen(db: SupportSQLiteDatabase) {
-                    super.onOpen(db)
-
-                    val cursor = db.query("SELECT COUNT(*) FROM area_hierarchy")
-                    cursor.moveToFirst()
-                    val count = cursor.getInt(0)
-                    cursor.close()
-
-                    if (count == 0) {
-                        populateMetadataFromAsset(context, db)
-                    }
-                }
-            })
             .build()
     }
 
@@ -600,6 +587,16 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideDatabaseBackupManager(
+        @ApplicationContext context: Context,
+        db: AppDatabase,
+    ): DatabaseBackupManager {
+        return DatabaseBackupManager(context, db)
+    }
+
+
+    @Provides
+    @Singleton
     fun providePlaylistRepository(
         playlistDao: PlaylistDao,
         playlistTracksDao: PlaylistTracksDao,
@@ -642,7 +639,9 @@ object AppModule {
         trackMoodRepository: TrackMoodRepository,
         albumArtistRepository: AlbumArtistRepository,
         albumGenreRepository: AlbumGenreRepository,
-        artistGenreRepository: ArtistGenreRepository
+        artistGenreRepository: ArtistGenreRepository,
+        db: AppDatabase,
+        @ApplicationContext context: Context
     ): MetadataRepository {
         return OfflineMetadataRepository(
             albumRepository,
@@ -651,7 +650,9 @@ object AppModule {
             trackMoodRepository,
             albumArtistRepository,
             albumGenreRepository,
-            artistGenreRepository
+            artistGenreRepository,
+            db,
+            context
         )
     }
 
