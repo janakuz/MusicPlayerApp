@@ -20,7 +20,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.musicapp"
+        applicationId = "com.github.janakuz.musicapp"
         minSdk = 33
         targetSdk = 36
         versionCode = 8
@@ -45,11 +45,16 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+
+        debug {
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "DIY Player (Debug)")
         }
     }
     compileOptions {
@@ -58,6 +63,11 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+        freeCompilerArgs += listOf(
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
+            )
     }
     buildFeatures {
         compose = true
