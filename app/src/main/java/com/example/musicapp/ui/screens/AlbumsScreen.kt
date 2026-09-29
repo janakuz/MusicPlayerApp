@@ -110,7 +110,6 @@ fun AllAlbumsScreen(
     onAddToQueue: (GridItem) -> Unit,
     onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
-    sortRequest: SortOption?,
 ) {
     val albumViewModel: AllAlbumsViewModel = hiltViewModel()
 
@@ -140,14 +139,6 @@ fun AllAlbumsScreen(
             )
         }
     }
-
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            albumViewModel.setSort(it)
-        }
-    }
-
 
     val albumsState by albumViewModel.albumListUiState.collectAsState()
     val albums = albumsState.albums

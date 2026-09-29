@@ -20,8 +20,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import java.io.File
-import java.util.UUID
 
 class PlaylistRepositoryImpl(
     private val playlistDao: PlaylistDao,
@@ -39,7 +37,7 @@ class PlaylistRepositoryImpl(
             SortField.DATE_CREATED -> playlistDao.getAllPlaylists("createdAt", sortBy.ascending)
             SortField.DATE_UPDATED -> playlistDao.getAllPlaylists("lastUpdated", sortBy.ascending)
             SortField.DURATION -> playlistDao.getAllPlaylistsByDuration(sortBy.ascending)
-            SortField.TRACK_NUM -> playlistDao.getAllPlaylistsByNumTracks(sortBy.ascending)
+            SortField.NUMBER_OF_TRACKS -> playlistDao.getAllPlaylistsByNumTracks(sortBy.ascending)
             else -> playlistDao.getAllPlaylists("name", sortBy.ascending)
         }
     }

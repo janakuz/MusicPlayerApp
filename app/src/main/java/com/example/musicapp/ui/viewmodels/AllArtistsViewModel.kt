@@ -13,7 +13,6 @@ import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
-import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,7 +50,7 @@ class AllArtistsViewModel @Inject constructor(
     val pendingDeleteUris = _pendingDeleteUris.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val artistListUiState: StateFlow<ArtistListUiState> = userPreferencesRepository.artistSortOption
+    val artistListUiState: StateFlow<ArtistListUiState> = userPreferencesRepository.artistsSortOption
         .flatMapLatest { option ->
             artistRepository.getAllArtistsSorted(option.ascending)
                 .map { artists -> ArtistListUiState(artists = artists, isLoading = false) }
@@ -65,12 +64,6 @@ class AllArtistsViewModel @Inject constructor(
             initialValue = ArtistListUiState(isLoading = true)
         )
 
-
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateArtistSort(option)
-        }
-    }
 
     init {
         Log.d("Artists VM", "CREATED ${hashCode()}")

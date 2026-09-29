@@ -15,7 +15,6 @@ import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
-import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,7 +53,7 @@ class AllAlbumsViewModel @Inject constructor(
     val refetchState = _refetchState.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val albumListUiState: StateFlow<AlbumListUiState> = userPreferencesRepository.albumSortOption
+    val albumListUiState: StateFlow<AlbumListUiState> = userPreferencesRepository.albumsSortOption
         .flatMapLatest { option ->
             albumRepository.getAllAlbums(option)
                 .map { albums -> AlbumListUiState(albums = toAlbumInfo(albums), isLoading = false) }
@@ -85,12 +84,6 @@ class AllAlbumsViewModel @Inject constructor(
             )
         }
         return albumInfos
-    }
-
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateAlbumSort(option)
-        }
     }
 
     fun prepareDeletion(albumId: Int) {

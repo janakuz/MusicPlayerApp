@@ -72,17 +72,7 @@ fun PlaylistsScreen(
     onAddToQueue: (Int) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
-    sortRequest: SortOption?,
-    onSort: (SortOption) -> Unit,
 ) {
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            onSort(it)
-        }
-    }
-
-
     if (createInfo.isShowing) {
         CreatePlaylistDialog(
             createInfo = createInfo,

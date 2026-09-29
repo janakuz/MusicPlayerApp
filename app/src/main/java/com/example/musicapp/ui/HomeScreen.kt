@@ -156,16 +156,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val noBack = tabs + listOf(HomeScreen.Scan, HomeScreen.Playlists, HomeScreen.Settings)
 //    HomeScreen.Scan,HomeScreen.Playlists)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    var artistSort by remember { mutableStateOf<SortOption?>(null) }
-    var albumSort by remember { mutableStateOf<SortOption?>(null) }
-    var trackSort by remember { mutableStateOf<SortOption?>(null) }
-    var artistDetailSort by remember { mutableStateOf<SortOption?>(null) }
-    var playlistsSort by remember { mutableStateOf<SortOption?>(null) }
-    var genresSort by remember { mutableStateOf<SortOption?>(null) }
-    var countriesSort by remember { mutableStateOf<SortOption?>(null) }
-    var areasSort by remember { mutableStateOf<SortOption?>(null) }
-    var labelsSort by remember { mutableStateOf<SortOption?>(null) }
-    var moodsSort by remember { mutableStateOf<SortOption?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -354,20 +344,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     else -> navController.navigate("search")
                                 }
                             },
-                            onSortClick = { sort ->
-                                when (currentRoute) {
-                                    HomeScreen.Artists.name -> artistSort = sort
-                                    HomeScreen.Albums.name -> albumSort = sort
-                                    HomeScreen.Tracks.name -> trackSort = sort
-                                    "artist/{artistId}" -> artistDetailSort = sort
-                                    HomeScreen.Playlists.name -> playlistsSort = sort
-                                    HomeScreen.Genres.name -> genresSort = sort
-                                    HomeScreen.Countries.name -> countriesSort = sort
-                                    HomeScreen.Areas.name -> areasSort = sort
-                                    HomeScreen.Labels.name -> labelsSort = sort
-                                    HomeScreen.Moods.name -> moodsSort = sort
-                                }
-                            },
                             onImport = {
                                 importM3uLauncher.launch(
                                     arrayOf(
@@ -392,7 +368,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                     navBackStackEntry?.arguments?.getString("playlistId") ?: ""
 
                                 playlistViewModel.confirmDuplicates(playlistId.toInt())
-                            }
+                            },
+                            currentRoute = currentRoute
                         )
                     }
                     if (selectionMode) {
@@ -494,7 +471,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
                 composable(route = HomeScreen.Artists.name) {
                     AllArtistsScreen(
-                        sortRequest = artistSort,
                         onClick = { artist ->
                             navController.navigate("artist/${artist.id}")
                             {
@@ -510,7 +486,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
                 composable(route = HomeScreen.Albums.name) {
                     AllAlbumsScreen(
-                        sortRequest = albumSort,
                         onClick = { album ->
                             navController.navigate("album/${album.id}") {
                                 launchSingleTop = true
@@ -526,7 +501,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
                 composable(route = HomeScreen.Tracks.name) {
                     AllTracksScreen(
-                        sortRequest = trackSort,
                         onClick = { track, tracks ->
                             playerViewModel.playTracks(tracks, track)
 //                            navController.navigate("nowPlaying")
@@ -545,13 +519,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 composable(route = HomeScreen.Genres.name) {
                     GenresScreen(
                         onGenreClick = { id -> navController.navigate("genre/$id") },
-                        sortRequest = genresSort)
+                    )
                 }
 
                 composable(route = HomeScreen.Countries.name) {
                     CountriesScreen(
                         onCountryClick = { code -> navController.navigate("country/$code")},
-                        sortRequest = countriesSort
                     )
                 }
 
@@ -561,7 +534,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onLabelClick = { name ->
                             val safeName = URLEncoder.encode(name, StandardCharsets.UTF_8.name())
                             navController.navigate("label/$safeName")},
-                        sortRequest = labelsSort
                     )
                 }
 
@@ -570,7 +542,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     MoodDashboardScreen(
                         onMoodClick = { id ->
                             navController.navigate("mood/$id")},
-                        sortRequest = moodsSort
                     )
                 }
 
@@ -589,7 +560,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             else
                                 navController.navigate("scene_detail/${safeType.lowercase()}/$code/$gid")
                                       },
-                        sortRequest = areasSort
                     )
                 }
 
@@ -603,7 +573,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { album -> playerViewModel.playNextAlbum(album.id) },
                         onAddToQueue = { album -> playerViewModel.addToQueueAlbum(album.id) },
                         onEdit = { album -> navController.navigate("album/edit/${album.id}/artist_view") },
-                        sortRequest = artistDetailSort,
                         onAddToPlaylist = { album -> playlistViewModel.onAddToPlaylistAlbum(album.id) },
                         onPlayNextArtist = { artist -> playerViewModel.playNextArtist(artist.id) },
                         onAddToQueueArtist = { artist -> playerViewModel.addToQueueArtist(artist.id) },
@@ -925,8 +894,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { id -> playerViewModel.playNextPlaylist(id) },
                         onAddToQueue = { id -> playerViewModel.addToQueuePlaylist(id) },
                         onPlay = { id -> playerViewModel.playPlaylist(id) },
-                        sortRequest = playlistsSort,
-                        onSort = { option -> playlistViewModel.setSort(option) },
                         onAddToPlaylist = { id -> playlistViewModel.onAddToPlaylistPlaylist(id) }
                     )
                 }

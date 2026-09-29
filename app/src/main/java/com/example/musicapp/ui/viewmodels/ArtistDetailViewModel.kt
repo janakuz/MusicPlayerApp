@@ -220,13 +220,6 @@ class ArtistDetailViewModel @Inject constructor(
         }
     }
 
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateArtistAlbumsSort(option)
-        }
-    }
-
-
     fun prepareDeletion(albumId: Int) {
         viewModelScope.launch {
             val uris = trackRepository.getAlbumTracks(albumId).map { it.fileUri }

@@ -18,19 +18,11 @@ import com.example.musicapp.util.toTitleCase
 @Composable
 fun MoodDashboardScreen(
     onMoodClick: (Int) -> Unit,
-    sortRequest: SortOption?,
     ){
     val moodDashboardViewModel: MoodDashboardViewModel = hiltViewModel()
     val moodsList by moodDashboardViewModel.moodsWithCounts.collectAsState()
 
     val visibleMoods = moodsList.filter { it.trackCount > 0 }
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            moodDashboardViewModel.setSort(it)
-        }
-    }
-
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),

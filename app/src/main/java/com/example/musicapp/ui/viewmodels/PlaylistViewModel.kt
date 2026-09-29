@@ -92,12 +92,6 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updatePlaylistsSort(option)
-        }
-    }
-
     fun createPlaylist() {
         viewModelScope.launch {
             val newPlaylist = Playlist(

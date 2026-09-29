@@ -26,10 +26,4 @@ class CountriesDashboardViewModel @Inject constructor(
             areaRepository.getCountriesDashboardInfo(option)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateCountrySort(option)
-        }
-    }
 }

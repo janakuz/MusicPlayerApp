@@ -1,46 +1,43 @@
 package com.example.musicapp.ui.components
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowLeft
-import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.musicapp.ui.LibraryScreen
+import com.example.musicapp.util.toTitleCase
 
 enum class SortField {
     NAME,
     RELEASE_DATE,
     DURATION,
-    TRACK_NUM,
+    NUMBER_OF_TRACKS,
     DATE_CREATED,
     DATE_UPDATED,
     TOTAL_COUNT,
     ARTIST_COUNT,
     ALBUM_COUNT
 }
-
-enum class MenuPage { MAIN, SORT }
-
 
 data class SortOption(
     val field: SortField = SortField.NAME,
@@ -63,7 +60,7 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         )
 
         LibraryScreen.PLAYLISTS -> listOf(
-            SortField.NAME, SortField.DURATION, SortField.TRACK_NUM,
+            SortField.NAME, SortField.DURATION, SortField.NUMBER_OF_TRACKS,
             SortField.DATE_CREATED, SortField.DATE_UPDATED
         )
 
@@ -92,175 +89,71 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
     }
 
 
-@Composable
-fun SortMenu(
-    screen: LibraryScreen,
-    onSortSelected: (SortOption) -> Unit,
-) {
-
-    availableSortFields(screen).forEach { field ->
-        if (screen != LibraryScreen.AREAS && screen != LibraryScreen.LABELS) {
-            DropdownMenuItem(
-                text = {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            "Sort by ${
-                                field.name.lowercase().replace("_", " ")
-                                    .replaceFirstChar { it.uppercase() }
-                            } "
-                        )
-                        Icon(
-                            Icons.Default.ArrowUpward,
-                            contentDescription = "ASC",
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                },
-                onClick = {
-                    onSortSelected(SortOption(field, ascending = true))
-                }
-            )
-        }
-        DropdownMenuItem(
-            text = {
-                Row(verticalAlignment = Alignment.Bottom) {
-
-                    Text(
-                        "Sort by ${
-                            field.name.lowercase().replace("_", " ")
-                                .replaceFirstChar { it.uppercase() }
-                        } "
-                    )
-
-                    Icon(
-                        Icons.Default.ArrowDownward,
-                        contentDescription = "DESC",
-                        modifier = Modifier.size(16.dp),
-                    )
-
-                }
-            },
-            onClick = {
-                onSortSelected(SortOption(field, ascending = false))
-            }
-        )
-    }
-
-
+fun isSortable(screen: LibraryScreen): Boolean{
+    return availableSortFields(screen).isNotEmpty()
 }
 
 
+
 @Composable
-fun RightMenu(
+fun SortMenuContent(
     screen: LibraryScreen,
-    onSortSelected: (SortOption) -> Unit,
-    onImport: (() -> Unit)? = null,
-    onShowSimilar: (() -> Unit)? = null,
-    onOpenSequencer: (() -> Unit)? = null,
-    onDeduplicate: (() -> Unit)? = null,
+    currentSortOption: SortOption,
+    onSortOptionSelected: (SortOption) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp)
     ) {
-    var expanded by remember { mutableStateOf(false) }
-    var menuPage by remember { mutableStateOf(MenuPage.MAIN) }
-
-
-    Box {
-
-        IconButton(
-            onClick = {
-                expanded = true
-                menuPage = MenuPage.MAIN
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Sort By",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(onClick = {
+                onSortOptionSelected(SortOption(currentSortOption.field, !currentSortOption.ascending))
             }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                Icon(
+                    imageVector = if (currentSortOption.ascending == true)
+                        Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                    contentDescription = "Toggle Sort Order"
+                )
+            }
         }
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        availableSortFields(screen).forEach { field ->
+            val isSelected = field == currentSortOption.field
+            ListItem(
+                headlineContent = { Text(field.name.lowercase().replace("_", " ").toTitleCase()) },
+                leadingContent = {
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = null
+                    )
+                },
+                modifier = Modifier.clickable {
+                    onSortOptionSelected(SortOption(field, currentSortOption.ascending))
+                }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth()
         ) {
-
-            when (menuPage) {
-                MenuPage.MAIN -> {
-                    if (screen == LibraryScreen.PLAYLISTS && onImport != null) {
-                        DropdownMenuItem(
-                            text = { Text("Import .m3u") },
-                            onClick = {
-                                expanded = false
-                                onImport()
-                            }
-                        )
-                    }
-                    if (screen == LibraryScreen.ARTIST_DETAIL && onShowSimilar != null) {
-                        DropdownMenuItem(
-                            text = { Text("Add Similar Artist") },
-                            onClick = {
-                                expanded = false
-                                onShowSimilar()
-                            }
-                        )
-                    }
-                    if (screen == LibraryScreen.PLAYLIST_DETAIL && onOpenSequencer != null){
-                        DropdownMenuItem(
-                            text = { Text("Open Sequencing Helper") },
-                            onClick = {
-                                expanded = false
-                                onOpenSequencer()
-                            }
-                        )
-                    }
-
-                    if (screen == LibraryScreen.PLAYLIST_DETAIL && onDeduplicate != null){
-                        DropdownMenuItem(
-                            text = { Text("Remove Duplicates") },
-                            onClick = {
-                                expanded = false
-                                onDeduplicate()
-                            }
-                        )
-
-                    }
-
-
-
-                    if (availableSortFields(screen).isNotEmpty()) {
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Sort")
-                                    Icon(Icons.AutoMirrored.Filled.ArrowRight, null)
-                                }
-                            },
-                            onClick = { menuPage = MenuPage.SORT }
-                        )
-                    }
-                }
-
-
-                MenuPage.SORT -> {
-
-                    if (availableSortFields(screen).isNotEmpty()) {
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowLeft, null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Back", fontWeight = FontWeight.Bold)
-                                }
-                            },
-                            onClick = { menuPage = MenuPage.MAIN }
-                        )
-                        SortMenu(
-                            screen = screen,
-                            onSortSelected = { screen ->
-                                expanded = false
-                                onSortSelected(screen)
-                            },
-                        )
-                    }
-                }
-
-            }
+            Text("Done")
         }
     }
 }
