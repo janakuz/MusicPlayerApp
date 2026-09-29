@@ -26,3 +26,4 @@ app/*.gif
 *.db-journal
 *.db-wal
 *.db-shm
+/app/release
