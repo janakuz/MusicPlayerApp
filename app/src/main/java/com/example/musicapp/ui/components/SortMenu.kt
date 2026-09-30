@@ -121,7 +121,7 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
         LibraryScreen.PLAYLISTS -> listOf(
             SortField.NAME, SortField.DURATION, SortField.NUMBER_OF_TRACKS,
             SortField.DATE_CREATED, SortField.DATE_UPDATED
-        )
+        ) + characteristics
 
         LibraryScreen.GENRES -> listOf(
             SortField.NAME, SortField.TOTAL_COUNT, SortField.ARTIST_COUNT, SortField.ALBUM_COUNT
