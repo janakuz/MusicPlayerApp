@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Album
@@ -15,29 +16,42 @@ class AlbumArtistRepositoryImpl(
     private val albumArtistDao: AlbumArtistDao,
     private val trackDao: TrackDao
 ) : AlbumArtistRepository {
-    override fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>> {
-        return albumArtistDao.getAlbumsByArtist(artistId)
-    }
-
     override fun getAllAlbumsByArtistSorted(
         artistId: Int,
         orderBy: SortOption
     ): Flow<List<AlbumInfo>> {
-        return when (orderBy.field) {
-            SortField.NAME -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistTitle(artistId) else albumArtistDao.getAlbumsByArtistTitleDesc(
-                artistId
-            )
+        val titleSort = """
+                         CASE 
+                            WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
+                            WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
+                            WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
+                            WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)
+                            ELSE title 
+                         END COLLATE NOCASE
+                        """.trimIndent()
 
-            SortField.DURATION -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistDuration(
-                artistId
-            ) else albumArtistDao.getAlbumsByArtistDurationDesc(artistId)
+        val sqlOrderBy =
+            when (orderBy.field) {
+                SortField.NAME -> titleSort
+                SortField.DURATION -> "duration"
+                SortField.RELEASE_DATE -> "releaseDate"
+                else -> titleSort
+            }
 
-            SortField.RELEASE_DATE -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtist(
-                artistId
-            ) else albumArtistDao.getAlbumsByArtistDesc(artistId)
+        val direction = if (orderBy.ascending) "ASC" else "DESC"
 
-            else -> albumArtistDao.getAlbumsByArtistTitle(artistId) //shouldn't happen
-        }
+        val sqlString = """
+                         SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
+                         FROM albums a
+                         JOIN album_artists aa ON aa.albumId = a.id
+                         JOIN artists ar ON aa.artistId = ar.id
+                         WHERE ar.id = $artistId
+                         ORDER BY $sqlOrderBy $direction
+                        """.trimIndent()
+
+        val query = SimpleSQLiteQuery(sqlString)
+
+        return albumArtistDao.getArtistAlbumsSorted(query)
     }
 
     override fun getAllAlbumsByArtistFull(artistId: Int): Flow<List<Album>> {
@@ -46,10 +60,6 @@ class AlbumArtistRepositoryImpl(
 
     override suspend fun getAllAlbumArtists(albumId: Int): List<Artist> {
         return albumArtistDao.getAllAlbumArtists(albumId)
-    }
-
-    override fun getAll(): Flow<List<AlbumInfo>> {
-        return albumArtistDao.getAll()
     }
 
     override suspend fun getAllUnenriched(): List<AlbumInfo> {

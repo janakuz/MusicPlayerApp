@@ -13,19 +13,6 @@ import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface AlbumRepository {
-
-    fun getAllAlbumsByName(): Flow<List<Album>>
-
-    fun getAllAlbumsByNameDesc(): Flow<List<Album>>
-
-    fun getAllAlbumsByReleaseDate(): Flow<List<Album>>
-
-    fun getAllAlbumsByReleaseDateDesc(): Flow<List<Album>>
-
-    fun getAllAlbumsByDuration(): Flow<List<Album>>
-
-    fun getAllAlbumsByDurationDesc(): Flow<List<Album>>
-
     fun getAllAlbums(orderBy: SortOption): Flow<List<Album>>
 
     fun getAlbum(id: Int): Flow<Album>

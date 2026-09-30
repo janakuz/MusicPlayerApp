@@ -3,6 +3,7 @@ package com.example.musicapp.data.repository
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Album
@@ -32,32 +33,32 @@ class AlbumRepositoryImpl(
     private val discogsApiService: DiscogsApiService,
     private val imageStorageManager: ImageStorageManager
 ) : AlbumRepository {
-
-    override fun getAllAlbumsByName(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByName()
-
-    override fun getAllAlbumsByNameDesc(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByNameDesc()
-
-    override fun getAllAlbumsByReleaseDate(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByReleaseDate()
-
-    override fun getAllAlbumsByReleaseDateDesc(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByReleaseDateDesc()
-
-    override fun getAllAlbumsByDuration(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByDuration()
-
-    override fun getAllAlbumsByDurationDesc(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByDurationDesc()
-
     override fun getAllAlbums(orderBy: SortOption): Flow<List<Album>> {
-        return when (orderBy.field) {
-            SortField.NAME -> if (orderBy.ascending) albumDao.getAllAlbumsByName() else albumDao.getAllAlbumsByNameDesc()
-            SortField.DURATION -> if (orderBy.ascending) albumDao.getAllAlbumsByDuration() else albumDao.getAllAlbumsByDurationDesc()
-            SortField.RELEASE_DATE -> if (orderBy.ascending) albumDao.getAllAlbumsByReleaseDate() else albumDao.getAllAlbumsByReleaseDateDesc()
-            else -> albumDao.getAllAlbumsByName() //shouldn't happen
-        }
+        val titleSort = """
+                         CASE 
+                            WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
+                            WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
+                            WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
+                            WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)
+                            ELSE title 
+                         END COLLATE NOCASE
+                        """.trimIndent()
+
+        val sqlOrderBy =
+            when (orderBy.field) {
+                SortField.NAME -> titleSort
+                SortField.DURATION -> "duration"
+                SortField.RELEASE_DATE -> "releaseDate"
+                else -> titleSort
+            }
+
+        val direction = if (orderBy.ascending) "ASC" else "DESC"
+
+        val sqlString = "SELECT * FROM albums ORDER BY $sqlOrderBy $direction"
+
+        val query = SimpleSQLiteQuery(sqlString)
+
+        return albumDao.getAlbumsSorted(query)
     }
 
     override fun getAlbum(id: Int): Flow<Album> =
