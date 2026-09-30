@@ -103,7 +103,7 @@ fun availableSortFields(screen: LibraryScreen): List<SortField> =
                     characteristics
 
         LibraryScreen.TRACKS ->
-            listOf(SortField.NAME, SortField.DURATION)
+            listOf(SortField.NAME, SortField.DURATION) + characteristics
 
         LibraryScreen.ARTIST_DETAIL -> listOf(
             SortField.NAME,
