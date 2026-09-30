@@ -5,9 +5,12 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.model.AlbumIdWithArtist
 import com.example.musicapp.data.local.model.AlbumInfo
 import kotlinx.coroutines.flow.Flow
@@ -23,102 +26,9 @@ interface AlbumArtistDao {
     @Delete
     suspend fun delete(albumArtist: AlbumArtist)
 
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    WHERE ar.id = :artistId
-    ORDER BY a.releaseDate ASC
-    """
-    )
-    fun getAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>>
 
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    WHERE ar.id = :artistId
-    ORDER BY a.releaseDate DESC
-    """
-    )
-    fun getAlbumsByArtistDesc(artistId: Int): Flow<List<AlbumInfo>>
-
-
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    WHERE ar.id = :artistId
-    ORDER BY 
-        CASE 
-            WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
-            WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
-            WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
-            WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)
-            ELSE title 
-        END COLLATE NOCASE ASC"""
-    )
-    fun getAlbumsByArtistTitle(artistId: Int): Flow<List<AlbumInfo>>
-
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    WHERE ar.id = :artistId
-    ORDER BY 
-        CASE 
-            WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
-            WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
-            WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
-            WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)
-            ELSE title 
-        END COLLATE NOCASE DESC"""
-    )
-    fun getAlbumsByArtistTitleDesc(artistId: Int): Flow<List<AlbumInfo>>
-
-
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    WHERE ar.id = :artistId
-    ORDER BY a.duration ASC
-    """
-    )
-    fun getAlbumsByArtistDuration(artistId: Int): Flow<List<AlbumInfo>>
-
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    WHERE ar.id = :artistId
-    ORDER BY a.duration DESC
-    """
-    )
-    fun getAlbumsByArtistDurationDesc(artistId: Int): Flow<List<AlbumInfo>>
-
-    @Query(
-        """
-    SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
-    FROM albums a
-    JOIN album_artists aa ON aa.albumId = a.id
-    JOIN artists ar ON aa.artistId = ar.id
-    ORDER BY a.duration ASC
-    """
-    )
-    fun getAll(): Flow<List<AlbumInfo>>
+    @RawQuery(observedEntities = [AlbumArtist::class, Album::class, Artist::class, Track::class])
+    fun getArtistAlbumsSorted(query: SupportSQLiteQuery): Flow<List<AlbumInfo>>
 
     @Query(
         """

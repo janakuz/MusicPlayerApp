@@ -30,16 +30,8 @@ fun AllTracksScreen(
     onAddToQueue: (TrackInfo) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onEdit: (TrackInfo) -> Unit,
-    sortRequest: SortOption?,
 ) {
     val trackViewModel: AllTracksViewModel = hiltViewModel()
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            trackViewModel.setSort(it)
-        }
-    }
-
 
     val tracksUIState by trackViewModel.tracksUiState.collectAsState()
     val tracks = tracksUIState.tracks
@@ -79,9 +71,9 @@ fun AllTracksScreen(
 
 }
 
-@Preview(showBackground = true)
-@Composable
-fun TracksPreview() {
-    MusicAppTheme {
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun TracksPreview() {
+//    MusicAppTheme {
+//    }
+//}

@@ -37,19 +37,11 @@ import com.example.musicapp.util.toTitleCase
 @Composable
 fun CountriesScreen(
     onCountryClick: (String) -> Unit,
-    sortRequest: SortOption?,
     ) {
     val countryDashboardViewModel: CountriesDashboardViewModel = hiltViewModel()
     val countriesList by countryDashboardViewModel.countriesWithCounts.collectAsState()
 
     val visibleCountries = countriesList.filter { it.artistCount > 0 || it.albumCount > 0 }
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            countryDashboardViewModel.setSort(it)
-        }
-    }
-
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),

@@ -47,21 +47,21 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         val MIN_SIMILARITY_SCORE = doublePreferencesKey("min_similarity_score")
     }
 
-    override val artistSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+    override val artistsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[ARTIST_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[ARTIST_SORT_ASC] ?: true
         )
     }.distinctUntilChanged()
 
-    override val albumSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+    override val albumsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[ALBUM_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[ALBUM_SORT_ASC] ?: true
         )
     }.distinctUntilChanged()
 
-    override val trackSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+    override val tracksSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[TRACK_SORT_FIELD] ?: SortField.NAME.name),
             ascending = prefs[TRACK_SORT_ASC] ?: true
@@ -99,21 +99,21 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         )
     }.distinctUntilChanged()
 
-    override val areaSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+    override val areasSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[AREA_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
             ascending = false
         )
     }.distinctUntilChanged()
 
-    override val labelSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+    override val labelsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[LABEL_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
             ascending = false
         )
     }.distinctUntilChanged()
 
-    override val moodSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
+    override val moodsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->
         SortOption(
             field = SortField.valueOf(prefs[MOODS_SORT_FIELD] ?: SortField.TOTAL_COUNT.name),
             ascending = prefs[MOODS_SORT_ASC] ?: false
@@ -131,21 +131,21 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
     }.distinctUntilChanged()
 
 
-    override suspend fun updateArtistSort(option: SortOption) {
+    override suspend fun updateArtistsSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[ARTIST_SORT_FIELD] = option.field.name
             prefs[ARTIST_SORT_ASC] = option.ascending
         }
     }
 
-    override suspend fun updateAlbumSort(option: SortOption) {
+    override suspend fun updateAlbumsSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[ALBUM_SORT_FIELD] = option.field.name
             prefs[ALBUM_SORT_ASC] = option.ascending
         }
     }
 
-    override suspend fun updateTrackSort(option: SortOption) {
+    override suspend fun updateTracksSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[TRACK_SORT_FIELD] = option.field.name
             prefs[TRACK_SORT_ASC] = option.ascending
@@ -173,27 +173,27 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         }
     }
 
-    override suspend fun updateCountrySort(option: SortOption) {
+    override suspend fun updateCountriesSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[COUNTRIES_SORT_FIELD] = option.field.name
             prefs[COUNTRIES_SORT_ASC] = option.ascending
         }
     }
 
-    override suspend fun updateAreaSort(option: SortOption) {
+    override suspend fun updateAreasSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[AREA_SORT_FIELD] = option.field.name
         }
     }
 
 
-    override suspend fun updateLabelSort(option: SortOption) {
+    override suspend fun updateLabelsSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[LABEL_SORT_FIELD] = option.field.name
         }
     }
 
-    override suspend fun updateMoodSort(option: SortOption) {
+    override suspend fun updateMoodsSort(option: SortOption) {
         dataStore.edit { prefs ->
             prefs[MOODS_SORT_FIELD] = option.field.name
             prefs[MOODS_SORT_ASC] = option.ascending

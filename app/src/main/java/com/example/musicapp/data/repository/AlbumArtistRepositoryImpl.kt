@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumArtistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Album
@@ -9,35 +10,72 @@ import com.example.musicapp.data.local.model.AlbumIdWithArtist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.characteristics
 import kotlinx.coroutines.flow.Flow
 
 class AlbumArtistRepositoryImpl(
     private val albumArtistDao: AlbumArtistDao,
     private val trackDao: TrackDao
 ) : AlbumArtistRepository {
-    override fun getAllAlbumsByArtist(artistId: Int): Flow<List<AlbumInfo>> {
-        return albumArtistDao.getAlbumsByArtist(artistId)
+    private fun characteristicSort(characteristic: String): String {
+        return """
+            (
+                SELECT AVG(t.$characteristic) 
+                FROM tracks t 
+                WHERE t.albumId = a.id
+            )
+        """.trimIndent()
     }
 
     override fun getAllAlbumsByArtistSorted(
         artistId: Int,
         orderBy: SortOption
     ): Flow<List<AlbumInfo>> {
-        return when (orderBy.field) {
-            SortField.NAME -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistTitle(artistId) else albumArtistDao.getAlbumsByArtistTitleDesc(
-                artistId
-            )
+        val titleSort = """
+                         CASE 
+                            WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
+                            WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
+                            WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
+                            WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)
+                            ELSE title 
+                         END COLLATE NOCASE
+                        """.trimIndent()
 
-            SortField.DURATION -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtistDuration(
-                artistId
-            ) else albumArtistDao.getAlbumsByArtistDurationDesc(artistId)
+        val sqlOrderBy =
+            when (orderBy.field) {
+                SortField.NAME -> titleSort
+                SortField.DURATION -> "duration"
+                SortField.RELEASE_DATE -> "releaseDate"
+                SortField.NUMBER_OF_TRACKS -> "numTracks"
+                SortField.ENGAGEMENT -> characteristicSort("engagement")
+                SortField.APPROACHABILITY -> characteristicSort("approachability")
+                SortField.DANCEABILITY -> characteristicSort("danceability")
+                SortField.MOOD_AGGRESSIVE -> characteristicSort("moodAggressive")
+                SortField.MOOD_RELAXED -> characteristicSort("moodRelaxed")
+                SortField.MOOD_SAD -> characteristicSort("moodSad")
+                SortField.MOOD_HAPPY -> characteristicSort("moodHappy")
+                SortField.MOOD_PARTY -> characteristicSort("moodParty")
+                SortField.BPM -> characteristicSort("bpm")
+                SortField.LOUDNESS -> characteristicSort("loudness")
+                SortField.DYNAMIC_RANGE -> characteristicSort("dynamicComplexity")
+                else -> "releaseDate"
+            }
 
-            SortField.RELEASE_DATE -> if (orderBy.ascending) albumArtistDao.getAlbumsByArtist(
-                artistId
-            ) else albumArtistDao.getAlbumsByArtistDesc(artistId)
+        val direction = if (orderBy.ascending) "ASC" else "DESC"
 
-            else -> albumArtistDao.getAlbumsByArtistTitle(artistId) //shouldn't happen
-        }
+        val sqlString = """
+                         SELECT a.id as albumId, a.title, a.releaseDate, a.image, ar.name as artistName, ar.id as artistId, a.duration, a.numTracks
+                         FROM albums a
+                         JOIN album_artists aa ON aa.albumId = a.id
+                         JOIN artists ar ON aa.artistId = ar.id
+                         WHERE ar.id = $artistId
+                         ORDER BY $sqlOrderBy $direction 
+                         ${if (orderBy.field in characteristics) "NULLS LAST" else ""}
+                        """.trimIndent()
+
+        val query = SimpleSQLiteQuery(sqlString)
+
+        return albumArtistDao.getArtistAlbumsSorted(query)
     }
 
     override fun getAllAlbumsByArtistFull(artistId: Int): Flow<List<Album>> {
@@ -46,10 +84,6 @@ class AlbumArtistRepositoryImpl(
 
     override suspend fun getAllAlbumArtists(albumId: Int): List<Artist> {
         return albumArtistDao.getAllAlbumArtists(albumId)
-    }
-
-    override fun getAll(): Flow<List<AlbumInfo>> {
-        return albumArtistDao.getAll()
     }
 
     override suspend fun getAllUnenriched(): List<AlbumInfo> {

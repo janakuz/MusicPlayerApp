@@ -5,30 +5,30 @@ import kotlinx.coroutines.flow.Flow
 
 interface UserPreferencesRepository {
 
-    val artistSortOption: Flow<SortOption>
-    val albumSortOption: Flow<SortOption>
-    val trackSortOption: Flow<SortOption>
+    val artistsSortOption: Flow<SortOption>
+    val albumsSortOption: Flow<SortOption>
+    val tracksSortOption: Flow<SortOption>
     val artistAlbumsSortOption: Flow<SortOption>
     val playlistsSortOption: Flow<SortOption>
     val genresSortOption: Flow<SortOption>
     val countriesSortOption: Flow<SortOption>
-    val areaSortOption: Flow<SortOption>
-    val labelSortOption: Flow<SortOption>
-    val moodSortOption: Flow<SortOption>
+    val areasSortOption: Flow<SortOption>
+    val labelsSortOption: Flow<SortOption>
+    val moodsSortOption: Flow<SortOption>
 
     val skipSilenceToggle: Flow<Boolean>
     val minVisibleSimilarityScore: Flow<Double>
 
-    suspend fun updateArtistSort(option: SortOption)
-    suspend fun updateAlbumSort(option: SortOption)
-    suspend fun updateTrackSort(option: SortOption)
+    suspend fun updateArtistsSort(option: SortOption)
+    suspend fun updateAlbumsSort(option: SortOption)
+    suspend fun updateTracksSort(option: SortOption)
     suspend fun updateArtistAlbumsSort(option: SortOption)
     suspend fun updatePlaylistsSort(option: SortOption)
     suspend fun updateGenresSort(option: SortOption)
-    suspend fun updateCountrySort(option: SortOption)
-    suspend fun updateAreaSort(option: SortOption)
-    suspend fun updateLabelSort(option: SortOption)
-    suspend fun updateMoodSort(option: SortOption)
+    suspend fun updateCountriesSort(option: SortOption)
+    suspend fun updateAreasSort(option: SortOption)
+    suspend fun updateLabelsSort(option: SortOption)
+    suspend fun updateMoodsSort(option: SortOption)
 
     suspend fun updateSkipSilence(enabled: Boolean)
     suspend fun updateMinSimilarityScore(newValue: Double)

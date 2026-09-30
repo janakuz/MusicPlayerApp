@@ -3,6 +3,7 @@ package com.example.musicapp.data.repository
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Album
@@ -19,6 +20,7 @@ import com.example.musicapp.service.ImageStorageManager
 import com.example.musicapp.service.ImageTarget
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.characteristics
 import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -33,31 +35,59 @@ class AlbumRepositoryImpl(
     private val imageStorageManager: ImageStorageManager
 ) : AlbumRepository {
 
-    override fun getAllAlbumsByName(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByName()
-
-    override fun getAllAlbumsByNameDesc(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByNameDesc()
-
-    override fun getAllAlbumsByReleaseDate(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByReleaseDate()
-
-    override fun getAllAlbumsByReleaseDateDesc(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByReleaseDateDesc()
-
-    override fun getAllAlbumsByDuration(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByDuration()
-
-    override fun getAllAlbumsByDurationDesc(): Flow<List<Album>> =
-        albumDao.getAllAlbumsByDurationDesc()
+    private fun characteristicSort(characteristic: String): String {
+        return """
+            (
+                SELECT AVG(t.$characteristic) 
+                FROM tracks t 
+                WHERE t.albumId = a.id
+            )
+        """.trimIndent()
+    }
 
     override fun getAllAlbums(orderBy: SortOption): Flow<List<Album>> {
-        return when (orderBy.field) {
-            SortField.NAME -> if (orderBy.ascending) albumDao.getAllAlbumsByName() else albumDao.getAllAlbumsByNameDesc()
-            SortField.DURATION -> if (orderBy.ascending) albumDao.getAllAlbumsByDuration() else albumDao.getAllAlbumsByDurationDesc()
-            SortField.RELEASE_DATE -> if (orderBy.ascending) albumDao.getAllAlbumsByReleaseDate() else albumDao.getAllAlbumsByReleaseDateDesc()
-            else -> albumDao.getAllAlbumsByName() //shouldn't happen
-        }
+        val titleSort = """
+                         CASE 
+                            WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
+                            WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
+                            WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
+                            WHEN title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(title, 2)
+                            ELSE title 
+                         END COLLATE NOCASE
+                        """.trimIndent()
+
+        val sqlOrderBy =
+            when (orderBy.field) {
+                SortField.NAME -> titleSort
+                SortField.DURATION -> "duration"
+                SortField.RELEASE_DATE -> "releaseDate"
+                SortField.NUMBER_OF_TRACKS -> "numTracks"
+                SortField.ENGAGEMENT -> characteristicSort("engagement")
+                SortField.APPROACHABILITY -> characteristicSort("approachability")
+                SortField.DANCEABILITY -> characteristicSort("danceability")
+                SortField.MOOD_AGGRESSIVE -> characteristicSort("moodAggressive")
+                SortField.MOOD_RELAXED -> characteristicSort("moodRelaxed")
+                SortField.MOOD_SAD -> characteristicSort("moodSad")
+                SortField.MOOD_HAPPY -> characteristicSort("moodHappy")
+                SortField.MOOD_PARTY -> characteristicSort("moodParty")
+                SortField.BPM -> characteristicSort("bpm")
+                SortField.LOUDNESS -> characteristicSort("loudness")
+                SortField.DYNAMIC_RANGE -> characteristicSort("dynamicComplexity")
+                else -> titleSort
+            }
+
+        val direction = if (orderBy.ascending) "ASC" else "DESC"
+
+        val sqlString = """
+                        SELECT * 
+                        FROM albums a
+                        ORDER BY $sqlOrderBy $direction 
+                        ${if (orderBy.field in characteristics) "NULLS LAST" else ""}
+                       """.trimIndent()
+
+        val query = SimpleSQLiteQuery(sqlString)
+
+        return albumDao.getAlbumsSorted(query)
     }
 
     override fun getAlbum(id: Int): Flow<Album> =

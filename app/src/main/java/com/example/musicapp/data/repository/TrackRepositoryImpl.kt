@@ -13,6 +13,7 @@ import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackLyrics
@@ -23,6 +24,7 @@ import com.example.musicapp.data.remote.service.EssentiaApiService
 import com.example.musicapp.data.remote.service.LRCLibApiService
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.characteristics
 import com.example.musicapp.ui.viewmodels.SelectSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -46,24 +48,51 @@ class TrackRepositoryImpl(
     private val lyricsApi: LRCLibApiService,
     ) : TrackRepository {
 
-    override fun getAllTracksByName(): Flow<List<TrackInfo>> =
-        trackDao.getAllTracksByName()
-
-    override fun getAllTracksByNameDesc(): Flow<List<TrackInfo>> =
-        trackDao.getAllTracksByNameDesc()
-
-    override fun getAllTracksByDuration(): Flow<List<TrackInfo>> =
-        trackDao.getAllTracksByDuration()
-
-    override fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>> =
-        trackDao.getAllTracksByDurationDesc()
-
     override fun getAllTracks(orderBy: SortOption): Flow<List<TrackInfo>> {
-        return when (orderBy.field) {
-            SortField.NAME -> if (orderBy.ascending) trackDao.getAllTracksByName() else trackDao.getAllTracksByNameDesc()
-            SortField.DURATION -> if (orderBy.ascending) trackDao.getAllTracksByDuration() else trackDao.getAllTracksByDurationDesc()
-            else -> trackDao.getAllTracksByName()
-        }
+        val titleSort = """
+                         CASE 
+                            WHEN t.title LIKE 'The %' THEN SUBSTR(t.title, 5)
+                            WHEN t.title LIKE 'A %' THEN SUBSTR(t.title, 3)
+                            WHEN t.title LIKE 'An %' THEN SUBSTR(t.title, 4)
+                            WHEN t.title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(t.title, 2)
+                            ELSE t.title 
+                         END COLLATE NOCASE
+                        """.trimIndent()
+
+        val sqlOrderBy =
+            when (orderBy.field) {
+                SortField.NAME -> titleSort
+                SortField.DURATION -> "t.duration"
+                SortField.ENGAGEMENT -> "engagement"
+                SortField.APPROACHABILITY -> "approachability"
+                SortField.DANCEABILITY -> "danceability"
+                SortField.MOOD_AGGRESSIVE -> "moodAggressive"
+                SortField.MOOD_RELAXED -> "moodRelaxed"
+                SortField.MOOD_SAD -> "moodSad"
+                SortField.MOOD_HAPPY -> "moodHappy"
+                SortField.MOOD_PARTY -> "moodParty"
+                SortField.BPM -> "bpm"
+                SortField.LOUDNESS -> "loudness"
+                SortField.DYNAMIC_RANGE -> "dynamicComplexity"
+                else -> titleSort
+            }
+
+        val direction = if (orderBy.ascending) "ASC" else "DESC"
+
+        val sqlString = """
+                        SELECT t.id as trackId, t.title as title, ar.name as artistName, 
+                          al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
+                          t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, 
+                          t.albumId as albumId, t.artistId as artistId 
+                        FROM tracks t
+                        JOIN artists ar on t.artistId=ar.id
+                        JOIN albums al on t.albumId=al.id
+                        ORDER BY $sqlOrderBy $direction 
+                       """.trimIndent()
+
+        val query = SimpleSQLiteQuery(sqlString)
+
+        return trackDao.getTracksSorted(query)
     }
 
     override fun getAllTracksFull(): Flow<List<Track>> {

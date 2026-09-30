@@ -19,20 +19,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicapp.ui.LibraryScreen
+import com.example.musicapp.ui.viewmodels.SortViewModel
+import com.example.musicapp.util.toTitleCase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryTopBar(
     currentScreen: LibraryScreen,
+    currentRoute: String,
     onFilterClick: () -> Unit,
     onSearchClick: () -> Unit,
-    onSortClick: (SortOption) -> Unit,
+//    onSortClick: (SortOption) -> Unit,
     onMenuClick: () -> Unit,
     onImport: (() -> Unit)? = null,
     title: String? = "",
@@ -42,6 +47,9 @@ fun LibraryTopBar(
     onOpenSequencer: (() -> Unit)? = null,
     onDeduplicate: (() -> Unit)? = null,
     ) {
+    var expanded by remember { mutableStateOf(false) }
+    var showSort by remember { mutableStateOf(false) }
+
     TopAppBar(
         title = {
             Text(
@@ -69,13 +77,41 @@ fun LibraryTopBar(
                 Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
             }
 
-            RightMenu(
-                screen = currentScreen,
-                onSortSelected = onSortClick,
-                onImport = onImport,
-                onShowSimilar = onShowSimilar,
-                onOpenSequencer = onOpenSequencer,
-                onDeduplicate = onDeduplicate)
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "More Options")
+            }
+
+            val topBarSortViewModel: SortViewModel = hiltViewModel()
+            val currentSortOption by topBarSortViewModel.getSortOptionForRoute(currentRoute).collectAsState()
+
+            val actions = MenuActions(
+                onDeduplicate = if (currentScreen == LibraryScreen.PLAYLIST_DETAIL) onDeduplicate else null,
+                onImportM3u = if (currentScreen == LibraryScreen.PLAYLISTS) onImport else null,
+                onAddSimilar = if (currentScreen == LibraryScreen.ARTIST_DETAIL) onShowSimilar else null,
+                onOpenSequencer = if (currentScreen == LibraryScreen.PLAYLIST_DETAIL) onOpenSequencer else null,
+                onSort =  if (isSortable(currentScreen)) { { showSort = true } } else null
+            )
+            if (expanded){
+                TopActionsMenu(
+                    title = "${currentScreen.name.split("_").first().toTitleCase()} Options",
+                    onDismiss = {
+                        expanded = false
+                        showSort = false
+                    },
+                    actions = actions,
+                    onSortClick = { sortOption -> topBarSortViewModel.updateSortOption(currentRoute, sortOption) },
+                    showSortMenu = showSort,
+                    currentScreen = currentScreen,
+                    currentSortOption = currentSortOption
+                )
+            }
+//            RightMenu(
+//                screen = currentScreen,
+//                onSortSelected = onSortClick,
+//                onImport = onImport,
+//                onShowSimilar = onShowSimilar,
+//                onOpenSequencer = onOpenSequencer,
+//                onDeduplicate = onDeduplicate)
         }
     )
 }

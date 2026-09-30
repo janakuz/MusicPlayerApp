@@ -625,7 +625,6 @@ fun ArtistView(
     onEditArtist: (GridItem) -> Unit,
     onClickArtist: (GridItem) -> Unit,
     onAddToPlaylistArtist: (GridItem) -> Unit,
-    sortRequest: SortOption?,
     onAddToPlaylist: (GridItem) -> Unit,
     showAddSimilarDialog: Boolean,
     onDismissSimilar: () -> Unit,
@@ -662,11 +661,11 @@ fun ArtistView(
     }
 
 
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            artistDetailViewModel.setSort(it)
-        }
-    }
+//    LaunchedEffect(sortRequest) {
+//        sortRequest?.let {
+//            artistDetailViewModel.setSort(it)
+//        }
+//    }
 
 
     val artistDetailUiState by artistDetailViewModel.artistDetailUiState.collectAsState()

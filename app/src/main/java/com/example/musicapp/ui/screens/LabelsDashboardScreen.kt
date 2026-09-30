@@ -25,20 +25,11 @@ import com.example.musicapp.ui.viewmodels.LabelsDashboardViewModel
 @Composable
 fun LabelsScreen(
     onLabelClick: (String) -> Unit,
-    sortRequest: SortOption?,
-
     ) {
     val labelsDashboardViewModel: LabelsDashboardViewModel = hiltViewModel()
     val labelsList by labelsDashboardViewModel.labelsWithCounts.collectAsState()
 
     val visibleLabels = labelsList.filter { it.artistCount > 0 || it.albumCount > 0 }
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            labelsDashboardViewModel.setSort(it)
-        }
-    }
-
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),
