@@ -10,6 +10,7 @@ import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.GenreInfo
 import com.example.musicapp.data.local.model.LabelInfo
@@ -29,7 +30,7 @@ interface AlbumDao {
     @Delete
     suspend fun delete(album: Album)
 
-    @RawQuery(observedEntities = [Album::class])
+    @RawQuery(observedEntities = [Album::class, Track::class])
     fun getAlbumsSorted(query: SupportSQLiteQuery): Flow<List<Album>>
 
     @Query("SELECT * FROM albums WHERE id=:id")

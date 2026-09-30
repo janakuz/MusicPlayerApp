@@ -20,6 +20,7 @@ import com.example.musicapp.service.ImageStorageManager
 import com.example.musicapp.service.ImageTarget
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.characteristics
 import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +34,17 @@ class AlbumRepositoryImpl(
     private val discogsApiService: DiscogsApiService,
     private val imageStorageManager: ImageStorageManager
 ) : AlbumRepository {
+
+    private fun characteristicSort(characteristic: String): String {
+        return """
+            (
+                SELECT AVG(t.$characteristic) 
+                FROM tracks t 
+                WHERE t.albumId = a.id
+            )
+        """.trimIndent()
+    }
+
     override fun getAllAlbums(orderBy: SortOption): Flow<List<Album>> {
         val titleSort = """
                          CASE 
@@ -49,12 +61,27 @@ class AlbumRepositoryImpl(
                 SortField.NAME -> titleSort
                 SortField.DURATION -> "duration"
                 SortField.RELEASE_DATE -> "releaseDate"
+                SortField.NUMBER_OF_TRACKS -> "numTracks"
+                SortField.ENGAGEMENT -> characteristicSort("engagement")
+                SortField.APPROACHABILITY -> characteristicSort("approachability")
+                SortField.DANCEABILITY -> characteristicSort("danceability")
+                SortField.MOOD_AGGRESSIVE -> characteristicSort("moodAggressive")
+                SortField.MOOD_RELAXED -> characteristicSort("moodRelaxed")
+                SortField.MOOD_SAD -> characteristicSort("moodSad")
+                SortField.MOOD_HAPPY -> characteristicSort("moodHappy")
+                SortField.MOOD_PARTY -> characteristicSort("moodParty")
+                SortField.BPM -> characteristicSort("bpm")
                 else -> titleSort
             }
 
         val direction = if (orderBy.ascending) "ASC" else "DESC"
 
-        val sqlString = "SELECT * FROM albums ORDER BY $sqlOrderBy $direction"
+        val sqlString = """
+                        SELECT * 
+                        FROM albums a
+                        ORDER BY $sqlOrderBy $direction 
+                        ${if (orderBy.field in characteristics) "NULLS LAST" else ""}
+                       """.trimIndent()
 
         val query = SimpleSQLiteQuery(sqlString)
 

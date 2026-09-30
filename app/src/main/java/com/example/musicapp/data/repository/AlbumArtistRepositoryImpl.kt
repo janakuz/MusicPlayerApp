@@ -10,12 +10,23 @@ import com.example.musicapp.data.local.model.AlbumIdWithArtist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.characteristics
 import kotlinx.coroutines.flow.Flow
 
 class AlbumArtistRepositoryImpl(
     private val albumArtistDao: AlbumArtistDao,
     private val trackDao: TrackDao
 ) : AlbumArtistRepository {
+    private fun characteristicSort(characteristic: String): String {
+        return """
+            (
+                SELECT AVG(t.$characteristic) 
+                FROM tracks t 
+                WHERE t.albumId = a.id
+            )
+        """.trimIndent()
+    }
+
     override fun getAllAlbumsByArtistSorted(
         artistId: Int,
         orderBy: SortOption
@@ -35,7 +46,17 @@ class AlbumArtistRepositoryImpl(
                 SortField.NAME -> titleSort
                 SortField.DURATION -> "duration"
                 SortField.RELEASE_DATE -> "releaseDate"
-                else -> titleSort
+                SortField.NUMBER_OF_TRACKS -> "numTracks"
+                SortField.ENGAGEMENT -> characteristicSort("engagement")
+                SortField.APPROACHABILITY -> characteristicSort("approachability")
+                SortField.DANCEABILITY -> characteristicSort("danceability")
+                SortField.MOOD_AGGRESSIVE -> characteristicSort("moodAggressive")
+                SortField.MOOD_RELAXED -> characteristicSort("moodRelaxed")
+                SortField.MOOD_SAD -> characteristicSort("moodSad")
+                SortField.MOOD_HAPPY -> characteristicSort("moodHappy")
+                SortField.MOOD_PARTY -> characteristicSort("moodParty")
+                SortField.BPM -> characteristicSort("bpm")
+                else -> "releaseDate"
             }
 
         val direction = if (orderBy.ascending) "ASC" else "DESC"
@@ -46,7 +67,8 @@ class AlbumArtistRepositoryImpl(
                          JOIN album_artists aa ON aa.albumId = a.id
                          JOIN artists ar ON aa.artistId = ar.id
                          WHERE ar.id = $artistId
-                         ORDER BY $sqlOrderBy $direction
+                         ORDER BY $sqlOrderBy $direction 
+                         ${if (orderBy.field in characteristics) "NULLS LAST" else ""}
                         """.trimIndent()
 
         val query = SimpleSQLiteQuery(sqlString)

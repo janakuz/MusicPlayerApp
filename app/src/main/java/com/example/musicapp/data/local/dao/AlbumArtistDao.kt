@@ -10,6 +10,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.model.AlbumIdWithArtist
 import com.example.musicapp.data.local.model.AlbumInfo
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +27,7 @@ interface AlbumArtistDao {
     suspend fun delete(albumArtist: AlbumArtist)
 
 
-    @RawQuery(observedEntities = [AlbumArtist::class])
+    @RawQuery(observedEntities = [AlbumArtist::class, Album::class, Artist::class, Track::class])
     fun getArtistAlbumsSorted(query: SupportSQLiteQuery): Flow<List<AlbumInfo>>
 
     @Query(
