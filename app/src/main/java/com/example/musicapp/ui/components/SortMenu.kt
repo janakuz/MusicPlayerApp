@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.SentimentVeryDissatisfied
 import androidx.compose.material.icons.filled.SentimentVerySatisfied
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -75,7 +77,9 @@ enum class SortField {
     MOOD_SAD,
     MOOD_PARTY,
     MOOD_RELAXED,
-    BPM
+    BPM,
+    DYNAMIC_RANGE,
+    LOUDNESS
 }
 
 val characteristics = listOf(
@@ -87,7 +91,9 @@ val characteristics = listOf(
     SortField.MOOD_PARTY,
     SortField.MOOD_HAPPY,
     SortField.MOOD_SAD,
-    SortField.BPM
+    SortField.BPM,
+    SortField.DYNAMIC_RANGE,
+    SortField.LOUDNESS
 )
 
 data class SortOption(
@@ -333,6 +339,8 @@ private fun getCharacteristicIcon(field: SortField): ImageVector? {
         SortField.MOOD_SAD -> Icons.Default.HeartBroken
         SortField.MOOD_RELAXED -> Icons.Default.Deck
         SortField.BPM -> Icons.Default.Speed
+        SortField.DYNAMIC_RANGE -> Icons.Default.Equalizer
+        SortField.LOUDNESS -> Icons.AutoMirrored.Filled.VolumeUp
         else -> Icons.Default.AutoAwesome
     }
 }

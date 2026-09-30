@@ -56,6 +56,8 @@ class AlbumArtistRepositoryImpl(
                 SortField.MOOD_HAPPY -> characteristicSort("moodHappy")
                 SortField.MOOD_PARTY -> characteristicSort("moodParty")
                 SortField.BPM -> characteristicSort("bpm")
+                SortField.LOUDNESS -> characteristicSort("loudness")
+                SortField.DYNAMIC_RANGE -> characteristicSort("dynamicComplexity")
                 else -> "releaseDate"
             }
 

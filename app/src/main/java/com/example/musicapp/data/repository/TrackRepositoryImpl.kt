@@ -72,6 +72,8 @@ class TrackRepositoryImpl(
                 SortField.MOOD_HAPPY -> "moodHappy"
                 SortField.MOOD_PARTY -> "moodParty"
                 SortField.BPM -> "bpm"
+                SortField.LOUDNESS -> "loudness"
+                SortField.DYNAMIC_RANGE -> "dynamicComplexity"
                 else -> titleSort
             }
 
