@@ -12,14 +12,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface TrackRepository {
 
-    fun getAllTracksByName(): Flow<List<TrackInfo>>
-
-    fun getAllTracksByNameDesc(): Flow<List<TrackInfo>>
-
-    fun getAllTracksByDuration(): Flow<List<TrackInfo>>
-
-    fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>>
-
     fun getAllTracks(orderBy: SortOption): Flow<List<TrackInfo>>
 
     fun getAllTracksFull(): Flow<List<Track>>
