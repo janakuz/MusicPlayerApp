@@ -91,7 +91,7 @@ val characteristics = listOf(
     SortField.MOOD_PARTY,
     SortField.MOOD_HAPPY,
     SortField.MOOD_SAD,
-    SortField.BPM,
+//    SortField.BPM,
     SortField.DYNAMIC_RANGE,
     SortField.LOUDNESS
 )
@@ -338,7 +338,7 @@ private fun getCharacteristicIcon(field: SortField): ImageVector? {
         SortField.MOOD_PARTY -> Icons.Default.Celebration
         SortField.MOOD_SAD -> Icons.Default.HeartBroken
         SortField.MOOD_RELAXED -> Icons.Default.Deck
-        SortField.BPM -> Icons.Default.Speed
+//        SortField.BPM -> Icons.Default.Speed
         SortField.DYNAMIC_RANGE -> Icons.Default.Equalizer
         SortField.LOUDNESS -> Icons.AutoMirrored.Filled.VolumeUp
         else -> Icons.Default.AutoAwesome
