@@ -9,18 +9,19 @@ class InternalCoverMapper(
     private val context: Context
 ) : Mapper<String, File> {
 
+    private val supportedDirs = setOf("covers", "album_art", "artist_art", "playlist_art")
+
     override fun map(data: String, options: Options): File? {
+        val folder = data.substringBefore("/", "")
+
         return when {
-            data.startsWith("covers/") -> File(context.filesDir, data)
+            folder in supportedDirs -> File(context.filesDir, data)
 
-            data.contains("/files/covers/") -> {
+            supportedDirs.any { data.contains("/files/$it/") } -> {
+                val dirName = supportedDirs.first { data.contains("/files/$it/") }
                 val fileName = data.substringAfterLast("/")
-                File(context.filesDir, "covers/$fileName")
+                File(context.filesDir, "$dirName/$fileName")
             }
-
-            data.startsWith("album_art/") -> File(context.filesDir, data)
-            data.startsWith("artist_art/") -> File(context.filesDir, data)
-            data.startsWith("playlist_art/") -> File(context.filesDir, data)
 
             else -> null
         }
