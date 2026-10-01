@@ -97,7 +97,7 @@ fun SettingsScreen(
             val context = LocalContext.current
 
             val exportLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument("application/x-sqlite3")
+                contract = ActivityResultContracts.CreateDocument("application/zip")
             ) { uri: Uri? ->
                 uri?.let { settingViewModel.exportDatabase(it) }
             }
