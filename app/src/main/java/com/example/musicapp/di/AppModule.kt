@@ -78,6 +78,7 @@ import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.repository.WorkerManagerRepositoryImpl
 import com.example.musicapp.service.DatabaseBackupManager
 import com.example.musicapp.service.ImageStorageManager
+import com.example.musicapp.service.InternalCoverMapper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -160,6 +161,9 @@ object AppModule {
     @Singleton
     fun provideCoilImageLoader(@ApplicationContext context: Context): ImageLoader {
         return ImageLoader.Builder(context)
+            .components {
+                add(InternalCoverMapper(context))
+            }
             .memoryCache {
                 MemoryCache.Builder(context)
                     .maxSizePercent(0.25)

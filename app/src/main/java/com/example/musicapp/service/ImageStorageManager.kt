@@ -24,7 +24,7 @@ class ImageStorageManager(private val context: Context) {
                     input.copyTo(output)
                 }
             }
-            destinationFile.absolutePath
+            "$folderName/${destinationFile.name}"
         }.getOrNull()
     }
 
@@ -53,7 +53,7 @@ class ImageStorageManager(private val context: Context) {
 
         directory.listFiles { file ->
             file.isFile && file.name.startsWith(prefix) && file.name.endsWith(".jpg")
-        }?.map { it.absolutePath } ?: emptyList()
+        }?.map { "${target.folderName}/${it.name}" } ?: emptyList()
     }
 
     suspend fun deleteImageFile(filePath: String?): Boolean = withContext(Dispatchers.IO) {
