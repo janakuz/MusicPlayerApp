@@ -44,6 +44,7 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         val MOODS_SORT_ASC = booleanPreferencesKey("moods_sort_ascending")
 
         val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
+        val PLAY_THRESHOLD = doublePreferencesKey("play_threshold")
         val MIN_SIMILARITY_SCORE = doublePreferencesKey("min_similarity_score")
     }
 
@@ -125,6 +126,9 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         prefs[SKIP_SILENCE] ?: false
     }.distinctUntilChanged()
 
+    override val playThreshold: Flow<Double> = dataStore.data.map { prefs ->
+        prefs[PLAY_THRESHOLD] ?: 0.5
+    }.distinctUntilChanged()
 
     override val minVisibleSimilarityScore: Flow<Double> = dataStore.data.map { prefs ->
         prefs[MIN_SIMILARITY_SCORE] ?: 0.0
@@ -205,6 +209,12 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
     override suspend fun updateSkipSilence(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[SKIP_SILENCE] = enabled
+        }
+    }
+
+    override suspend fun updatePlayThreshold(newValue: Double) {
+        dataStore.edit { prefs ->
+            prefs[PLAY_THRESHOLD] = newValue
         }
     }
 

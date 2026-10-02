@@ -17,6 +17,7 @@ interface UserPreferencesRepository {
     val moodsSortOption: Flow<SortOption>
 
     val skipSilenceToggle: Flow<Boolean>
+    val playThreshold: Flow<Double>
     val minVisibleSimilarityScore: Flow<Double>
 
     suspend fun updateArtistsSort(option: SortOption)
@@ -31,6 +32,7 @@ interface UserPreferencesRepository {
     suspend fun updateMoodsSort(option: SortOption)
 
     suspend fun updateSkipSilence(enabled: Boolean)
+    suspend fun updatePlayThreshold(newValue: Double)
     suspend fun updateMinSimilarityScore(newValue: Double)
 
 }

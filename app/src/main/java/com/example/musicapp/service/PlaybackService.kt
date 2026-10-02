@@ -40,13 +40,18 @@ class PlaybackService : MediaSessionService() {
     private var hasMarkedPlayed: Boolean = false
     private var trackerJob: Job? = null
 
-    private var playThresholdRatio: Float = 0.5f
+    private var playThresholdRatio: Double = 0.5
 
     @OptIn(UnstableApi::class)
     private fun observePreferences() {
         serviceScope.launch {
             preferencesRepository.skipSilenceToggle.collect { isEnabled ->
                 player.skipSilenceEnabled = isEnabled
+            }
+        }
+        serviceScope.launch {
+            preferencesRepository.playThreshold.collect { value ->
+                playThresholdRatio = value
             }
         }
     }

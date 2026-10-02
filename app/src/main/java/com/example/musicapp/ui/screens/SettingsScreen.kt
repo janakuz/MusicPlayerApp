@@ -56,6 +56,7 @@ fun SettingsScreen(
 
 
     val skipSilenceEnabled by settingViewModel.skipSilenceEnabled.collectAsState()
+    val playThreshold by settingViewModel.playThreshold.collectAsState()
     val minSimilarityScore by settingViewModel.minSimilarityScore.collectAsState()
 
     Scaffold(snackbarHost = {
@@ -75,6 +76,13 @@ fun SettingsScreen(
                 description = "Automatically fast-forward through dead air at the edges or middle of tracks.",
                 checked = skipSilenceEnabled,
                 onCheckedChange = { enabled -> settingViewModel.updateSkipSilence(enabled) }
+            )
+
+            SettingsSliderRow(
+                title = "Minimum Play Threshold",
+                description = "Mark a track as played once this percentage of its duration is reached.",
+                value = (playThreshold * 100).toInt(),
+                onValueChangeFinished = { score -> settingViewModel.updatePlayThreshold(score) }
             )
 
             HorizontalDivider(
