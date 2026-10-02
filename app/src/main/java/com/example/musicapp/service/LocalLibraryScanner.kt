@@ -72,13 +72,14 @@ class LocalLibraryScanner @Inject constructor(
     private fun saveArtworkToStorage(context: Context, folder: File, artwork: ByteArray): String? {
         return try {
             val fileName = "cover_${folder.name}.jpg"
+            val relativePath = "covers/$fileName"
             val directory = File(context.filesDir, "covers")
             if (!directory.exists()) {
                 directory.mkdirs()
             }
             val file = File(directory, fileName)
             file.writeBytes(artwork)
-            file.absolutePath
+            relativePath
         } catch (e: Exception) {
             e.printStackTrace()
             null

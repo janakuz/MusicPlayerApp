@@ -41,6 +41,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,7 +100,7 @@ fun SettingsScreen(
             val context = LocalContext.current
 
             val exportLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument("application/x-sqlite3")
+                contract = ActivityResultContracts.CreateDocument("application/zip")
             ) { uri: Uri? ->
                 uri?.let { settingViewModel.exportDatabase(it) }
             }
@@ -124,7 +127,10 @@ fun SettingsScreen(
                 title = "Export Database",
                 description = "Save a copy of your library metadata, playlists, and settings to external storage.",
                 buttonText = "Export",
-                onClick = { exportLauncher.launch("music_app_backup.zip") }
+                onClick = {
+                    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                    exportLauncher.launch("music_app_backup.zip_$timeStamp")
+                }
             )
 
             SettingsActionRow(
