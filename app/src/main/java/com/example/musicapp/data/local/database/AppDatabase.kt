@@ -60,7 +60,7 @@ import com.example.musicapp.data.local.entity.TrackMood
         SequencerBlock::class,
         TrackLyrics::class
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
