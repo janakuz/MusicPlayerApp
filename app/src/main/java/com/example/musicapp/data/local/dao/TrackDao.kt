@@ -33,6 +33,14 @@ interface TrackDao {
     @Update
     suspend fun updateAll(tracks: List<Track>)
 
+    @Query("""
+        UPDATE tracks 
+        SET plays = plays + 1, 
+            lastPlayed = :timestamp 
+        WHERE id = :trackId
+        """)
+    suspend fun incrementPlayStats(trackId: Int, timestamp: Long)
+
     @Delete
     suspend fun delete(track: Track)
 

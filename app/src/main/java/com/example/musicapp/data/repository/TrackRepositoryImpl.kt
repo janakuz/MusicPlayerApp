@@ -286,6 +286,10 @@ class TrackRepositoryImpl(
         trackDao.updateAll(tracks)
     }
 
+    override suspend fun updateStats(trackId: Int) {
+        trackDao.incrementPlayStats(trackId, System.currentTimeMillis())
+    }
+
     override suspend fun getTrackWithLyrics(): List<Int> {
         return trackDao.getAllTracksWithLyrics()
     }

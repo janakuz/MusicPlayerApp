@@ -44,6 +44,8 @@ interface TrackRepository {
 
     suspend fun updateAll(tracks: List<Track>)
 
+    suspend fun updateStats(trackId: Int)
+
     suspend fun getTrackWithLyrics(): List<Int>
 
     suspend fun delete(track: Track)
@@ -53,7 +55,6 @@ interface TrackRepository {
     suspend fun deleteByUri(uris: List<String>)
 
     suspend fun getAll(): List<Track>
-
 
     suspend fun getLyrics(trackInfo: TrackInfo): LRCLibResponse?
 
