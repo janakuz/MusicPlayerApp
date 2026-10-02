@@ -44,7 +44,9 @@ fun ArtistWithArea.getCountryDisplay(): String {
                             else ""
 
 
-    countryDisplay += if (!area.stateName.isTrulyBlank()) " ${area.stateName}" else if (!area.countryName.isTrulyBlank()) " ${area.countryName}" else " ${artist.country ?: ""}"
+    countryDisplay += if (!area.stateName.isTrulyBlank() && artist.homeAreaGid != area.state) " ${area.stateName}"
+                        else if (!area.countryName.isTrulyBlank()) " ${area.countryName}"
+                        else " ${artist.country ?: ""}"
 
     return countryDisplay
 }
