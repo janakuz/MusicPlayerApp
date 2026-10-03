@@ -41,7 +41,7 @@ class PlaylistRepositoryImpl(
 
         val sqlOrderBy =
             when (orderBy.field) {
-                SortField.NAME -> "p.name"
+                SortField.NAME -> "LOWER(p.name)"
                 SortField.DURATION -> "playlistDuration"
                 SortField.NUMBER_OF_TRACKS -> "trackCount"
                 SortField.DATE_CREATED -> "createdAt"
