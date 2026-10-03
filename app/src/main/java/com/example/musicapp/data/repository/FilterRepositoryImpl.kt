@@ -154,7 +154,8 @@ class FilterRepositoryImpl(
             }
             VoiceGender.FEMALE -> {
                 conditions.add("t.voice = ?")
-                bindArgs.add("female")            }
+                bindArgs.add("female")
+            }
             VoiceGender.MIXED -> {
                 conditions.add("t.voice = ?")
                 bindArgs.add("mixed")
@@ -257,13 +258,13 @@ class FilterRepositoryImpl(
         }
 
         if (filter.addedInPastDays != null) {
-            val cutoffTimestamp = System.currentTimeMillis() - (filter.addedInPastDays * 24 * 60 * 60 * 1000L)
+            val cutoffTimestamp = System.currentTimeMillis() - (filter.addedInPastDays.toLong() * 24 * 60 * 60 * 1000L)
             conditions.add("t.dateAdded >= ?")
             bindArgs.add(cutoffTimestamp)
         }
 
         if (filter.playedInPastDays != null) {
-            val cutoffTimestamp = System.currentTimeMillis() - (filter.playedInPastDays * 24 * 60 * 60 * 1000L)
+            val cutoffTimestamp = System.currentTimeMillis() - (filter.playedInPastDays.toLong() * 24 * 60 * 60 * 1000L)
             conditions.add("t.lastPlayed >= ?")
             bindArgs.add(cutoffTimestamp)
         }

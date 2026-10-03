@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
+import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortField
@@ -33,7 +35,8 @@ class PlaylistViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val playlistTracksRepository: PlaylistTracksRepository,
     private val trackRepository: TrackRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val smartPlaylistRepository: SmartPlaylistRepository
 ) : ViewModel() {
 
     private val _createInfo = MutableStateFlow<CreatePlaylistState>(CreatePlaylistState())
@@ -68,6 +71,9 @@ class PlaylistViewModel @Inject constructor(
                 }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+
+    val smartPlaylists: StateFlow<List<SmartPlaylist>> = smartPlaylistRepository.getAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val playlistsForAdd: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists(
         SortOption(SortField.NAME, true)

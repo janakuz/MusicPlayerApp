@@ -38,6 +38,9 @@ interface SmartPlaylistDao {
     @Query("SELECT * FROM smart_playlists WHERE id = :playlistId")
     fun getSmartPlaylistById(playlistId: Int): SmartPlaylist?
 
+    @Query("SELECT * FROM smart_playlists WHERE id = :playlistId")
+    fun getById(playlistId: Int): Flow<SmartPlaylist>
+
     @Query("SELECT * FROM smart_playlists")
     fun getAll(): Flow<List<SmartPlaylist>>
 

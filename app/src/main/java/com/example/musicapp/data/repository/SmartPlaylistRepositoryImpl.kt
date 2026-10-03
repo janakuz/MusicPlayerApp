@@ -1,24 +1,23 @@
 package com.example.musicapp.data.repository
 
+import android.util.Log
 import com.google.gson.*
 import java.lang.reflect.Type
 import com.example.musicapp.data.local.dao.SmartPlaylistDao
 import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.data.local.model.TrackInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 
 class SmartPlaylistRepositoryImpl(
     private val smartPlaylistDao: SmartPlaylistDao,
-    private val filterRepository: FilterRepository
+    private val filterRepository: FilterRepository,
+    private val smartPlaylistGson: Gson
 ) : SmartPlaylistRepository {
-
-    val smartPlaylistGson = GsonBuilder()
-        .registerTypeAdapter(IntRange::class.java, IntRangeAdapter())
-        .registerTypeAdapter(LongRange::class.java, LongRangeAdapter())
-        .registerTypeAdapter(ClosedFloatingPointRange::class.java, FloatRangeAdapter())
-        .create()
-
     override suspend fun savePlaylist(
         filter: LibraryFilter,
         name: String
@@ -33,17 +32,19 @@ class SmartPlaylistRepositoryImpl(
         smartPlaylistDao.insert(toInsert)
     }
 
-    override fun getSmartPlaylist(playlistId: Int): Flow<List<TrackInfo>> {
-        val playlist = smartPlaylistDao.getSmartPlaylistById(playlistId)
+    override fun getSmartPlaylistTracks(filterJson: String): Flow<List<TrackInfo>> {
+        val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
+        val rawQuery = filterRepository.buildLibraryQuery(filter, FilterSection.GLOBAL)
 
-        if (playlist != null) {
-            val filter = smartPlaylistGson.fromJson(playlist.filterJson, LibraryFilter::class.java)
+        return smartPlaylistDao.getFilteredTracks(rawQuery)
+    }
 
-            val rawQuery = filterRepository.buildLibraryQuery(filter, FilterSection.GLOBAL)
+    override fun getAll(): Flow<List<SmartPlaylist>> {
+        return smartPlaylistDao.getAll()
+    }
 
-            return smartPlaylistDao.getFilteredTracks(rawQuery)
-        }
-        return flowOf(emptyList())
+    override fun getSmartPlaylist(playlistId: Int): Flow<SmartPlaylist> {
+        return smartPlaylistDao.getById(playlistId)
     }
 
 

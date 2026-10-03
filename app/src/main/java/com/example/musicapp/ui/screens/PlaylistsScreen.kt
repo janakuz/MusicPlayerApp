@@ -47,6 +47,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
 import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.ui.components.ActionMenu
 import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.components.MenuActions
@@ -59,9 +60,11 @@ import com.example.musicapp.util.formatDuration
 @Composable
 fun PlaylistsScreen(
     playlistStates: List<PlaylistUiModel>,
+    smartPlaylists: List<SmartPlaylist>,
     createInfo: CreatePlaylistState,
     onNameChange: (String) -> Unit,
     onClick: (Int) -> Unit,
+    onSmartPlaylistClick: (Int) -> Unit,
     onCreateNewPlaylist: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -111,6 +114,57 @@ fun PlaylistsScreen(
                     onAddToPlaylist = onAddToPlaylist
                 )
             }
+
+            items(smartPlaylists) { playlist ->
+                SmartPlaylistRow(
+                    playlist = playlist,
+                    onClick = { onSmartPlaylistClick(playlist.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SmartPlaylistRow(
+    playlist: SmartPlaylist,
+    onClick: () -> Unit,
+    ){
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { expanded = true }
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        val defaultImage = painterResource(R.drawable.baseline_album_24)
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(playlist.image)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            placeholder = defaultImage,
+            error = defaultImage,
+            fallback = defaultImage,
+        )
+        Spacer(Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = playlist.name,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

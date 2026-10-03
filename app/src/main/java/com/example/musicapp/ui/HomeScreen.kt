@@ -182,6 +182,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val playlistDuplicates by playlistViewModel.duplicateTracks.collectAsState()
     val playlistDeduplicateState by playlistViewModel.deduplicateConfirmation.collectAsState()
 
+    val smartPlaylists by playlistViewModel.smartPlaylists.collectAsState()
+
     val filterViewModel: FilterViewModel = hiltViewModel()
 
 
@@ -894,11 +896,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNext = { id -> playerViewModel.playNextPlaylist(id) },
                         onAddToQueue = { id -> playerViewModel.addToQueuePlaylist(id) },
                         onPlay = { id -> playerViewModel.playPlaylist(id) },
-                        onAddToPlaylist = { id -> playlistViewModel.onAddToPlaylistPlaylist(id) }
+                        onAddToPlaylist = { id -> playlistViewModel.onAddToPlaylistPlaylist(id) },
+                        smartPlaylists = smartPlaylists,
+                        onSmartPlaylistClick = { id -> navController.navigate("smart_playlist/$id") }
                     )
                 }
 
-                composable("playlist/{playlistId}") {
+                composable(
+                    "playlist/{playlistId}",
+                    arguments = listOf(
+                        navArgument("playlistId") { type = NavType.StringType },
+                        navArgument("isSmart") { type = NavType.BoolType; defaultValue = false }
+                    )) {
                     PlaylistDetailScreen(
                         onTrackClick = { track, tracks, entryId, entryIds ->
                             playerViewModel.playTracks(tracks, track, entryId, entryIds)
@@ -932,6 +941,36 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 composable("playlist/create") {
                     PlaylistEditScreen(
                         onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(
+                    "smart_playlist/{playlistId}",
+                    arguments = listOf(
+                        navArgument("playlistId") { type = NavType.StringType },
+                        navArgument("isSmart") { type = NavType.BoolType; defaultValue = true }
+                    )) {
+                    PlaylistDetailScreen(
+                        onTrackClick = { track, tracks, entryId, entryIds ->
+                            playerViewModel.playTracks(tracks, track, entryId, entryIds)
+//                            navController.navigate("nowPlaying")
+//                            {
+//                                launchSingleTop = true
+//                            }
+                        },
+                        onPlayNext = { track -> playerViewModel.playNext(track) },
+                        onAddToQueue = { track -> playerViewModel.addToQueue(track) },
+                        onEdit = { track -> navController.navigate("track/edit/${track.trackId}") },
+                        onRemove = { entry, playlist ->
+                            playlistViewModel.removeTrackFromPlaylist(
+                                entry,
+                                playlist
+                            )
+                        },
+                        onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
+                        onShuffle = { tracks -> playerViewModel.playShuffledPlaylist(tracks) },
+                        onGoToAlbum = { id -> navController.navigate("album/$id")},
+                        onGoToArtist = { id -> navController.navigate("artist/$id")}
                     )
                 }
 
