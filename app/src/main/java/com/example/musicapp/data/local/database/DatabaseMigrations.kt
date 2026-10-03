@@ -501,6 +501,24 @@ val MIGRATION_24_25 = object : Migration(24,25) {
     }
 }
 
+val MIGRATION_25_26 = object : Migration(25,26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `smart_playlists` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `filterJson` TEXT NOT NULL,
+                `image` TEXT,
+                `description` TEXT,
+                `createdAt` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("ALTER TABLE playlists DROP COLUMN isSmart")
+    }
+}
+
 
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
@@ -523,7 +541,8 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_21_22,
     MIGRATION_22_23,
     MIGRATION_23_24,
-    MIGRATION_24_25
+    MIGRATION_24_25,
+    MIGRATION_25_26
 )
 
 //fun getAllMigrations(context: Context): Array<Migration> {
