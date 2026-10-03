@@ -25,6 +25,7 @@ import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
 import com.example.musicapp.data.local.dao.SequencerDao
+import com.example.musicapp.data.local.dao.SmartPlaylistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
 import com.example.musicapp.data.local.database.ALL_MIGRATIONS
@@ -68,6 +69,8 @@ import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.SearchRepositoryImpl
 import com.example.musicapp.data.repository.SequencerRepository
 import com.example.musicapp.data.repository.SequencerRepositoryImpl
+import com.example.musicapp.data.repository.SmartPlaylistRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepositoryImpl
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackMoodRepositoryImpl
 import com.example.musicapp.data.repository.TrackRepository
@@ -666,6 +669,17 @@ object AppModule {
     @Singleton
     fun provideSequencerRepository(sequencerDao: SequencerDao, playlistTracksDao: PlaylistTracksDao): SequencerRepository {
         return SequencerRepositoryImpl(sequencerDao, playlistTracksDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideSmartPlaylistDao(db: AppDatabase): SmartPlaylistDao = db.smartPlaylistDao()
+
+    @Provides
+    @Singleton
+    fun provideSmartPlaylistRepository(smartPlaylistDao: SmartPlaylistDao, filterRepository: FilterRepository): SmartPlaylistRepository {
+        return SmartPlaylistRepositoryImpl(smartPlaylistDao, filterRepository)
     }
 
 
