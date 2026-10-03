@@ -12,9 +12,13 @@ import androidx.room.Update
 import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.AlbumGenre
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.ArtistGenre
+import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackLyrics
+import com.example.musicapp.data.local.entity.TrackMood
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
@@ -276,6 +280,12 @@ interface TrackDao {
     )
     fun searchAlbumTracks(query: String, albumId: Int): Flow<List<TrackInfo>>
 
-    @RawQuery(observedEntities = [Track::class])
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        TrackMood::class,
+        Mood::class,
+    ])
     fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
 }

@@ -10,7 +10,12 @@ import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.AlbumArtist
+import com.example.musicapp.data.local.entity.AlbumGenre
+import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.ArtistGenre
+import com.example.musicapp.data.local.entity.Genre
 import com.example.musicapp.data.local.entity.SimilarArtists
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.ArtistWithArea
@@ -116,7 +121,12 @@ interface ArtistDao {
     fun searchArtists(query: String): Flow<List<Artist>>
 
 
-    @RawQuery(observedEntities = [Artist::class])
+    @RawQuery(observedEntities = [
+        Artist::class,
+        ArtistGenre::class,
+        Genre::class,
+        AreaHierarchy::class
+    ])
     fun getFilteredArtists(query: SupportSQLiteQuery): Flow<List<Artist>>
 
     @Query(" SELECT MIN(CAST(SUBSTR(activeStartYear, 1, 4) AS INTEGER)) FROM artists WHERE activeStartYear > 0 and activeStartYear IS NOT NULL")
