@@ -1,6 +1,5 @@
 package com.example.musicapp.data.repository
 
-import android.R
 import android.util.Log
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.AlbumDao
@@ -9,7 +8,6 @@ import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.TrackInfo
-import com.example.musicapp.ui.HomeScreen
 import com.example.musicapp.util.normalizeGenre
 import kotlinx.coroutines.flow.Flow
 
@@ -21,7 +19,7 @@ class FilterRepositoryImpl(
 ) : FilterRepository {
 
 
-    private fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery {
+    override fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery {
         val conditions = mutableListOf<String>()
         val bindArgs = mutableListOf<Any>()
 
@@ -41,11 +39,18 @@ class FilterRepositoryImpl(
             conditions.add("al.label in ($labels)")
         }
 
-        if (filter.selectedGenres.isNotEmpty()) {
-            val genres = filter.selectedGenres.map { it.normalizeGenre() }.joinToString(",") { "?" }
-            bindArgs.addAll(filter.selectedGenres)
-            conditions.add("g.name in ($genres)")
+        if (filter.selectedAlbumGenres.isNotEmpty()) {
+            val genres = filter.selectedAlbumGenres.map { it.normalizeGenre() }.joinToString(",") { "?" }
+            bindArgs.addAll(filter.selectedAlbumGenres)
+            conditions.add("g2.name in ($genres)")
         }
+
+        if (filter.selectedArtistGenres.isNotEmpty()) {
+            val genres = filter.selectedArtistGenres.map { it.normalizeGenre() }.joinToString(",") { "?" }
+            bindArgs.addAll(filter.selectedArtistGenres)
+            conditions.add("g1.name in ($genres)")
+        }
+
 
         if (filter.selectedMoods.isNotEmpty()) {
             val moods = filter.selectedMoods.map { it.normalizeGenre() }.joinToString(",") { "?" }
@@ -251,7 +256,27 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
+        if (filter.addedInPastDays != null) {
+            val cutoffTimestamp = System.currentTimeMillis() - (filter.addedInPastDays * 24 * 60 * 60 * 1000L)
+            conditions.add("t.dateAdded >= ?")
+            bindArgs.add(cutoffTimestamp)
+        }
 
+        if (filter.playedInPastDays != null) {
+            val cutoffTimestamp = System.currentTimeMillis() - (filter.playedInPastDays * 24 * 60 * 60 * 1000L)
+            conditions.add("t.lastPlayed >= ?")
+            bindArgs.add(cutoffTimestamp)
+        }
+
+        if (filter.minPlays != null) {
+            bindArgs.add(filter.minPlays)
+            conditions.add("t.plays >= ?")
+        }
+
+        if (filter.maxPlays != null) {
+            bindArgs.add(filter.maxPlays)
+            conditions.add("t.plays <= ?")
+        }
 
 
         val baseQuery =
@@ -263,7 +288,7 @@ class FilterRepositoryImpl(
                      JOIN album_artists aa ON al.id=aa.albumId
                      JOIN artists ar ON ar.id=aa.artistId
                      LEFT JOIN album_genres ag ON ag.albumId=al.id
-                     LEFT JOIN genres g ON ag.genreId=g.id
+                     LEFT JOIN genres g2 ON ag.genreId=g2.id
                  """.trimIndent()
 
                 FilterSection.ARTISTS ->
@@ -272,7 +297,7 @@ class FilterRepositoryImpl(
                     FROM artists ar
                     LEFT JOIN artist_genres ag on ag.artistId=ar.id
                     LEFT JOIN area_hierarchy ah on ah.gid=ar.homeAreaGid
-                    LEFT JOIN genres g on ag.genreId=g.id
+                    LEFT JOIN genres g1 on ag.genreId=g1.id
                 """.trimIndent()
 
                 FilterSection.TRACKS ->
@@ -285,15 +310,28 @@ class FilterRepositoryImpl(
                     LEFT JOIN track_moods tm ON tm.trackId=t.id
                     LEFT JOIN moods m on tm.moodId=m.id
                 """.trimIndent()
+
+                FilterSection.GLOBAL ->
+                    """
+                    SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, al.image as albumArt, t.trackNumber as trackNum, 
+                            t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
+                    FROM tracks t
+                    JOIN artists ar ON t.artistId=ar.id
+                    JOIN albums al ON t.albumId=al.id
+                    LEFT JOIN track_moods tm ON tm.trackId=t.id
+                    LEFT JOIN moods m on tm.moodId=m.id
+                    LEFT JOIN artist_genres ag on ag.artistId=ar.id
+                    LEFT JOIN genres g1 on ag.genreId=g1.id
+                    LEFT JOIN album_genres alg ON alg.albumId=al.id
+                    LEFT JOIN genres g2 ON alg.genreId=g2.id
+                """.trimIndent()
             }
+
         val joiner = if (filter.logic == FilterLogic.AND) " AND " else " OR "
         val sql = baseQuery + if (conditions.isNotEmpty()) {
             " WHERE ${conditions.joinToString(joiner)}"
         } else ""
         val sqlGrouped = if (type == FilterSection.ALBUMS) "$sql GROUP BY al.id" else if (type == FilterSection.ARTISTS) "$sql GROUP BY ar.id" else "$sql GROUP BY t.id"
-
-        println("DEBUG QUERY: $sqlGrouped")
-        println("DEBUG ARGS: ${bindArgs.joinToString(", ")}")
 
         return SimpleSQLiteQuery(sqlGrouped, bindArgs.toTypedArray())
     }

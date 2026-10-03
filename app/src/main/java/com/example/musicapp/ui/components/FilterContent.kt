@@ -182,11 +182,11 @@ fun FilterDrawerContent(
 
                 item {
                     GenrePicker(
-                        genres = draft.selectedGenres.toList(),
+                        genres = draft.selectedArtistGenres.toList(),
                         suggestions = genreSuggestions,
                         onGenreQueryChange = { query -> onGenreQueryChange(query) },
                         onGenresChange = { newGenres ->
-                            onDraftChange(draft.copy(selectedGenres = newGenres.toSet()))
+                            onDraftChange(draft.copy(selectedArtistGenres = newGenres.toSet()))
                             onGenreQueryChange("")
                         },
                         label = "Genre",
@@ -380,11 +380,11 @@ fun FilterDrawerContent(
 
                 item {
                     GenrePicker(
-                        genres = draft.selectedGenres.toList(),
+                        genres = draft.selectedAlbumGenres.toList(),
                         suggestions = genreSuggestions,
                         onGenreQueryChange = { query -> onGenreQueryChange(query) },
                         onGenresChange = { newGenres ->
-                            onDraftChange(draft.copy(selectedGenres = newGenres.toSet()))
+                            onDraftChange(draft.copy(selectedAlbumGenres = newGenres.toSet()))
                             onGenreQueryChange("")
                         },
                         label = "Genre",

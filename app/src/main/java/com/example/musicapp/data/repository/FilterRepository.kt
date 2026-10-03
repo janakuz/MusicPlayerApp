@@ -1,6 +1,7 @@
 package com.example.musicapp.data.repository
 
 import androidx.annotation.FloatRange
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
@@ -16,6 +17,7 @@ interface FilterRepository {
 
     fun getFilteredTracks(filter: LibraryFilter): Flow<List<TrackInfo>>
 
+    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery
 
     fun getMinYear(): Flow<Int>
 
@@ -40,7 +42,8 @@ data class LibraryFilter(
     val dateRanges: List<IntRange> = emptyList(),
     val selectedLabels: Set<String> = emptySet(),
     val durationRanges: List<LongRange> = emptyList(),
-    val selectedGenres: Set<String> = emptySet(),
+    val selectedArtistGenres: Set<String> = emptySet(),
+    val selectedAlbumGenres: Set<String> = emptySet(),
     val selectedMoods: Set<String> = emptySet(),
     val selectedCountries: Set<String> = emptySet(),
     val defunctStatus: DefunctFilterStatus = DefunctFilterStatus.ALL,
@@ -68,15 +71,19 @@ data class LibraryFilter(
     val activeSadRange: ClosedFloatingPointRange<Float> = 0f..1f,
     val activeDanceabilityRange: ClosedFloatingPointRange<Float> = 0f..1f,
     val activeKeySelection: Key = Key(null, null),
-
-    )
+    val addedInPastDays: Int? = null,
+    val playedInPastDays: Int? = null,
+    val minPlays: Int? = null,
+    val maxPlays: Int? = null,
+)
 
 enum class FilterLogic { AND, OR }
 
 enum class FilterSection {
     ARTISTS,
     ALBUMS,
-    TRACKS
+    TRACKS,
+    GLOBAL
 }
 
 enum class DefunctFilterStatus {
