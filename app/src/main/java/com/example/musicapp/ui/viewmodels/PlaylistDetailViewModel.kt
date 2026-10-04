@@ -37,13 +37,12 @@ class PlaylistDetailViewModel @Inject constructor(
         smartPlaylistRepository.getSmartPlaylist(playlistId).flatMapLatest { smartPlaylist ->
             smartPlaylistRepository.getSmartPlaylistTracks(smartPlaylist.filterJson).map { tracks ->
                 tracks.mapIndexed { index, track ->
-                PlaylistTrack(
-                    position = index,
-                    trackInfo = track,
-                    playlistId = playlistId,
-                    entryId = index,
-                    addedAt = 0
-                )
+                    PlaylistTrack(
+                        position = index,
+                        trackInfo = track,
+                        playlistId = playlistId,
+                        entryId = track.trackId,
+                    )
                 }
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -57,7 +56,6 @@ class PlaylistDetailViewModel @Inject constructor(
                 Playlist(
                     name = playlist.name,
                     description = playlist.description,
-                    lastUpdated = 0
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
         } else {

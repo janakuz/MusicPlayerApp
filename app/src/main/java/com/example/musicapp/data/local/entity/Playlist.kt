@@ -11,5 +11,5 @@ data class Playlist(
     val image: String? = null,
     val description: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val lastUpdated: Long
+    val lastUpdated: Long = System.currentTimeMillis()
 )
