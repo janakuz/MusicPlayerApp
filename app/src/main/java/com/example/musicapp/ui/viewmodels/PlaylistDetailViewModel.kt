@@ -63,13 +63,12 @@ class PlaylistDetailViewModel @Inject constructor(
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val playlistStats = if (isSmartPlaylist) {
-        playlistTracks.map { tracks ->
-            PlaylistStats(
-                trackCount = tracks.size,
-                duration = tracks.sumOf { it.trackInfo.duration }
-            )
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        smartPlaylistRepository.getSmartPlaylist(playlistId)
+            .flatMapLatest { playlist ->
+                smartPlaylistRepository.getSmartPlaylistStats(playlist.filterJson)
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     } else {
         playlistRepository.getPlaylistStats(playlistId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)

@@ -81,7 +81,6 @@ class PlaylistViewModel @Inject constructor(
     val smartPlaylists: StateFlow<List<PlaylistUiModel>> =
         smartPlaylistRepository.getAll()
             .flatMapLatest { playlists ->
-
                 val individualUiModelFlows: List<Flow<PlaylistUiModel>> = playlists.map { smartPlaylist ->
                     smartPlaylistRepository.getSmartPlaylistStats(smartPlaylist.filterJson).map { stats ->
                         PlaylistUiModel(
