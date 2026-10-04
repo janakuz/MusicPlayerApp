@@ -8,6 +8,7 @@ import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.remote.dto.Key
 import com.example.musicapp.util.normalizeGenre
 import kotlinx.coroutines.flow.Flow
 
@@ -18,14 +19,123 @@ class FilterRepositoryImpl(
     private val trackDao: TrackDao,
 ) : FilterRepository {
 
+    private fun resolveActiveIntRanges(
+        savedRanges: List<IntRange>,
+        activeRange: IntRange?,
+    ): List<IntRange> {
+        return if (activeRange == null) {
+            savedRanges
+        } else {
+            savedRanges + listOf(activeRange)
+        }
+    }
 
-    override fun buildLibraryQueryParts(filter: LibraryFilter, type: FilterSection): BoundQuery {
+    private fun resolveActiveLongRanges(
+        savedRanges: List<LongRange>,
+        activeRange: LongRange,
+        defaultSpectrum: LongRange
+    ): List<LongRange> {
+        return if (activeRange == defaultSpectrum) {
+            savedRanges
+        } else {
+            savedRanges + listOf(activeRange)
+        }
+    }
+
+    private fun resolveActiveFloatRanges(
+        savedRanges: List<ClosedFloatingPointRange<Float>>,
+        activeRange: ClosedFloatingPointRange<Float>,
+        defaultSpectrum: ClosedFloatingPointRange<Float> = 0.0f..1.0f
+    ): List<ClosedFloatingPointRange<Float>> {
+        return if (activeRange == defaultSpectrum) {
+            savedRanges
+        } else {
+            savedRanges + listOf(activeRange)
+        }
+    }
+
+
+    override fun buildLibraryQueryParts(filter: LibraryFilter, type: FilterSection, ): BoundQuery {
         val conditions = mutableListOf<String>()
         val bindArgs = mutableListOf<Any>()
 
+        val effectiveReleaseDateRanges =
+            if (type == FilterSection.ALBUMS || type == FilterSection.GLOBAL)
+                resolveActiveIntRanges(
+                    filter.dateRanges,
+                    filter.activeRange,
+                )
+            else emptyList()
 
-        if (filter.dateRanges.isNotEmpty()) {
-            val rangeClauses = filter.dateRanges.map { range ->
+        val effectiveArtistStartRanges =
+            if (type == FilterSection.ARTISTS || type == FilterSection.GLOBAL)
+                resolveActiveIntRanges(
+                    filter.artistFormedRanges,
+                    filter.activeArtistStartRange,
+                )
+            else emptyList()
+
+
+        val effectiveArtistEndRanges =
+            if ((type == FilterSection.ARTISTS || type == FilterSection.GLOBAL)
+                && filter.defunctStatus== DefunctFilterStatus.DEFUNCT)
+                resolveActiveIntRanges(
+                    filter.artistEndedRanges,
+                    filter.activeArtistEndRange,
+                )
+            else emptyList()
+
+        val effectiveBPMRanges = resolveActiveIntRanges(
+            filter.bpmRanges,
+            filter.activeBPMRange,
+        )
+
+        val effectiveKeys =
+            if (filter.activeKeySelection == Key(null, null)) filter.selectedKeys
+            else filter.selectedKeys + listOf(filter.activeKeySelection)
+
+        val effectiveApproachabilityRanges = resolveActiveFloatRanges(
+            filter.approachabilityRanges,
+            filter.activeApproachabilityRange
+        )
+
+        val effectiveEngagementRanges = resolveActiveFloatRanges(
+            filter.engagementRanges,
+            filter.activeEngagementRange
+        )
+
+        val effectiveDanceabilityRanges = resolveActiveFloatRanges(
+            filter.danceabilityRanges,
+            filter.activeDanceabilityRange
+        )
+
+        val effectiveMoodAggressiveRanges = resolveActiveFloatRanges(
+            filter.moodAggressiveRanges,
+            filter.activeAggressiveRange
+        )
+
+        val effectiveMoodSadRanges = resolveActiveFloatRanges(
+            filter.moodSadRanges,
+            filter.activeSadRange
+        )
+
+        val effectiveMoodHappyRanges = resolveActiveFloatRanges(
+            filter.moodHappyRanges,
+            filter.activeHappyRange
+        )
+
+        val effectiveMoodPartyRanges = resolveActiveFloatRanges(
+            filter.moodPartyRanges,
+            filter.activePartyRange
+        )
+
+        val effectiveMoodRelaxedRanges = resolveActiveFloatRanges(
+            filter.moodRelaxedRanges,
+            filter.activeRelaxedRange
+        )
+
+        if (effectiveReleaseDateRanges.isNotEmpty()) {
+            val rangeClauses = effectiveReleaseDateRanges.map { range ->
                 bindArgs.add(range.first)
                 bindArgs.add(range.last)
                 "(al.releaseDate BETWEEN ? AND ?)"
@@ -65,7 +175,6 @@ class FilterRepositoryImpl(
             conditions.add("ar.countryCode in ($countries)")
         }
 
-        Log.d("area filter", filter.selectedAreas.joinToString())
         if (filter.selectedAreas.isNotEmpty()){
             val cityGids = mutableListOf<String>()
             val countyGids = mutableListOf<String>()
@@ -120,8 +229,8 @@ class FilterRepositoryImpl(
         }
 
 
-        if (filter.artistFormedRanges.isNotEmpty()) {
-            val rangeClauses = filter.artistFormedRanges.map { range ->
+        if (effectiveArtistStartRanges.isNotEmpty()) {
+            val rangeClauses = effectiveArtistStartRanges.map { range ->
                 bindArgs.add(range.first)
                 bindArgs.add(range.last)
                 "(ar.activeStartYear BETWEEN ? AND ?)"
@@ -130,8 +239,8 @@ class FilterRepositoryImpl(
         }
 
 
-        if (filter.artistEndedRanges.isNotEmpty()) {
-            val rangeClauses = filter.artistEndedRanges.map { range ->
+        if (effectiveArtistEndRanges.isNotEmpty()) {
+            val rangeClauses = effectiveArtistEndRanges.map { range ->
                 bindArgs.add(range.first)
                 bindArgs.add(range.last)
                 "(ar.activeEndYear BETWEEN ? AND ?)"
@@ -162,8 +271,8 @@ class FilterRepositoryImpl(
             }
         }
 
-        if (filter.selectedKeys.isNotEmpty()) {
-            val keyClauses = filter.selectedKeys.map { fullKey ->
+        if (effectiveKeys.isNotEmpty()) {
+            val keyClauses = effectiveKeys.map { fullKey ->
                 val pattern = when {
                     fullKey.key != null && fullKey.scale != null -> "${fullKey.key} ${fullKey.scale}"
                     fullKey.key != null -> "${fullKey.key} %"
@@ -176,8 +285,8 @@ class FilterRepositoryImpl(
             conditions.add("(${keyClauses.joinToString(" OR ")})")
         }
 
-        if (filter.bpmRanges.isNotEmpty()) {
-            val rangeClauses = filter.bpmRanges.map { range ->
+        if (effectiveBPMRanges.isNotEmpty()) {
+            val rangeClauses = effectiveBPMRanges.map { range ->
                 bindArgs.add(range.first)
                 bindArgs.add(range.last)
                 "(t.bpm BETWEEN ? AND ?)"
@@ -185,8 +294,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.approachabilityRanges.isNotEmpty()) {
-            val rangeClauses = filter.approachabilityRanges.map { range ->
+        if (effectiveApproachabilityRanges.isNotEmpty()) {
+            val rangeClauses = effectiveApproachabilityRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.approachability BETWEEN ? AND ?)"
@@ -194,8 +303,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.engagementRanges.isNotEmpty()) {
-            val rangeClauses = filter.engagementRanges.map { range ->
+        if (effectiveEngagementRanges.isNotEmpty()) {
+            val rangeClauses = effectiveEngagementRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.engagement BETWEEN ? AND ?)"
@@ -203,8 +312,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.danceabilityRanges.isNotEmpty()) {
-            val rangeClauses = filter.danceabilityRanges.map { range ->
+        if (effectiveDanceabilityRanges.isNotEmpty()) {
+            val rangeClauses = effectiveDanceabilityRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.danceability BETWEEN ? AND ?)"
@@ -212,8 +321,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.moodAggressiveRanges.isNotEmpty()) {
-            val rangeClauses = filter.moodAggressiveRanges.map { range ->
+        if (effectiveMoodAggressiveRanges.isNotEmpty()) {
+            val rangeClauses = effectiveMoodAggressiveRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.moodAggressive BETWEEN ? AND ?)"
@@ -221,8 +330,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.moodHappyRanges.isNotEmpty()) {
-            val rangeClauses = filter.moodHappyRanges.map { range ->
+        if (effectiveMoodHappyRanges.isNotEmpty()) {
+            val rangeClauses = effectiveMoodHappyRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.moodHappy BETWEEN ? AND ?)"
@@ -230,8 +339,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.moodPartyRanges.isNotEmpty()) {
-            val rangeClauses = filter.moodPartyRanges.map { range ->
+        if (effectiveMoodPartyRanges.isNotEmpty()) {
+            val rangeClauses = effectiveMoodPartyRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.moodParty BETWEEN ? AND ?)"
@@ -239,8 +348,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.moodRelaxedRanges.isNotEmpty()) {
-            val rangeClauses = filter.moodRelaxedRanges.map { range ->
+        if (effectiveMoodRelaxedRanges.isNotEmpty()) {
+            val rangeClauses = effectiveMoodRelaxedRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.moodRelaxed BETWEEN ? AND ?)"
@@ -248,8 +357,8 @@ class FilterRepositoryImpl(
             conditions.add("(${rangeClauses.joinToString(" OR ")})")
         }
 
-        if (filter.moodSadRanges.isNotEmpty()) {
-            val rangeClauses = filter.moodSadRanges.map { range ->
+        if (effectiveMoodSadRanges.isNotEmpty()) {
+            val rangeClauses = effectiveMoodSadRanges.map { range ->
                 bindArgs.add(range.start)
                 bindArgs.add(range.endInclusive)
                 "(t.moodSad BETWEEN ? AND ?)"
@@ -337,10 +446,7 @@ class FilterRepositoryImpl(
         return BoundQuery(sqlGrouped, bindArgs.toTypedArray())
     }
 
-    override fun buildLibraryQuery(
-        filter: LibraryFilter,
-        section: FilterSection
-    ): SimpleSQLiteQuery {
+    override fun buildLibraryQuery(filter: LibraryFilter, section: FilterSection, ): SimpleSQLiteQuery {
         return buildLibraryQueryParts(filter, section).toSimpleSQLiteQuery()
     }
 

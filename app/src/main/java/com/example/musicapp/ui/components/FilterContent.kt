@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.components
 
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -47,7 +48,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -71,10 +71,14 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.input.KeyboardType
 import com.example.musicapp.R
 import com.example.musicapp.data.local.entity.AreaHierarchy
 import com.example.musicapp.data.remote.dto.Key
@@ -439,6 +443,38 @@ fun FilterDrawerContent(
                         Text("Match Any")
                     }
                 }
+
+                item {
+                    RecentActivitySection(
+                        days = draft.addedInPastDays,
+                        label = "Added within last",
+                        onDaysChange = { days ->  onDraftChange(draft.copy(addedInPastDays = days))}
+                    )
+                }
+
+                item {
+                    RecentActivitySection(
+                        days = draft.playedInPastDays,
+                        label = "Played within last",
+                        onDaysChange = { days ->  onDraftChange(draft.copy(playedInPastDays = days))}
+                    )
+                }
+
+                item {
+                    PlayCountFilterSection(
+                        minPlays = draft.minPlays,
+                        maxPlays = draft.maxPlays,
+                        onPlayCountChange = { newMin, newMax ->
+                            onDraftChange(
+                                draft.copy(
+                                    minPlays = newMin,
+                                    maxPlays = newMax
+                                )
+                            )
+                        }
+                    )
+                }
+
 
                 item {
                     GenrePicker(
@@ -835,8 +871,8 @@ fun KeyPicker(
             var noteDropdownExpanded by remember { mutableStateOf(false) }
             var scaleDropdownExpanded by remember { mutableStateOf(false) }
 
-            val rootNotes = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-            val scales = listOf("major", "minor")
+            val rootNotes = listOf("Any", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+            val scales = listOf("any", "major", "minor")
 
 
             ExposedDropdownMenuBox(
@@ -861,7 +897,8 @@ fun KeyPicker(
                         DropdownMenuItem(
                             text = { Text(note) },
                             onClick = {
-                                onActiveKeyChange(Key(note, activeKeySelection.scale))
+                                val selectedNote = if (note.lowercase() != "any") note else null
+                                onActiveKeyChange(Key(selectedNote, activeKeySelection.scale))
                                 noteDropdownExpanded = false
                             }
                         )
@@ -890,7 +927,8 @@ fun KeyPicker(
                         DropdownMenuItem(
                             text = { Text(scale.replaceFirstChar { it.uppercase() }) },
                             onClick = {
-                                onActiveKeyChange(Key(activeKeySelection.key, scale))
+                                val selectedScale = if (scale.lowercase() != "any") scale else null
+                                onActiveKeyChange(Key(activeKeySelection.key, selectedScale))
                                 scaleDropdownExpanded = false
                             }
                         )
@@ -914,12 +952,12 @@ fun KeyPicker(
 fun DateRangeSection(
     title: String,
     savedRanges: List<IntRange>,
-    activeRange: IntRange,
+    activeRange: IntRange?,
     minYear: Int,
     maxYear: Int,
     interaction: MutableInteractionSource,
     onRangeCommitted: (updatedRanges: List<IntRange>) -> Unit,
-    onActiveRangeSliderChange: (IntRange) -> Unit,
+    onActiveRangeSliderChange: (IntRange?) -> Unit,
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
@@ -946,8 +984,10 @@ fun DateRangeSection(
         DateRangePicker(activeRange, minYear, maxYear, interaction, onActiveRangeSliderChange)
 
         IconButton(onClick = {
-            val updatedSaved = savedRanges + listOf<IntRange>(activeRange)
-            onRangeCommitted(updatedSaved)
+            if (activeRange != null) {
+                val updatedSaved = savedRanges + listOf<IntRange>(activeRange)
+                onRangeCommitted(updatedSaved)
+            }
         }) {
             Icon(Icons.Default.Add, "Add another range")
         }
@@ -958,38 +998,41 @@ fun DateRangeSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePicker(
-    activeRange: IntRange,
+    activeRange: IntRange?,
     minYear: Int,
     maxYear: Int,
     interaction: MutableInteractionSource,
-    onRangeChange: (IntRange) -> Unit
+    onRangeChange: (IntRange?) -> Unit
 ) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                text = "From: ${activeRange.first}",
+                text = "From: ${activeRange?.first ?: minYear}",
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
-                text = "To: ${activeRange.last}",
+                text = "To: ${activeRange?.last ?: maxYear}",
                 style = MaterialTheme.typography.labelLarge
             )
         }
 
-        var lastStart by remember(activeRange) { mutableIntStateOf(activeRange.first) }
-        var lastEnd by remember(activeRange) { mutableIntStateOf(activeRange.last) }
+        val displayStart = activeRange?.first ?: minYear
+        val displayEnd = activeRange?.last ?: maxYear
 
+        var sliderPosition by remember(activeRange, minYear, maxYear) {
+            mutableStateOf(displayStart.toFloat()..displayEnd.toFloat())
+        }
         RangeSlider(
-            value = lastStart.toFloat()..lastEnd.toFloat(),
-            onValueChange = { range ->
-                val newStart = range.start.roundToInt()
-                val newEnd = range.endInclusive.roundToInt()
+            value = sliderPosition,
+            onValueChange = { range -> sliderPosition = range },
+            onValueChangeFinished = {
+                val newStart = sliderPosition.start.roundToInt()
+                val newEnd = sliderPosition.endInclusive.roundToInt()
 
-                if (newStart != lastStart || newEnd != lastEnd) {
-                    lastStart = newStart
-                    lastEnd = newEnd
-
-                    onRangeChange(newStart..newEnd)
+                if (newStart == minYear && newEnd == maxYear) {
+                    onRangeChange(null)
+                } else {
+                        onRangeChange(newStart..newEnd)
                 }
             },
             startInteractionSource = interaction,
@@ -1095,6 +1138,130 @@ fun FloatRangePicker(
                 },
             valueRange = 0f..1f,
         )
+    }
+}
+
+
+@Composable
+fun RecentActivitySection(
+    days: Int?,
+    label: String,
+    onDaysChange: (Int?) -> Unit
+){
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = days?.toString() ?: "",
+                onValueChange = { newValue ->
+                    val digitsOnly = newValue.filter { it.isDigit() }
+                    val parsedDays = digitsOnly.toIntOrNull()
+                    onDaysChange(parsedDays)
+                },
+                placeholder = { Text("#") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true,
+                modifier = Modifier.width(80.dp)
+            )
+
+            Text(
+                text = "days",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+}
+
+@Composable
+fun PlayCountFilterSection(
+    minPlays: Int?,
+    maxPlays: Int?,
+    onPlayCountChange: (min: Int?, max: Int?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Play Count",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            FilterChip(
+                selected = minPlays == null && maxPlays == 0,
+                onClick = {
+                    if (minPlays == null && maxPlays == 0) {
+                        onPlayCountChange(null, null)
+                    } else {
+                        onPlayCountChange(null, 0)
+                    }
+                },
+                label = { Text("Unplayed") }
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = minPlays?.toString() ?: "",
+                onValueChange = { newValue ->
+                    val parsed = newValue.filter { it.isDigit() }.toIntOrNull()
+                    onPlayCountChange(parsed, maxPlays)
+                },
+                label = { Text("At least") },
+                placeholder = { Text("0") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = maxPlays?.toString() ?: "",
+                onValueChange = { newValue ->
+                    val parsed = newValue.filter { it.isDigit() }.toIntOrNull()
+                    onPlayCountChange(minPlays, parsed)
+                },
+                label = { Text("At most") },
+                placeholder = { Text("Any") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 

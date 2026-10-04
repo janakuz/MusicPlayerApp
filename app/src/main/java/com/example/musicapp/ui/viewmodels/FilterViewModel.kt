@@ -170,16 +170,7 @@ class FilterViewModel @Inject constructor(
         Pair(filter, type)
     }.flatMapLatest { (filter, type) ->
         if (type != FilterType.ARTISTS) flowOf(emptyList())
-        else {
-            val fullStartRanges = filter.artistFormedRanges + listOf<IntRange>(filter.activeArtistStartRange)
-            var newFilter = filter.copy(artistFormedRanges = fullStartRanges)
-            if (_draftFilter.value.defunctStatus == DefunctFilterStatus.DEFUNCT) {
-                val fullEndRanges =
-                    filter.artistEndedRanges + listOf<IntRange>(filter.activeArtistEndRange)
-                newFilter = newFilter.copy(artistEndedRanges = fullEndRanges)
-            }
-            filterRepository.getFilteredArtists(newFilter)
-        }
+        else filterRepository.getFilteredArtists(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -187,16 +178,7 @@ class FilterViewModel @Inject constructor(
         Pair(filter, type)
     }.flatMapLatest { (filter, type) ->
         if (type != FilterType.ARTISTS) flowOf(emptyList())
-        else {
-            val fullStartRanges = filter.artistFormedRanges + listOf<IntRange>(filter.activeArtistStartRange)
-            var newFilter = filter.copy(artistFormedRanges = fullStartRanges)
-            if (_draftFilter.value.defunctStatus == DefunctFilterStatus.DEFUNCT) {
-                val fullEndRanges =
-                    filter.artistEndedRanges + listOf<IntRange>(filter.activeArtistEndRange)
-                newFilter = newFilter.copy(artistEndedRanges = fullEndRanges)
-            }
-            filterRepository.getFilteredArtists(newFilter)
-        }
+        else  filterRepository.getFilteredArtists(filter)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -207,11 +189,7 @@ class FilterViewModel @Inject constructor(
         Pair(filter, type)
     }.flatMapLatest { (filter, type) ->
         if (type != FilterType.ALBUMS) flowOf(emptyList())
-        else {
-            val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
-            val newFilter = filter.copy(dateRanges = fullRanges)
-            filterRepository.getFilteredAlbums(newFilter)
-        }
+        else filterRepository.getFilteredAlbums(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
@@ -220,11 +198,7 @@ class FilterViewModel @Inject constructor(
         Pair(filter, type)
     }.flatMapLatest { (filter, type) ->
         if (type != FilterType.ALBUMS) flowOf(emptyList())
-        else {
-            val fullRanges = filter.dateRanges + listOf<IntRange>(filter.activeRange)
-            val newFilter = filter.copy(dateRanges = fullRanges)
-            filterRepository.getFilteredAlbums(newFilter)
-        }
+        else filterRepository.getFilteredAlbums(filter)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -236,66 +210,16 @@ class FilterViewModel @Inject constructor(
         Pair(filter, type)
     }.flatMapLatest { (filter, type) ->
         if (type != FilterType.TRACKS) flowOf(emptyList())
-        else {
-            val fullBPMRanges = filter.bpmRanges + listOf<IntRange>(filter.activeBPMRange)
-            val fullApproachabilityRanges = filter.approachabilityRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeApproachabilityRange)
-            val fullEngagementRanges = filter.engagementRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeEngagementRange)
-            val fullDanceabilityRanges = filter.danceabilityRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeDanceabilityRange)
-            val fullHappyRanges = filter.moodHappyRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeHappyRange)
-            val fullAggressiveRanges = filter.moodAggressiveRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeAggressiveRange)
-            val fullPartyRanges = filter.moodPartyRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activePartyRange)
-            val fullSadRanges = filter.moodSadRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeSadRange)
-            val fullRelaxedRanges = filter.moodRelaxedRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeRelaxedRange)
-            val fullKeys = filter.selectedKeys + listOf(filter.activeKeySelection)
-
-            val newFilter = filter.copy(
-                bpmRanges = fullBPMRanges,
-                approachabilityRanges = fullApproachabilityRanges,
-                engagementRanges = fullEngagementRanges,
-                danceabilityRanges = fullDanceabilityRanges,
-                moodHappyRanges = fullHappyRanges,
-                moodSadRanges = fullSadRanges,
-                moodAggressiveRanges = fullAggressiveRanges,
-                moodRelaxedRanges = fullRelaxedRanges,
-                moodPartyRanges = fullPartyRanges,
-                selectedKeys = fullKeys
-                )
-            filterRepository.getFilteredTracks(newFilter)
-        }
+        else  filterRepository.getFilteredTracks(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val potentialTrackMatches = combine(_draftFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
+    val potentialTrackMatches = combine(_draftFilter, _libraryType, filterDefaults) { filter, type, defaults ->
+        Triple(filter, type, defaults)
+    }.flatMapLatest { (filter, type, defaults) ->
         if (type != FilterType.TRACKS) flowOf(emptyList())
-        else {
-            val fullBPMRanges = filter.bpmRanges + listOf<IntRange>(filter.activeBPMRange)
-            val fullApproachabilityRanges = filter.approachabilityRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeApproachabilityRange)
-            val fullEngagementRanges = filter.engagementRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeEngagementRange)
-            val fullDanceabilityRanges = filter.danceabilityRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeDanceabilityRange)
-            val fullHappyRanges = filter.moodHappyRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeHappyRange)
-            val fullAggressiveRanges = filter.moodAggressiveRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeAggressiveRange)
-            val fullPartyRanges = filter.moodPartyRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activePartyRange)
-            val fullSadRanges = filter.moodSadRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeSadRange)
-            val fullRelaxedRanges = filter.moodRelaxedRanges + listOf<ClosedFloatingPointRange<Float>>(filter.activeRelaxedRange)
-            val fullKeys = filter.selectedKeys + listOf(filter.activeKeySelection)
-
-            val newFilter = filter.copy(
-                bpmRanges = fullBPMRanges,
-                approachabilityRanges = fullApproachabilityRanges,
-                engagementRanges = fullEngagementRanges,
-                danceabilityRanges = fullDanceabilityRanges,
-                moodHappyRanges = fullHappyRanges,
-                moodSadRanges = fullSadRanges,
-                moodAggressiveRanges = fullAggressiveRanges,
-                moodRelaxedRanges = fullRelaxedRanges,
-                moodPartyRanges = fullPartyRanges,
-                selectedKeys = fullKeys
-            )
-            filterRepository.getFilteredTracks(newFilter)
-        }
+        else filterRepository.getFilteredTracks(filter)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -303,26 +227,10 @@ class FilterViewModel @Inject constructor(
 
 
     init {
-
         resetAll()
-        viewModelScope.launch {
-            val realDefaults = filterDefaults.first { it.minYear != 1950 || it.maxYear != 2026 }
-            resetDefaultYears(realDefaults)
-        }
-
     }
 
 
-    fun resetDefaultYears(defaults: FilterDefaults){
-        _draftFilter.update { currentDraft ->
-            currentDraft.copy(
-                activeRange = defaults.minYear..defaults.maxYear,
-                activeArtistStartRange = defaults.minYearArtists..defaults.maxYearArtists,
-                activeArtistEndRange = defaults.minYearArtists..defaults.maxYearArtists
-            )
-        }
-
-    }
 
 
     fun updateType(type: FilterType){
@@ -358,12 +266,10 @@ class FilterViewModel @Inject constructor(
     fun resetAll(){
         _draftFilter.value = LibraryFilter()
         _activeFilter.value = LibraryFilter()
-        resetDefaultYears(filterDefaults.value)
     }
 
     fun resetDraft(){
         _draftFilter.value = LibraryFilter()
-        resetDefaultYears(filterDefaults.value)
     }
 
     fun reset() {

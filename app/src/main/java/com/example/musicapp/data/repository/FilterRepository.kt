@@ -7,6 +7,7 @@ import com.example.musicapp.data.local.entity.Artist
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.remote.dto.Key
+import com.example.musicapp.ui.viewmodels.FilterDefaults
 import kotlinx.coroutines.flow.Flow
 
 interface FilterRepository {
@@ -17,7 +18,7 @@ interface FilterRepository {
 
     fun getFilteredTracks(filter: LibraryFilter): Flow<List<TrackInfo>>
 
-    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery
+    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection,): SimpleSQLiteQuery
 
     fun buildLibraryQueryParts(filter: LibraryFilter, section: FilterSection): BoundQuery
 
@@ -37,10 +38,14 @@ interface FilterRepository {
 
 data class LibraryFilter(
     val logic: FilterLogic = FilterLogic.AND,
-    val activeRange: IntRange = 1950..2026,
-    val activeArtistStartRange: IntRange = 1950..2026,
-    val activeArtistEndRange: IntRange = 1950..2026,
-    val activeBPMRange: IntRange = 40..250,
+//    val activeRange: IntRange = 1950..2026,
+//    val activeArtistStartRange: IntRange = 1950..2026,
+//    val activeArtistEndRange: IntRange = 1950..2026,
+//    val activeBPMRange: IntRange = 40..250,
+    val activeRange: IntRange? = null,
+    val activeArtistStartRange: IntRange? = null,
+    val activeArtistEndRange: IntRange? = null,
+    val activeBPMRange: IntRange? = null,
     val dateRanges: List<IntRange> = emptyList(),
     val selectedLabels: Set<String> = emptySet(),
     val durationRanges: List<LongRange> = emptyList(),
