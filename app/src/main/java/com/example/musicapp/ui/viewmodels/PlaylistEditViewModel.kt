@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.repository.PlaylistRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,10 +23,12 @@ import javax.inject.Inject
 @HiltViewModel
 class PlaylistEditViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
+    private val smartPlaylistRepository: SmartPlaylistRepository,
     savedStateHandle: SavedStateHandle
 
 ) : ViewModel() {
     private val playlistId: Int? = savedStateHandle.get<String>("playlistId")?.toInt()
+    val isSmartPlaylist: Boolean = savedStateHandle["isSmart"] ?: false
 
     val isEditMode = playlistId != null
 
@@ -58,7 +61,14 @@ class PlaylistEditViewModel @Inject constructor(
 
     fun loadPlaylist(playlistId: Int) {
         viewModelScope.launch {
-            val playlist = playlistRepository.getPlaylistById(playlistId)
+            val playlist = if (isSmartPlaylist) {
+                val smartPlaylist = smartPlaylistRepository.getSmartPlaylistById(playlistId)
+                Playlist(
+                    name = smartPlaylist.name,
+                    description = smartPlaylist.description,
+                    image = smartPlaylist.image
+                )
+            } else playlistRepository.getPlaylistById(playlistId)
 
             initialName = playlist.name
             initialDescription = playlist.description
@@ -105,22 +115,35 @@ class PlaylistEditViewModel @Inject constructor(
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
 
-                val currentPlaylist = playlistRepository.getPlaylistById(playlistId!!)
-
                 val newPath =
                     if (_uiState.value.draftImageUrl != null && _uiState.value.draftImageUrl != initialImage) playlistRepository.savePlaylistImage(
                         _uiState.value.draftImageUrl!!.toUri(),
-                        playlistId
+                        playlistId!!
                     )
                     else _uiState.value.draftImageUrl
 
-                val newPlaylist = currentPlaylist.copy(
-                    name = _uiState.value.name,
-                    description = _uiState.value.draftDescription,
-                    image = newPath,
-                )
+                if (isSmartPlaylist){
+                    val currentPlaylist = smartPlaylistRepository.getSmartPlaylistById(playlistId!!)
 
-                playlistRepository.update(newPlaylist)
+                    val newPlaylist = currentPlaylist.copy(
+                        name = _uiState.value.name,
+                        description = _uiState.value.draftDescription,
+                        image = newPath
+                    )
+
+                    smartPlaylistRepository.updatePlaylist(newPlaylist)
+                }
+                else {
+                    val currentPlaylist = playlistRepository.getPlaylistById(playlistId!!)
+
+                    val newPlaylist = currentPlaylist.copy(
+                        name = _uiState.value.name,
+                        description = _uiState.value.draftDescription,
+                        image = newPath,
+                    )
+
+                    playlistRepository.update(newPlaylist)
+                }
             }
         } else {
             viewModelScope.launch {

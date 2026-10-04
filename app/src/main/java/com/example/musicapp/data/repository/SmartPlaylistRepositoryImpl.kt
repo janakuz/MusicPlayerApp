@@ -66,6 +66,10 @@ class SmartPlaylistRepositoryImpl(
         return smartPlaylistDao.getById(playlistId)
     }
 
+    override suspend fun getSmartPlaylistById(playlistId: Int): SmartPlaylist {
+        return smartPlaylistDao.getSmartPlaylistById(playlistId)
+    }
+
     override fun getSmartPlaylistStats(filterJson: String): Flow<PlaylistStats> {
         val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
         val rawQuery = filterRepository.buildLibraryQueryParts(filter, FilterSection.GLOBAL)

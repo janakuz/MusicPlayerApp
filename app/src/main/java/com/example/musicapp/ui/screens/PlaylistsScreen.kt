@@ -77,6 +77,7 @@ fun PlaylistsScreen(
     onPlay: (Int, Boolean) -> Unit,
     onDelete: (Int, Boolean) -> Unit,
     onEdit: (Int) -> Unit,
+    onSmartPlaylistEdit: (Int) -> Unit,
     onPlayNext: (Int, Boolean) -> Unit,
     onAddToQueue: (Int, Boolean) -> Unit,
     onAddToPlaylist: (Int, Boolean) -> Unit,
@@ -145,7 +146,7 @@ fun PlaylistsScreen(
                 PlaylistRow(
                     playlist = playlist.playlist,
                     onClick = { onSmartPlaylistClick(playlist.playlist.id) },
-                    onEdit = onEdit,
+                    onEdit = onSmartPlaylistEdit,
                     onDelete = { id -> onDelete(id, true) },
                     trackCount = playlist.trackCount,
                     duration = playlist.totalDuration,

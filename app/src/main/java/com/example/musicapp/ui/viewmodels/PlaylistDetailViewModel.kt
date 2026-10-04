@@ -56,6 +56,7 @@ class PlaylistDetailViewModel @Inject constructor(
                 Playlist(
                     name = playlist.name,
                     description = playlist.description,
+                    image = playlist.image
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
         } else {

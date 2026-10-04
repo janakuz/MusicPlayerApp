@@ -892,6 +892,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onDelete = { id, isSmart -> playlistViewModel.deletePlaylist(id) },
                         playlistStates = playlistUiStates,
                         onEdit = { id -> navController.navigate("playlist/edit/$id") },
+                        onSmartPlaylistEdit = { id -> navController.navigate("smart_playlist/edit/$id") },
                         onExport = { uri, id, isSmart -> playlistViewModel.exportM3u(uri, id, isSmart) },
                         onPlayNext = { id, isSmart -> playerViewModel.playNextPlaylist(id, isSmart) },
                         onAddToQueue = { id, isSmart -> playerViewModel.addToQueuePlaylist(id, isSmart) },
@@ -953,10 +954,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     PlaylistDetailScreen(
                         onTrackClick = { track, tracks, entryId, entryIds ->
                             playerViewModel.playTracks(tracks, track, entryId, entryIds)
-//                            navController.navigate("nowPlaying")
-//                            {
-//                                launchSingleTop = true
-//                            }
                         },
                         onPlayNext = { track -> playerViewModel.playNext(track) },
                         onAddToQueue = { track -> playerViewModel.addToQueue(track) },
@@ -973,6 +970,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onGoToArtist = { id -> navController.navigate("artist/$id")}
                     )
                 }
+
+                composable(
+                    "smart_playlist/edit/{playlistId}",
+                    arguments = listOf(
+                        navArgument("playlistId") { type = NavType.StringType },
+                        navArgument("isSmart") { type = NavType.BoolType; defaultValue = true }
+                    )) {
+                    PlaylistEditScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
 
 
                 composable("nowPlaying") { backStackEntry ->

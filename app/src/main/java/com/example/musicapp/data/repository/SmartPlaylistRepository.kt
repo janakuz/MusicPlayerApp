@@ -20,6 +20,8 @@ interface SmartPlaylistRepository {
 
     fun getSmartPlaylist(playlistId: Int): Flow<SmartPlaylist>
 
+    suspend fun getSmartPlaylistById(playlistId: Int): SmartPlaylist
+
     fun getSmartPlaylistStats(filterJson: String): Flow<PlaylistStats>
 }
 
