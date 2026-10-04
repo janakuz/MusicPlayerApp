@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.SmartPlaylist
+import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
@@ -270,11 +271,18 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    fun exportM3u(uri: Uri, playlistId: Int) {
+    fun exportM3u(uri: Uri, playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks =
-                playlistTracksRepository.getAllTracksInPlaylist(playlistId, "position", true)
-                    .first()
+            val tracks = if (isSmart) {
+                smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId).mapIndexed { index, track ->
+                    PlaylistTrack(
+                        entryId = index,
+                        position = index,
+                        playlistId = playlistId,
+                        trackInfo = track
+                    )
+                }
+            } else playlistTracksRepository.getTracksInPlaylist(playlistId)
             playlistRepository.exportPlaylist(uri, tracks)
         }
     }

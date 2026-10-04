@@ -892,7 +892,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onDelete = { id, isSmart -> playlistViewModel.deletePlaylist(id) },
                         playlistStates = playlistUiStates,
                         onEdit = { id -> navController.navigate("playlist/edit/$id") },
-                        onExport = { uri, id -> playlistViewModel.exportM3u(uri, id) },
+                        onExport = { uri, id, isSmart -> playlistViewModel.exportM3u(uri, id, isSmart) },
                         onPlayNext = { id, isSmart -> playerViewModel.playNextPlaylist(id, isSmart) },
                         onAddToQueue = { id, isSmart -> playerViewModel.addToQueuePlaylist(id, isSmart) },
                         onPlay = { id, isSmart -> playerViewModel.playPlaylist(id, isSmart) },

@@ -80,7 +80,7 @@ fun PlaylistsScreen(
     onPlayNext: (Int, Boolean) -> Unit,
     onAddToQueue: (Int, Boolean) -> Unit,
     onAddToPlaylist: (Int, Boolean) -> Unit,
-    onExport: (Uri, Int) -> Unit,
+    onExport: (Uri, Int, Boolean) -> Unit,
 ) {
     if (createInfo.isShowing) {
         CreatePlaylistDialog(
@@ -123,7 +123,7 @@ fun PlaylistsScreen(
                     trackCount = playlistModel.trackCount,
                     duration = playlistModel.totalDuration,
                     images = playlistModel.top4Images,
-                    onExport = onExport,
+                    onExport = { uri, id -> onExport(uri, id, false) },
                     onPlayNext = { id -> onPlayNext(id, false)},
                     onAddToQueue = { id -> onAddToQueue(id, false) },
                     onPlay = { id -> onPlay(id, false) },
@@ -150,7 +150,7 @@ fun PlaylistsScreen(
                     trackCount = playlist.trackCount,
                     duration = playlist.totalDuration,
                     images = playlist.top4Images,
-                    onExport = onExport,
+                    onExport = { uri, id -> onExport(uri, id, true) },
                     onPlayNext = { id -> onPlayNext(id, true)},
                     onAddToQueue = { id -> onAddToQueue(id, true) },
                     onPlay = { id -> onPlay(id, true) },
