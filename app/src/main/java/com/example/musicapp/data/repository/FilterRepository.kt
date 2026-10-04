@@ -19,6 +19,8 @@ interface FilterRepository {
 
     fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery
 
+    fun buildLibraryQueryParts(filter: LibraryFilter, section: FilterSection): BoundQuery
+
     fun getMinYear(): Flow<Int>
 
     fun getMaxYear(): Flow<Int>
@@ -103,4 +105,28 @@ enum class VoiceGender {
     MALE,
     FEMALE,
     MIXED
+}
+
+data class BoundQuery(
+    val sql: String,
+    val args: Array<Any?>
+) {
+    fun toSimpleSQLiteQuery(): SimpleSQLiteQuery {
+        return SimpleSQLiteQuery(sql, args)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as BoundQuery
+        if (sql != other.sql) return false
+        if (!args.contentEquals(other.args)) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = sql.hashCode()
+        result = 31 * result + args.contentHashCode()
+        return result
+    }
 }

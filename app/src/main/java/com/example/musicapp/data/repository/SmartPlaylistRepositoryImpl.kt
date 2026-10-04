@@ -1,17 +1,15 @@
 package com.example.musicapp.data.repository
 
+import android.R
 import android.util.Log
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.google.gson.*
 import java.lang.reflect.Type
 import com.example.musicapp.data.local.dao.SmartPlaylistDao
 import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.data.local.model.TrackInfo
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.combine
 
 class SmartPlaylistRepositoryImpl(
     private val smartPlaylistDao: SmartPlaylistDao,
@@ -32,11 +30,32 @@ class SmartPlaylistRepositoryImpl(
         smartPlaylistDao.insert(toInsert)
     }
 
-    override fun getSmartPlaylistTracks(filterJson: String): Flow<List<TrackInfo>> {
+    override suspend fun updatePlaylist(playlist: SmartPlaylist) {
+        smartPlaylistDao.update(playlist)
+    }
+
+    override suspend fun delete(playlistId: Int) {
+        smartPlaylistDao.deleteById(playlistId)
+    }
+
+    private fun getFilter(filterJson: String): SimpleSQLiteQuery {
         val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
         val rawQuery = filterRepository.buildLibraryQuery(filter, FilterSection.GLOBAL)
 
+        return rawQuery
+    }
+
+    override fun getSmartPlaylistTracks(filterJson: String): Flow<List<TrackInfo>> {
+        val rawQuery = getFilter(filterJson)
+
         return smartPlaylistDao.getFilteredTracks(rawQuery)
+    }
+
+    override suspend fun getSmartPlaylistTracksFromId(playlistId: Int): List<TrackInfo> {
+        val playlist = smartPlaylistDao.getSmartPlaylistById(playlistId)
+        val query = getFilter(playlist.filterJson)
+
+        return smartPlaylistDao.getFilteredTracksSuspend(query)
     }
 
     override fun getAll(): Flow<List<SmartPlaylist>> {
@@ -47,7 +66,37 @@ class SmartPlaylistRepositoryImpl(
         return smartPlaylistDao.getById(playlistId)
     }
 
+    override fun getSmartPlaylistStats(filterJson: String): Flow<PlaylistStats> {
+        val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
+        val rawQuery = filterRepository.buildLibraryQueryParts(filter, FilterSection.GLOBAL)
 
+        val statsSql = """
+                        SELECT COUNT(sub.trackId) AS trackCount, SUM(sub.duration) AS duration 
+                        FROM (${rawQuery.sql}) AS sub
+                       """.trimIndent()
+
+        val statsQuery = SimpleSQLiteQuery(statsSql, rawQuery.args)
+
+        val artSql = """
+                      SELECT DISTINCT sub.albumArt 
+                      FROM (${rawQuery.sql}) AS sub 
+                      WHERE sub.albumArt IS NOT NULL AND sub.albumArt != '' 
+                      LIMIT 4
+                    """.trimIndent()
+
+        val artQuery = SimpleSQLiteQuery(artSql, rawQuery.args)
+
+        return combine (
+            smartPlaylistDao.getSmartPlaylistStats(statsQuery),
+            smartPlaylistDao.getSmartPlaylistCollageArtwork(artQuery)) { rawStats, artworkUris ->
+            PlaylistStats(
+                trackCount = rawStats.trackCount,
+                duration = rawStats.duration,
+                images = artworkUris
+            )
+        }
+
+    }
 }
 
 

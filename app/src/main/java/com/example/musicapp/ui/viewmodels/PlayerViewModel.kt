@@ -26,6 +26,7 @@ import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.PlayQueueRepository
 import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.data.repository.PlaylistTracksRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.service.PlaybackService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,6 +57,7 @@ class PlayerViewModel @Inject constructor(
     private val playQueueRepository: PlayQueueRepository,
     private val trackRepository: TrackRepository,
     private val playlistTracksRepository: PlaylistTracksRepository,
+    private val smartPlaylistRepository: SmartPlaylistRepository,
     private val dynamicThemeRepository: DynamicThemeRepository,
 ) : ViewModel() {
 
@@ -560,32 +562,33 @@ class PlayerViewModel @Inject constructor(
         controller!!.play()
     }
 
-    fun addToQueuePlaylist(playlistId: Int) {
+    fun addToQueuePlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks =
-                playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo }
+            val tracks = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId)
+                         else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo }
 
             addToQueueList(tracks)
         }
     }
 
-    fun playNextPlaylist(playlistId: Int) {
+    fun playNextPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks =
-                playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo }
+            val tracks = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId)
+                        else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo }
 
             playNextList(tracks)
         }
     }
 
 
-    fun playPlaylist(playlistId: Int) {
+    fun playPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks = playlistTracksRepository.getTracksInPlaylist(playlistId)
-            val trackInfos = tracks.map { it.trackInfo }
+            val tracks = if (isSmart) null else playlistTracksRepository.getTracksInPlaylist(playlistId)
+            val trackInfos = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId) else tracks?.map { it.trackInfo }
+                ?: emptyList()
             val selectedTrack = trackInfos[0]
-            val startEntryId = tracks[0].entryId
-            val entryIds = tracks.map { it.entryId }
+            val startEntryId = tracks?.get(0)?.entryId
+            val entryIds = tracks?.map { it.entryId }
 
             playTracks(trackInfos, selectedTrack, startEntryId, entryIds)
         }

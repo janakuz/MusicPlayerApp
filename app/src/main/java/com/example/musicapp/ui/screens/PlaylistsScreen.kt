@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,8 +20,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -28,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,9 +41,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -60,7 +66,7 @@ import com.example.musicapp.util.formatDuration
 @Composable
 fun PlaylistsScreen(
     playlistStates: List<PlaylistUiModel>,
-    smartPlaylists: List<SmartPlaylist>,
+    smartPlaylists: List<PlaylistUiModel>,
     createInfo: CreatePlaylistState,
     onNameChange: (String) -> Unit,
     onClick: (Int) -> Unit,
@@ -68,12 +74,12 @@ fun PlaylistsScreen(
     onCreateNewPlaylist: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    onPlay: (Int) -> Unit,
-    onDelete: (Int) -> Unit,
+    onPlay: (Int, Boolean) -> Unit,
+    onDelete: (Int, Boolean) -> Unit,
     onEdit: (Int) -> Unit,
-    onPlayNext: (Int) -> Unit,
-    onAddToQueue: (Int) -> Unit,
-    onAddToPlaylist: (Int) -> Unit,
+    onPlayNext: (Int, Boolean) -> Unit,
+    onAddToQueue: (Int, Boolean) -> Unit,
+    onAddToPlaylist: (Int, Boolean) -> Unit,
     onExport: (Uri, Int) -> Unit,
 ) {
     if (createInfo.isShowing) {
@@ -98,73 +104,59 @@ fun PlaylistsScreen(
             )
         ) {
 
+            stickyHeader {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    SectionHeader(
+                        title = "Your Playlists",
+                        count = playlistStates.size,
+                        icon = Icons.Default.Person
+                    )
+                }
+            }
+
             items(playlistStates) { playlistModel ->
                 PlaylistRow(
                     playlist = playlistModel.playlist,
                     onClick = { onClick(playlistModel.playlist.id) },
                     onEdit = onEdit,
-                    onDelete = onDelete,
+                    onDelete = { id -> onDelete(id, false) },
                     trackCount = playlistModel.trackCount,
                     duration = playlistModel.totalDuration,
                     images = playlistModel.top4Images,
                     onExport = onExport,
-                    onPlayNext = onPlayNext,
-                    onAddToQueue = onAddToQueue,
-                    onPlay = onPlay,
-                    onAddToPlaylist = onAddToPlaylist
+                    onPlayNext = { id -> onPlayNext(id, false)},
+                    onAddToQueue = { id -> onAddToQueue(id, false) },
+                    onPlay = { id -> onPlay(id, false) },
+                    onAddToPlaylist = { id -> onAddToPlaylist(id, false) }
                 )
+            }
+
+            stickyHeader {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    SectionHeader(
+                        title = "Smart Playlists",
+                        count = smartPlaylists.size,
+                        icon = Icons.Default.FilterList
+                    )
+                }
             }
 
             items(smartPlaylists) { playlist ->
-                SmartPlaylistRow(
-                    playlist = playlist,
-                    onClick = { onSmartPlaylistClick(playlist.id) }
+                PlaylistRow(
+                    playlist = playlist.playlist,
+                    onClick = { onSmartPlaylistClick(playlist.playlist.id) },
+                    onEdit = onEdit,
+                    onDelete = { id -> onDelete(id, true) },
+                    trackCount = playlist.trackCount,
+                    duration = playlist.totalDuration,
+                    images = playlist.top4Images,
+                    onExport = onExport,
+                    onPlayNext = { id -> onPlayNext(id, true)},
+                    onAddToQueue = { id -> onAddToQueue(id, true) },
+                    onPlay = { id -> onPlay(id, true) },
+                    onAddToPlaylist = { id -> onAddToPlaylist(id, true) }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun SmartPlaylistRow(
-    playlist: SmartPlaylist,
-    onClick: () -> Unit,
-    ){
-    var expanded by remember { mutableStateOf(false) }
-
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = { expanded = true }
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ){
-        val defaultImage = painterResource(R.drawable.baseline_album_24)
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(playlist.image)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            placeholder = defaultImage,
-            error = defaultImage,
-            fallback = defaultImage,
-        )
-        Spacer(Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = playlist.name,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth(),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }
@@ -285,6 +277,40 @@ fun PlaylistRow(
                 onDismiss = { expanded = false }
             )
         }
+    }
+}
+
+@Composable
+fun SectionHeader(
+    title: String,
+    icon: ImageVector,
+    count: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "($count)",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

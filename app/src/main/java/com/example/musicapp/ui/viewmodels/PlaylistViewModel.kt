@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
@@ -15,14 +16,18 @@ import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -71,8 +76,24 @@ class PlaylistViewModel @Inject constructor(
                 }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val smartPlaylists: StateFlow<List<PlaylistUiModel>> =
+        smartPlaylistRepository.getAll()
+            .flatMapLatest { playlists ->
 
-    val smartPlaylists: StateFlow<List<SmartPlaylist>> = smartPlaylistRepository.getAll()
+                val individualUiModelFlows: List<Flow<PlaylistUiModel>> = playlists.map { smartPlaylist ->
+                    smartPlaylistRepository.getSmartPlaylistStats(smartPlaylist.filterJson).map { stats ->
+                        PlaylistUiModel(
+                            playlist = Playlist(id = smartPlaylist.id, name = smartPlaylist.name, description = smartPlaylist.description, image = smartPlaylist.image),
+                            trackCount = stats.trackCount,
+                            totalDuration = stats.duration,
+                            top4Images = stats.images
+                        )
+                    }
+                }
+                combine(individualUiModelFlows) { array -> array.toList() }
+            }
+            .flowOn(Dispatchers.IO)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val playlistsForAdd: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists(
@@ -189,10 +210,10 @@ class PlaylistViewModel @Inject constructor(
     }
 
 
-    fun onAddToPlaylistPlaylist(playlistId: Int) {
+    fun onAddToPlaylistPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks = playlistTracksRepository.getTracksInPlaylist(playlistId)
-            val trackIds = tracks.map { it.trackInfo.trackId }
+            val trackIds = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId).map { it.trackId }
+                        else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo.trackId }
             _createInfo.update { it.copy(name = playlistRepository.getPlaylistById(playlistId).name) }
             onAdd(trackIds)
         }
@@ -224,9 +245,10 @@ class PlaylistViewModel @Inject constructor(
         _createInfo.update { it.copy(name = newName) }
     }
 
-    fun deletePlaylist(id: Int) {
+    fun deletePlaylist(id: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            playlistRepository.deleteById(id)
+            if (isSmart) smartPlaylistRepository.delete(id)
+            else playlistRepository.deleteById(id)
         }
     }
 

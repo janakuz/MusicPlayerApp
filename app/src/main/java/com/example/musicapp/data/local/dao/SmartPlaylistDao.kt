@@ -19,6 +19,8 @@ import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackMood
 import com.example.musicapp.data.local.model.TrackInfo
+import com.example.musicapp.data.repository.PlaylistStats
+import com.example.musicapp.data.repository.RawPlaylistStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -36,7 +38,7 @@ interface SmartPlaylistDao {
     suspend fun deleteById(playlistId: Int)
 
     @Query("SELECT * FROM smart_playlists WHERE id = :playlistId")
-    fun getSmartPlaylistById(playlistId: Int): SmartPlaylist?
+    suspend fun getSmartPlaylistById(playlistId: Int): SmartPlaylist
 
     @Query("SELECT * FROM smart_playlists WHERE id = :playlistId")
     fun getById(playlistId: Int): Flow<SmartPlaylist>
@@ -54,4 +56,38 @@ interface SmartPlaylistDao {
         Mood::class,
     ])
     fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
+
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        AlbumGenre::class,
+        ArtistGenre::class,
+        TrackMood::class,
+        Mood::class,
+    ])
+    suspend fun getFilteredTracksSuspend(query: SupportSQLiteQuery): List<TrackInfo>
+
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        AlbumGenre::class,
+        ArtistGenre::class,
+        TrackMood::class,
+        Mood::class,
+    ])
+    fun getSmartPlaylistStats(query: SupportSQLiteQuery): Flow<RawPlaylistStats>
+
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        AlbumGenre::class,
+        ArtistGenre::class,
+        TrackMood::class,
+        Mood::class,
+    ])
+    fun getSmartPlaylistCollageArtwork(query: SupportSQLiteQuery): Flow<List<String>>
+
 }

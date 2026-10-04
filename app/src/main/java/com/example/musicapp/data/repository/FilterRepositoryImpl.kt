@@ -19,7 +19,7 @@ class FilterRepositoryImpl(
 ) : FilterRepository {
 
 
-    override fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery {
+    override fun buildLibraryQueryParts(filter: LibraryFilter, type: FilterSection): BoundQuery {
         val conditions = mutableListOf<String>()
         val bindArgs = mutableListOf<Any>()
 
@@ -334,7 +334,14 @@ class FilterRepositoryImpl(
         } else ""
         val sqlGrouped = if (type == FilterSection.ALBUMS) "$sql GROUP BY al.id" else if (type == FilterSection.ARTISTS) "$sql GROUP BY ar.id" else "$sql GROUP BY t.id"
 
-        return SimpleSQLiteQuery(sqlGrouped, bindArgs.toTypedArray())
+        return BoundQuery(sqlGrouped, bindArgs.toTypedArray())
+    }
+
+    override fun buildLibraryQuery(
+        filter: LibraryFilter,
+        section: FilterSection
+    ): SimpleSQLiteQuery {
+        return buildLibraryQueryParts(filter, section).toSimpleSQLiteQuery()
     }
 
     override fun getFilteredAlbums(filter: LibraryFilter): Flow<List<AlbumInfo>> {
