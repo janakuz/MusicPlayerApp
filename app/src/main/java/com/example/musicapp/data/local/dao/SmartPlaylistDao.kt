@@ -34,7 +34,7 @@ interface SmartPlaylistDao {
     @Delete
     suspend fun delete(playlist: SmartPlaylist)
 
-    @Query("DELETE FROM playlists WHERE id=:playlistId")
+    @Query("DELETE FROM smart_playlists WHERE id=:playlistId")
     suspend fun deleteById(playlistId: Int)
 
     @Query("SELECT * FROM smart_playlists WHERE id = :playlistId")

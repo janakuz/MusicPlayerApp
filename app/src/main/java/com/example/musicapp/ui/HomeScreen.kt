@@ -897,7 +897,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onDismiss = { playlistViewModel.hideCreateDialog() },
                         onNameChange = { newName -> playlistViewModel.onNameChange(newName) },
                         onConfirm = { playlistViewModel.createPlaylist() },
-                        onDelete = { id, isSmart -> playlistViewModel.deletePlaylist(id) },
+                        onDelete = { id, isSmart -> playlistViewModel.deletePlaylist(id, isSmart) },
                         playlistStates = playlistUiStates,
                         onEdit = { id -> navController.navigate("playlist/edit/$id") },
                         onSmartPlaylistEdit = { id -> navController.navigate("smart_playlist/edit/$id") },
