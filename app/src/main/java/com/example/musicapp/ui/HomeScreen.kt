@@ -872,7 +872,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlayNextTrack = { track ->playerViewModel.playNext(track) },
                         onAddToQueueTrack = { track -> playerViewModel.addToQueue(track) },
                         onEditTrack = { track -> navController.navigate("track/edit/${track.trackId}") },
-
+                        isFilter = true,
+                        onSaveSmartPlaylist = { name -> filterViewModel.saveSmartPlaylist(name) }
                     )
                 }
 
@@ -1109,4 +1110,3 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
         }
     }
 }
-

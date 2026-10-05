@@ -261,10 +261,8 @@ fun SearchTopBar(
             }
         },
         actions = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear")
-                }
+            IconButton(onClick = { onQueryChange("") }) {
+                Icon(Icons.Default.Clear, contentDescription = "Clear")
             }
         }
     )

@@ -11,6 +11,7 @@ import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.LibraryFilter
 import com.example.musicapp.data.repository.MoodRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepository
 import com.example.musicapp.ui.components.FilterType
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
@@ -39,6 +40,7 @@ class FilterViewModel @Inject constructor(
     private val genreRepository: GenreRepository,
     private val areaRepository: AreaRepository,
     private val moodRepository: MoodRepository,
+    private val smartPlaylistRepository: SmartPlaylistRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -299,6 +301,12 @@ class FilterViewModel @Inject constructor(
 
     fun reset() {
         _draftFilter.value = _activeFilter.value
+    }
+
+    fun saveSmartPlaylist(name: String){
+        viewModelScope.launch {
+            smartPlaylistRepository.savePlaylist(_activeFilter.value, name)
+        }
     }
 }
 
