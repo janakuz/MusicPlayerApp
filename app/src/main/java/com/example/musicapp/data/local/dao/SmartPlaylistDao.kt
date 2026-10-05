@@ -55,17 +55,6 @@ interface SmartPlaylistDao {
         TrackMood::class,
         Mood::class,
     ])
-    fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
-
-    @RawQuery(observedEntities = [
-        Track::class,
-        Artist::class,
-        Album::class,
-        AlbumGenre::class,
-        ArtistGenre::class,
-        TrackMood::class,
-        Mood::class,
-    ])
     suspend fun getFilteredTracksSuspend(query: SupportSQLiteQuery): List<TrackInfo>
 
     @RawQuery(observedEntities = [

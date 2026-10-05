@@ -18,7 +18,9 @@ interface FilterRepository {
 
     fun getFilteredTracks(filter: LibraryFilter): Flow<List<TrackInfo>>
 
-    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection,): SimpleSQLiteQuery
+    fun getGlobalTracks(filter: LibraryFilter): Flow<List<TrackInfo>>
+
+    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery
 
     fun buildLibraryQueryParts(filter: LibraryFilter, section: FilterSection): BoundQuery
 

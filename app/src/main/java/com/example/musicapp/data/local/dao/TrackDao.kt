@@ -288,4 +288,16 @@ interface TrackDao {
         Mood::class,
     ])
     fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
+
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        AlbumGenre::class,
+        ArtistGenre::class,
+        TrackMood::class,
+        Mood::class,
+    ])
+    fun getFilteredTracksGlobal(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
+
 }

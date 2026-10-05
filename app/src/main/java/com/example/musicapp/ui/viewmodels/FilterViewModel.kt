@@ -87,6 +87,8 @@ class FilterViewModel @Inject constructor(
 
     private val _moodQuery = MutableStateFlow("")
 
+    private val _isGlobal = MutableStateFlow(false)
+    val isGlobal = _isGlobal.asStateFlow()
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val labelSuggestions: StateFlow<List<String>> = _labelQuery
@@ -166,18 +168,18 @@ class FilterViewModel @Inject constructor(
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val filteredArtists = combine(_activeFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
-        if (type != FilterType.ARTISTS) flowOf(emptyList())
+    val filteredArtists = combine(_activeFilter, _libraryType, _isGlobal) { filter, type, global ->
+        Triple(filter, type, global)
+    }.flatMapLatest { (filter, type, global) ->
+        if (type != FilterType.ARTISTS || global) flowOf(emptyList())
         else filterRepository.getFilteredArtists(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val potentialArtistMatches = combine(_draftFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
-        if (type != FilterType.ARTISTS) flowOf(emptyList())
+    val potentialArtistMatches = combine(_draftFilter, _libraryType, _isGlobal) { filter, type, global ->
+        Triple(filter, type, global)
+    }.flatMapLatest { (filter, type, global) ->
+        if (type != FilterType.ARTISTS || global) flowOf(emptyList())
         else  filterRepository.getFilteredArtists(filter)
     }
         .map { it.size }
@@ -185,19 +187,19 @@ class FilterViewModel @Inject constructor(
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val filteredAlbums = combine(_activeFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
-        if (type != FilterType.ALBUMS) flowOf(emptyList())
+    val filteredAlbums = combine(_activeFilter, _libraryType, _isGlobal) { filter, type, global ->
+        Triple(filter, type, global)
+    }.flatMapLatest { (filter, type, global) ->
+        if (type != FilterType.ALBUMS || global) flowOf(emptyList())
         else filterRepository.getFilteredAlbums(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val potentialAlbumMatches = combine(_draftFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
-        if (type != FilterType.ALBUMS) flowOf(emptyList())
+    val potentialAlbumMatches = combine(_draftFilter, _libraryType, _isGlobal) { filter, type, global ->
+        Triple(filter, type, global)
+    }.flatMapLatest { (filter, type, global) ->
+        if (type != FilterType.ALBUMS || global) flowOf(emptyList())
         else filterRepository.getFilteredAlbums(filter)
     }
         .map { it.size }
@@ -206,23 +208,42 @@ class FilterViewModel @Inject constructor(
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val filteredTracks = combine(_activeFilter, _libraryType) { filter, type ->
-        Pair(filter, type)
-    }.flatMapLatest { (filter, type) ->
-        if (type != FilterType.TRACKS) flowOf(emptyList())
+    val filteredTracks = combine(_activeFilter, _libraryType, _isGlobal) { filter, type, global ->
+        Triple(filter, type, global)
+    }.flatMapLatest { (filter, type, global) ->
+        if (type != FilterType.TRACKS || global) flowOf(emptyList())
         else  filterRepository.getFilteredTracks(filter)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val potentialTrackMatches = combine(_draftFilter, _libraryType, filterDefaults) { filter, type, defaults ->
-        Triple(filter, type, defaults)
-    }.flatMapLatest { (filter, type, defaults) ->
-        if (type != FilterType.TRACKS) flowOf(emptyList())
+    val potentialTrackMatches = combine(_draftFilter, _libraryType, _isGlobal) { filter, type, global ->
+        Triple(filter, type, global)
+    }.flatMapLatest { (filter, type, global) ->
+        if (type != FilterType.TRACKS || global) flowOf(emptyList())
         else filterRepository.getFilteredTracks(filter)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val potentialGlobalMatches = combine(_draftFilter, _isGlobal) { filter, global ->
+        Pair(filter, global)
+    }.flatMapLatest { (filter, global) ->
+        if (!global) flowOf(emptyList())
+        else filterRepository.getGlobalTracks(filter)
+    }
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val filteredGlobalTracks = combine(_activeFilter,_isGlobal) { filter, global ->
+        Pair(filter, global)
+    }.flatMapLatest { (filter, global) ->
+        if (!global) flowOf(emptyList())
+        else  filterRepository.getGlobalTracks(filter)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 
 
 
@@ -261,6 +282,10 @@ class FilterViewModel @Inject constructor(
 
     fun onAreaQueryChange(newQuery: String) {
         _areaQuery.value = newQuery
+    }
+
+    fun onGlobalChange(){
+        _isGlobal.value = !_isGlobal.value
     }
 
     fun resetAll(){

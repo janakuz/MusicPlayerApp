@@ -46,9 +46,9 @@ class SmartPlaylistRepositoryImpl(
     }
 
     override fun getSmartPlaylistTracks(filterJson: String): Flow<List<TrackInfo>> {
-        val rawQuery = getFilter(filterJson)
+        val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
 
-        return smartPlaylistDao.getFilteredTracks(rawQuery)
+        return filterRepository.getGlobalTracks(filter)
     }
 
     override suspend fun getSmartPlaylistTracksFromId(playlistId: Int): List<TrackInfo> {

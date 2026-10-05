@@ -1,6 +1,5 @@
 package com.example.musicapp.ui.components
 
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -103,10 +102,12 @@ enum class FilterTabs(@StringRes val title: Int, val type: FilterType) {
 @Composable
 fun FilterDrawerContent(
     draft: LibraryFilter,
+    isGlobal: Boolean,
     filterType: FilterType,
     potentialAlbumCount: Int,
     potentialArtistCount: Int,
     potentialTrackCount: Int,
+    potentialGlobalCount: Int,
     filterDefaults: FilterDefaults,
     labelSuggestions: List<String>,
     onDraftChange: (LibraryFilter) -> Unit,
@@ -117,9 +118,11 @@ fun FilterDrawerContent(
     moodSuggestions: List<String>,
     onGenreQueryChange: (String) -> Unit,
     onMoodQueryChange: (String) -> Unit,
-    onTabChange: (FilterType) -> Unit,
+    onTabChange: (FilterType, Boolean) -> Unit,
     areaSuggestions: List<AreaHierarchy>,
     onAreaQueryChange: (String) -> Unit,
+    onGlobalChange: () -> Unit,
+    isEditingSmart: Boolean = false,
 ) {
     val dummyFocusRequester = remember { FocusRequester() }
 
@@ -133,6 +136,37 @@ fun FilterDrawerContent(
     var acousticSectionExpanded by remember { mutableStateOf(false) }
 
     Column() {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Global Filter",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Apply rules across all library tabs (artists, albums, and tracks) instead of just the current view.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Switch(
+                checked = isGlobal,
+                onCheckedChange = { onGlobalChange() },
+                enabled = !isEditingSmart
+            )
+        }
 
         TabRow(
             selectedTabIndex = selectedTabIndex,
@@ -144,7 +178,7 @@ fun FilterDrawerContent(
                     selected = index == selectedTabIndex,
                     onClick = {
                         selectedTabIndex = index
-                        onTabChange(tabs[index].type)
+                        onTabChange(tabs[index].type, isGlobal)
                     }
                 )
             }
@@ -309,7 +343,7 @@ fun FilterDrawerContent(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        Text("Show $potentialArtistCount Results")
+                        Text("Show ${ if (isGlobal) potentialGlobalCount else potentialArtistCount } Results")
                     }
                 }
 
@@ -407,7 +441,7 @@ fun FilterDrawerContent(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        Text("Show $potentialAlbumCount Results")
+                        Text("Show ${ if (isGlobal) potentialGlobalCount else potentialAlbumCount } Results")
                     }
                 }
 
@@ -812,7 +846,7 @@ fun FilterDrawerContent(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        Text("Show $potentialTrackCount Results")
+                        Text("Show ${ if (isGlobal) potentialGlobalCount else potentialTrackCount } Results")
                     }
                 }
 

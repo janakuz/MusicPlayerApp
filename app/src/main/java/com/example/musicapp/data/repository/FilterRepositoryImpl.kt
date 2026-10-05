@@ -468,6 +468,12 @@ class FilterRepositoryImpl(
         return trackDao.getFilteredTracks(rawQuery)
     }
 
+    override fun getGlobalTracks(filter: LibraryFilter): Flow<List<TrackInfo>> {
+        val rawQuery = buildLibraryQuery(filter, FilterSection.GLOBAL)
+
+        return trackDao.getFilteredTracksGlobal(rawQuery)
+    }
+
     override fun getMinYear(): Flow<Int> {
         return albumDao.getMinYear()
     }

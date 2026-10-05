@@ -189,12 +189,15 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
     val draftFilter by filterViewModel.draftFilter.collectAsState()
     val filterAlbumCount by filterViewModel.potentialAlbumMatches.collectAsState()
     val filterAlbumResults by filterViewModel.filteredAlbums.collectAsState()
     val filterArtistCount by filterViewModel.potentialArtistMatches.collectAsState()
     val filterArtistResults by filterViewModel.filteredArtists.collectAsState()
     val filterTrackResults by filterViewModel.filteredTracks.collectAsState()
+    val filterGlobalCount by filterViewModel.potentialGlobalMatches.collectAsState()
+    val filterGlobalResults by filterViewModel.filteredGlobalTracks.collectAsState()
     val filterDefaults by filterViewModel.filterDefaults.collectAsState()
     val labelSuggestions by filterViewModel.labelSuggestions.collectAsState()
     val sliderInteractionSource = remember { MutableInteractionSource() }
@@ -203,6 +206,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
     val areaSuggestions by filterViewModel.areaSuggestions.collectAsState()
     val moodSuggestions by filterViewModel.moodSuggestions.collectAsState()
     val filterTrackCount by filterViewModel.potentialTrackMatches.collectAsState()
+    val isGlobal by filterViewModel.isGlobal.collectAsState()
 
 
 
@@ -835,7 +839,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     route = "filter_results",
                     ) {
                     SearchContent(
-                        results = SearchResult(albums = filterAlbumResults, artists = filterArtistResults, tracks = filterTrackResults),
+                        results = SearchResult(
+                            albums = filterAlbumResults,
+                            artists = filterArtistResults,
+                            tracks = if (isGlobal) filterGlobalResults else filterTrackResults),
                         onArtistClick = { id -> navController.navigate("artist/$id") },
                         onAlbumClick = { id -> navController.navigate("album/$id") },
                         onTrackClick = { tracks, track ->
@@ -1083,13 +1090,18 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         moodSuggestions = moodSuggestions,
                         onMoodQueryChange = { query -> filterViewModel.onMoodQueryChange(query) },
                         potentialArtistCount = filterArtistCount,
-                        onTabChange = { tab ->
-                            filterViewModel.resetAll()
+                        onTabChange = { tab, isGlobal ->
+                            if (!isGlobal) {
+                                filterViewModel.resetAll()
+                            }
                             filterViewModel.updateType(tab)
                         },
                         areaSuggestions = areaSuggestions,
                         onAreaQueryChange = { query -> filterViewModel.onAreaQueryChange(query) },
-                        potentialTrackCount = filterTrackCount
+                        potentialTrackCount = filterTrackCount,
+                        isGlobal = isGlobal,
+                        onGlobalChange = { filterViewModel.onGlobalChange() },
+                        potentialGlobalCount = filterGlobalCount
                     )
                 }
 
