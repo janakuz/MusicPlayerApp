@@ -168,6 +168,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
         "album/edit",
         "track/edit",
         "playlist/edit",
+        "smart_playlist/edit",
         "playlist/create"
     )
 
@@ -1082,7 +1083,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 ModalBottomSheet(
                     onDismissRequest = {
                         showFilterSheet = false
-                        filterViewModel.resetDraft()
+                        if (currentRoute != null && !currentRoute.startsWith("filter_results"))
+                            filterViewModel.resetDraft()
                     },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 ) {
