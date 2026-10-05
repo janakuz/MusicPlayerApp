@@ -183,12 +183,11 @@ fun FilterDrawerContent(
                 )
             }
         }
-
+        val maxHeight = if (isEditingSmart) 1f else 0.7f
         when {
-
             (selectedTabIndex == tabs.indexOf(FilterTabs.Artists)) -> LazyColumn(
                 modifier = Modifier
-                    .fillMaxHeight(0.7f)
+                    .fillMaxHeight(maxHeight)
                     .focusRequester(dummyFocusRequester)
                     .focusable()
                     .clickable(
@@ -343,7 +342,9 @@ fun FilterDrawerContent(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        Text("Show ${ if (isGlobal) potentialGlobalCount else potentialArtistCount } Results")
+                        Text( if (isEditingSmart) "Save Smart Playlist (Current Tracks: $potentialGlobalCount)" else
+                            "Show ${ if (isGlobal) potentialGlobalCount else potentialArtistCount } Results"
+                        )
                     }
                 }
 
@@ -351,7 +352,7 @@ fun FilterDrawerContent(
 
             (selectedTabIndex == tabs.indexOf(FilterTabs.Albums)) -> LazyColumn(
                 modifier = Modifier
-                    .fillMaxHeight(0.7f)
+                    .fillMaxHeight(maxHeight)
                     .focusRequester(dummyFocusRequester)
                     .focusable()
                     .clickable(
@@ -441,7 +442,8 @@ fun FilterDrawerContent(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        Text("Show ${ if (isGlobal) potentialGlobalCount else potentialAlbumCount } Results")
+                        Text(if (isEditingSmart) "Save Smart Playlist (Current Tracks: $potentialGlobalCount)" else
+                            "Show ${ if (isGlobal) potentialGlobalCount else potentialAlbumCount } Results")
                     }
                 }
 
@@ -449,7 +451,7 @@ fun FilterDrawerContent(
 
             (selectedTabIndex == tabs.indexOf(FilterTabs.Tracks)) -> LazyColumn(
                 modifier = Modifier
-                    .fillMaxHeight(0.7f)
+                    .fillMaxHeight(maxHeight)
                     .focusRequester(dummyFocusRequester)
                     .focusable()
                     .clickable(
@@ -846,7 +848,8 @@ fun FilterDrawerContent(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        Text("Show ${ if (isGlobal) potentialGlobalCount else potentialTrackCount } Results")
+                        Text(if (isEditingSmart) "Save Smart Playlist (Current Tracks: $potentialGlobalCount)" else
+                            "Show ${ if (isGlobal) potentialGlobalCount else potentialTrackCount } Results")
                     }
                 }
 

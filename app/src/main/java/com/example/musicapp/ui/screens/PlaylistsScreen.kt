@@ -82,6 +82,7 @@ fun PlaylistsScreen(
     onAddToQueue: (Int, Boolean) -> Unit,
     onAddToPlaylist: (Int, Boolean) -> Unit,
     onExport: (Uri, Int, Boolean) -> Unit,
+    onEditFilters: ((Int) -> Unit),
 ) {
     if (createInfo.isShowing) {
         CreatePlaylistDialog(
@@ -155,7 +156,8 @@ fun PlaylistsScreen(
                     onPlayNext = { id -> onPlayNext(id, true)},
                     onAddToQueue = { id -> onAddToQueue(id, true) },
                     onPlay = { id -> onPlay(id, true) },
-                    onAddToPlaylist = { id -> onAddToPlaylist(id, true) }
+                    onAddToPlaylist = { id -> onAddToPlaylist(id, true) },
+                    onEditFilters = onEditFilters
                 )
             }
         }
@@ -176,7 +178,8 @@ fun PlaylistRow(
     onDelete: (Int) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
-) {
+    onEditFilters: ((Int) -> Unit)? = null,
+    ) {
 
     val exportM3uLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("audio/x-mpegurl")
@@ -267,7 +270,14 @@ fun PlaylistRow(
             onExportM3u = {
                 exportM3uLauncher.launch("${playlist.name}.m3u")
                 expanded = false
-            }
+            },
+            onEditSmartFilters =
+                if (onEditFilters != null) {
+                    {
+                        onEditFilters(playlist.id)
+                        expanded = false
+                    }
+                } else null
         )
 
         if (expanded) {

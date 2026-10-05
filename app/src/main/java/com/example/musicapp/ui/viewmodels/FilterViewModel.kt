@@ -297,6 +297,11 @@ class FilterViewModel @Inject constructor(
 
     fun resetDraft(){
         _draftFilter.value = LibraryFilter()
+        _labelQuery.value = ""
+        _genreQuery.value = ""
+        _areaQuery.value = ""
+        _moodQuery.value = ""
+        updateType(FilterType.ARTISTS)
     }
 
     fun reset() {

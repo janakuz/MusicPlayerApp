@@ -63,6 +63,7 @@ import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.components.DeduplicatePlaylistDialog
 import com.example.musicapp.ui.components.DuplicateTracksDialog
 import com.example.musicapp.ui.components.FilterDrawerContent
+import com.example.musicapp.ui.components.FilterType
 import com.example.musicapp.ui.components.LibraryTopBar
 import com.example.musicapp.ui.components.NowPlayingBar
 import com.example.musicapp.ui.components.SelectionTopBar
@@ -94,6 +95,7 @@ import com.example.musicapp.ui.screens.SearchContent
 import com.example.musicapp.ui.screens.SearchResultsScreen
 import com.example.musicapp.ui.screens.SequencerScreen
 import com.example.musicapp.ui.screens.SettingsScreen
+import com.example.musicapp.ui.screens.SmartFiltersEditScreen
 import com.example.musicapp.ui.screens.TrackEditScreen
 import com.example.musicapp.ui.screens.TrackMultiEditScreen
 import com.example.musicapp.ui.viewmodels.FilterViewModel
@@ -907,7 +909,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onPlay = { id, isSmart -> playerViewModel.playPlaylist(id, isSmart) },
                         onAddToPlaylist = { id, isSmart -> playlistViewModel.onAddToPlaylistPlaylist(id, isSmart) },
                         smartPlaylists = smartPlaylists,
-                        onSmartPlaylistClick = { id -> navController.navigate("smart_playlist/$id") }
+                        onSmartPlaylistClick = { id -> navController.navigate("smart_playlist/$id") },
+                        onEditFilters = { id -> navController.navigate("smart_playlist/edit_filters/$id") }
                     )
                 }
 
@@ -990,6 +993,15 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                     )
                 }
 
+                composable("smart_playlist/edit_filters/{playlistId}",) {
+
+                    SmartFiltersEditScreen(
+                        interaction = sliderInteractionSource,
+                        onBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
 
 
                 composable("nowPlaying") { backStackEntry ->
@@ -1068,7 +1080,10 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
 
             if (showFilterSheet) {
                 ModalBottomSheet(
-                    onDismissRequest = { showFilterSheet = false },
+                    onDismissRequest = {
+                        showFilterSheet = false
+                        filterViewModel.resetDraft()
+                    },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 ) {
                     FilterDrawerContent(
@@ -1084,7 +1099,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             filterViewModel.applyFilters()
                             showFilterSheet = false
                             navController.navigate("filter_results")
-                            filterViewModel.resetDraft()
                         },
                         genreSuggestions = genreSuggestions,
                         onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) },
