@@ -13,8 +13,10 @@ An Android music player for local files. Features rich metadata from music metad
 	- record labels, genres
 - Reorderable play queue with persistence across app restarts
 - Now playing screen with playback controls (including A-B looping and playback speed control) and lyrics
+- Extensive filtering options
 - Playlist management (create, update, delete, import/export)
 - Playlist sequencing helper using BPM, key compatibility (Camelot wheel), and perceived loudness
+- Smart playlists (saved filters)
 - Mood and audio feature tagging (implemented as a [Python API](https://github.com/janakuz/essentia-api))
 
 ## Tech stack
