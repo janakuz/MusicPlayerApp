@@ -173,8 +173,8 @@ object AppModule {
         @ApplicationContext context: Context,
         smartPlaylistGson: Gson): AppDatabase {
         val databaseCallback = object : RoomDatabase.Callback() {
-            override fun onOpen(db: SupportSQLiteDatabase) {
-                super.onOpen(db)
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
                 createPresetSmartPlaylists(db, smartPlaylistGson)
             }
         }

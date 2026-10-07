@@ -606,20 +606,24 @@ fun populateMetadataFromAsset(context: Context, db: SupportSQLiteDatabase) {
 
 data class DefaultSmartPlaylist(
     val name: String,
+    val description: String,
     val filter: LibraryFilter
 )
 
 val defaultPlaylists = listOf(
     DefaultSmartPlaylist(
         name = "Recently Added",
+        description = "Tracks added in the last 30 days",
         filter = LibraryFilter(logic = FilterLogic.AND, addedInPastDays = 30)
     ),
     DefaultSmartPlaylist(
         name = "Unplayed Additions",
+        description = "Tracks added in the last 90 days that haven't been played yet",
         filter = LibraryFilter(logic = FilterLogic.AND, maxPlays = 0, addedInPastDays = 90)
     ),
     DefaultSmartPlaylist(
         name = "Most Played",
+        description = "Most played 20% of tracks",
         filter = LibraryFilter(logic = FilterLogic.AND, topPlaysPercentage = 20)
     ),
 )
@@ -639,8 +643,8 @@ fun createPresetSmartPlaylists(db: SupportSQLiteDatabase, smartPlaylistGson: Gso
             if (!exists) {
                 val json = smartPlaylistGson.toJson(preset.filter)
                 db.execSQL(
-                    "INSERT INTO smart_playlists (name, filterJson, createdAt) VALUES (?, ?, ?)",
-                    arrayOf(preset.name, json, System.currentTimeMillis())
+                    "INSERT INTO smart_playlists (name, description, filterJson, createdAt) VALUES (?, ?, ?, ?)",
+                    arrayOf(preset.name, preset.description, json, System.currentTimeMillis())
                 )
             }
         }
