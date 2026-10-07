@@ -4,6 +4,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
+import com.example.musicapp.data.repository.FilterLogic
+import com.example.musicapp.data.repository.LibraryFilter
+import com.google.gson.Gson
 
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -598,5 +601,51 @@ fun populateMetadataFromAsset(context: Context, db: SupportSQLiteDatabase) {
     catch (e: Exception) {
         e.printStackTrace()
         throw e
+    }
+}
+
+data class DefaultSmartPlaylist(
+    val name: String,
+    val filter: LibraryFilter
+)
+
+val defaultPlaylists = listOf(
+    DefaultSmartPlaylist(
+        name = "Recently Added",
+        filter = LibraryFilter(logic = FilterLogic.AND, addedInPastDays = 30)
+    ),
+    DefaultSmartPlaylist(
+        name = "Unplayed Additions",
+        filter = LibraryFilter(logic = FilterLogic.AND, maxPlays = 0, addedInPastDays = 90)
+    ),
+    DefaultSmartPlaylist(
+        name = "Most Played",
+        filter = LibraryFilter(logic = FilterLogic.AND, topPlaysPercentage = 20)
+    ),
+)
+
+fun createPresetSmartPlaylists(db: SupportSQLiteDatabase, smartPlaylistGson: Gson){
+    db.beginTransaction()
+    try {
+        for (preset in defaultPlaylists) {
+            val cursor = db.query(
+                "SELECT COUNT(*) FROM smart_playlists WHERE name = ?",
+                arrayOf(preset.name)
+            )
+            val exists = cursor.use {
+                it.moveToFirst() && it.getInt(0) > 0
+            }
+
+            if (!exists) {
+                val json = smartPlaylistGson.toJson(preset.filter)
+                db.execSQL(
+                    "INSERT INTO smart_playlists (name, filterJson, createdAt) VALUES (?, ?, ?)",
+                    arrayOf(preset.name, json, System.currentTimeMillis())
+                )
+            }
+        }
+        db.setTransactionSuccessful()
+    } finally {
+        db.endTransaction()
     }
 }

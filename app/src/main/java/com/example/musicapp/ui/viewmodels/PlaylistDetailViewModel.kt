@@ -10,6 +10,7 @@ import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistStats
 import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.SmartPlaylistRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +25,7 @@ class PlaylistDetailViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val playlistTracksRepository: PlaylistTracksRepository,
     private val smartPlaylistRepository: SmartPlaylistRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -32,10 +34,17 @@ class PlaylistDetailViewModel @Inject constructor(
 
     val isSmartPlaylist: Boolean = savedStateHandle["isSmart"] ?: false
 
+    private val _initialTimestamp = userPreferencesRepository.initialScanCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0L
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val playlistTracks = if (isSmartPlaylist) {
         smartPlaylistRepository.getSmartPlaylist(playlistId).flatMapLatest { smartPlaylist ->
-            smartPlaylistRepository.getSmartPlaylistTracks(smartPlaylist.filterJson).map { tracks ->
+            smartPlaylistRepository.getSmartPlaylistTracks(smartPlaylist.filterJson, _initialTimestamp.value).map { tracks ->
                 tracks.mapIndexed { index, track ->
                     PlaylistTrack(
                         position = index,
@@ -68,7 +77,7 @@ class PlaylistDetailViewModel @Inject constructor(
     val playlistStats = if (isSmartPlaylist) {
         smartPlaylistRepository.getSmartPlaylist(playlistId)
             .flatMapLatest { playlist ->
-                smartPlaylistRepository.getSmartPlaylistStats(playlist.filterJson)
+                smartPlaylistRepository.getSmartPlaylistStats(playlist.filterJson, _initialTimestamp.value)
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     } else {
         playlistRepository.getPlaylistStats(playlistId)

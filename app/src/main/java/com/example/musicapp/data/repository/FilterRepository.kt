@@ -12,17 +12,17 @@ import kotlinx.coroutines.flow.Flow
 
 interface FilterRepository {
 
-    fun getFilteredAlbums(filter: LibraryFilter): Flow<List<AlbumInfo>>
+    fun getFilteredAlbums(filter: LibraryFilter, initialTimestamp: Long): Flow<List<AlbumInfo>>
 
-    fun getFilteredArtists(filter: LibraryFilter): Flow<List<Artist>>
+    fun getFilteredArtists(filter: LibraryFilter, initialTimestamp: Long): Flow<List<Artist>>
 
-    fun getFilteredTracks(filter: LibraryFilter): Flow<List<TrackInfo>>
+    fun getFilteredTracks(filter: LibraryFilter, initialTimestamp: Long): Flow<List<TrackInfo>>
 
-    fun getGlobalTracks(filter: LibraryFilter): Flow<List<TrackInfo>>
+    fun getGlobalTracks(filter: LibraryFilter, initialTimestamp: Long): Flow<List<TrackInfo>>
 
-    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection): SimpleSQLiteQuery
+    fun buildLibraryQuery(filter: LibraryFilter, type: FilterSection, initialTimestamp: Long): SimpleSQLiteQuery
 
-    fun buildLibraryQueryParts(filter: LibraryFilter, section: FilterSection): BoundQuery
+    fun buildLibraryQueryParts(filter: LibraryFilter, section: FilterSection, initialTimestamp: Long): BoundQuery
 
     fun getMinYear(): Flow<Int>
 
@@ -40,10 +40,6 @@ interface FilterRepository {
 
 data class LibraryFilter(
     val logic: FilterLogic = FilterLogic.AND,
-//    val activeRange: IntRange = 1950..2026,
-//    val activeArtistStartRange: IntRange = 1950..2026,
-//    val activeArtistEndRange: IntRange = 1950..2026,
-//    val activeBPMRange: IntRange = 40..250,
     val activeRange: IntRange? = null,
     val activeArtistStartRange: IntRange? = null,
     val activeArtistEndRange: IntRange? = null,
@@ -84,6 +80,7 @@ data class LibraryFilter(
     val playedInPastDays: Int? = null,
     val minPlays: Int? = null,
     val maxPlays: Int? = null,
+    val topPlaysPercentage: Int? = null
 )
 
 enum class FilterLogic { AND, OR }

@@ -17,6 +17,7 @@ import com.example.musicapp.data.repository.AlbumRepository
 import com.example.musicapp.data.repository.ArtistGenreRepository
 import com.example.musicapp.data.repository.ArtistRepository
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.util.normalizeForMatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,14 +30,15 @@ class LocalLibraryScanner @Inject constructor(
     private val albumGenreRepository: AlbumGenreRepository,
     private val albumArtistRepository: AlbumArtistRepository,
     private val trackRepository: TrackRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val database: AppDatabase
 ) {
 
 
-    suspend fun scanAll(context: Context, onProgress: (Float) -> Unit) {
+    suspend fun scanAll(context: Context, onProgress: (Float) -> Unit, isInitial: Boolean = false) {
         val audioEntries = queryMediaStore(context, isManual = true)
 
-        buildTracks(context, audioEntries, onProgress)
+        buildTracks(context, audioEntries, onProgress, isInitial)
     }
 
 
@@ -61,7 +63,8 @@ class LocalLibraryScanner @Inject constructor(
         buildTracks(
             context,
             entries = toAddAudioEntries,
-            onProgressUpdate = null
+            onProgressUpdate = null,
+            isInitial = false
         )
 
         return true
@@ -253,7 +256,8 @@ class LocalLibraryScanner @Inject constructor(
     private suspend fun buildTracks(
         context: Context,
         entries: List<RawAudioEntry>,
-        onProgressUpdate: ((Float) -> Unit)?
+        onProgressUpdate: ((Float) -> Unit)?,
+        isInitial: Boolean
     ) {
         var done = 0
         val total = entries.size
@@ -376,6 +380,10 @@ class LocalLibraryScanner @Inject constructor(
         }
 
         if (onProgressUpdate != null) onProgressUpdate(100F)
+
+        if (isInitial){
+            userPreferencesRepository.setInitialScanCompleted(System.currentTimeMillis())
+        }
 
     }
 

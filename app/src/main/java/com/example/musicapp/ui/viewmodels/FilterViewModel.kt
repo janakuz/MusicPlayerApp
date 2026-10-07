@@ -12,6 +12,7 @@ import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.LibraryFilter
 import com.example.musicapp.data.repository.MoodRepository
 import com.example.musicapp.data.repository.SmartPlaylistRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.FilterType
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
@@ -41,6 +42,7 @@ class FilterViewModel @Inject constructor(
     private val areaRepository: AreaRepository,
     private val moodRepository: MoodRepository,
     private val smartPlaylistRepository: SmartPlaylistRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -91,6 +93,13 @@ class FilterViewModel @Inject constructor(
 
     private val _isGlobal = MutableStateFlow(false)
     val isGlobal = _isGlobal.asStateFlow()
+
+    private val _initialTimestamp = userPreferencesRepository.initialScanCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0L
+        )
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val labelSuggestions: StateFlow<List<String>> = _labelQuery
@@ -174,7 +183,7 @@ class FilterViewModel @Inject constructor(
         Triple(filter, type, global)
     }.flatMapLatest { (filter, type, global) ->
         if (type != FilterType.ARTISTS || global) flowOf(emptyList())
-        else filterRepository.getFilteredArtists(filter)
+        else filterRepository.getFilteredArtists(filter, _initialTimestamp.value)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -182,7 +191,7 @@ class FilterViewModel @Inject constructor(
         Triple(filter, type, global)
     }.flatMapLatest { (filter, type, global) ->
         if (type != FilterType.ARTISTS || global) flowOf(emptyList())
-        else  filterRepository.getFilteredArtists(filter)
+        else  filterRepository.getFilteredArtists(filter, _initialTimestamp.value)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -193,7 +202,7 @@ class FilterViewModel @Inject constructor(
         Triple(filter, type, global)
     }.flatMapLatest { (filter, type, global) ->
         if (type != FilterType.ALBUMS || global) flowOf(emptyList())
-        else filterRepository.getFilteredAlbums(filter)
+        else filterRepository.getFilteredAlbums(filter, _initialTimestamp.value)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
@@ -202,7 +211,7 @@ class FilterViewModel @Inject constructor(
         Triple(filter, type, global)
     }.flatMapLatest { (filter, type, global) ->
         if (type != FilterType.ALBUMS || global) flowOf(emptyList())
-        else filterRepository.getFilteredAlbums(filter)
+        else filterRepository.getFilteredAlbums(filter, _initialTimestamp.value)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -214,7 +223,7 @@ class FilterViewModel @Inject constructor(
         Triple(filter, type, global)
     }.flatMapLatest { (filter, type, global) ->
         if (type != FilterType.TRACKS || global) flowOf(emptyList())
-        else  filterRepository.getFilteredTracks(filter)
+        else  filterRepository.getFilteredTracks(filter, _initialTimestamp.value)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
@@ -223,7 +232,7 @@ class FilterViewModel @Inject constructor(
         Triple(filter, type, global)
     }.flatMapLatest { (filter, type, global) ->
         if (type != FilterType.TRACKS || global) flowOf(emptyList())
-        else filterRepository.getFilteredTracks(filter)
+        else filterRepository.getFilteredTracks(filter, _initialTimestamp.value)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -233,7 +242,7 @@ class FilterViewModel @Inject constructor(
         Pair(filter, global)
     }.flatMapLatest { (filter, global) ->
         if (!global) flowOf(emptyList())
-        else filterRepository.getGlobalTracks(filter)
+        else filterRepository.getGlobalTracks(filter, _initialTimestamp.value)
     }
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -243,7 +252,7 @@ class FilterViewModel @Inject constructor(
         Pair(filter, global)
     }.flatMapLatest { (filter, global) ->
         if (!global) flowOf(emptyList())
-        else  filterRepository.getGlobalTracks(filter)
+        else  filterRepository.getGlobalTracks(filter, _initialTimestamp.value)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 

@@ -12,9 +12,9 @@ interface SmartPlaylistRepository {
 
     suspend fun delete(playlistId: Int)
 
-    fun getSmartPlaylistTracks(filterJson: String): Flow<List<TrackInfo>>
+    fun getSmartPlaylistTracks(filterJson: String, initialTimestamp: Long): Flow<List<TrackInfo>>
 
-    suspend fun getSmartPlaylistTracksFromId(playlistId: Int): List<TrackInfo>
+    suspend fun getSmartPlaylistTracksFromId(playlistId: Int, initialTimestamp: Long): List<TrackInfo>
 
     fun getAll(): Flow<List<SmartPlaylist>>
 
@@ -22,7 +22,7 @@ interface SmartPlaylistRepository {
 
     suspend fun getSmartPlaylistById(playlistId: Int): SmartPlaylist
 
-    fun getSmartPlaylistStats(filterJson: String): Flow<PlaylistStats>
+    fun getSmartPlaylistStats(filterJson: String, initialTimestamp: Long): Flow<PlaylistStats>
 }
 
 data class RawPlaylistStats(

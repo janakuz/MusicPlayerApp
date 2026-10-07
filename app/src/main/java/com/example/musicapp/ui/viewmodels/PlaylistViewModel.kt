@@ -61,6 +61,13 @@ class PlaylistViewModel @Inject constructor(
     private val _deduplicateConfirmation = MutableStateFlow(DeduplicateState())
     val deduplicateConfirmation = _deduplicateConfirmation.asStateFlow()
 
+    private val _initialTimestamp = userPreferencesRepository.initialScanCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0L
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val playlists: StateFlow<List<PlaylistUiModel>> = userPreferencesRepository.playlistsSortOption
         .flatMapLatest { option ->
@@ -82,7 +89,7 @@ class PlaylistViewModel @Inject constructor(
         smartPlaylistRepository.getAll()
             .flatMapLatest { playlists ->
                 val individualUiModelFlows: List<Flow<PlaylistUiModel>> = playlists.map { smartPlaylist ->
-                    smartPlaylistRepository.getSmartPlaylistStats(smartPlaylist.filterJson).map { stats ->
+                    smartPlaylistRepository.getSmartPlaylistStats(smartPlaylist.filterJson, _initialTimestamp.value).map { stats ->
                         PlaylistUiModel(
                             playlist = Playlist(id = smartPlaylist.id, name = smartPlaylist.name, description = smartPlaylist.description, image = smartPlaylist.image),
                             trackCount = stats.trackCount,
@@ -212,7 +219,7 @@ class PlaylistViewModel @Inject constructor(
 
     fun onAddToPlaylistPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val trackIds = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId).map { it.trackId }
+            val trackIds = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value).map { it.trackId }
                         else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo.trackId }
             _createInfo.update { it.copy(name = playlistRepository.getPlaylistById(playlistId).name) }
             onAdd(trackIds)
@@ -273,7 +280,7 @@ class PlaylistViewModel @Inject constructor(
     fun exportM3u(uri: Uri, playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
             val tracks = if (isSmart) {
-                smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId).mapIndexed { index, track ->
+                smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value).mapIndexed { index, track ->
                     PlaylistTrack(
                         entryId = index,
                         position = index,

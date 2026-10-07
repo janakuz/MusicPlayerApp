@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.LibraryFilter
 import com.example.musicapp.data.repository.SmartPlaylistRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,6 +25,7 @@ class SmartFiltersEditViewModel @Inject constructor(
     private val smartPlaylistRepository: SmartPlaylistRepository,
     private val filterRepository: FilterRepository,
     private val smartPlaylistGson: Gson,
+    private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -36,13 +38,20 @@ class SmartFiltersEditViewModel @Inject constructor(
     private val _draftFilter = MutableStateFlow(LibraryFilter())
     val draftFilter = _draftFilter.asStateFlow()
 
+    private val _initialTimestamp = userPreferencesRepository.initialScanCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0L
+        )
+
     val hasUnsavedChanges: StateFlow<Boolean> = _draftFilter.map { draft ->
         draft != initialFilter
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredGlobalTracks = _draftFilter.flatMapLatest { filter ->
-        filterRepository.getGlobalTracks(filter)
+        filterRepository.getGlobalTracks(filter, _initialTimestamp.value)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onSave(){

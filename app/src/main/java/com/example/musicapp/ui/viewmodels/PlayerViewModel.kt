@@ -28,6 +28,7 @@ import com.example.musicapp.data.repository.PlayerColors
 import com.example.musicapp.data.repository.PlaylistTracksRepository
 import com.example.musicapp.data.repository.SmartPlaylistRepository
 import com.example.musicapp.data.repository.TrackRepository
+import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.service.PlaybackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -59,9 +60,17 @@ class PlayerViewModel @Inject constructor(
     private val playlistTracksRepository: PlaylistTracksRepository,
     private val smartPlaylistRepository: SmartPlaylistRepository,
     private val dynamicThemeRepository: DynamicThemeRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     private var controller: MediaController? = null
+
+    private val _initialTimestamp = userPreferencesRepository.initialScanCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0L
+        )
 
     val isShuffleEnabled: StateFlow<Boolean> = playQueueRepository.shuffleOn
         .stateIn(
@@ -564,7 +573,7 @@ class PlayerViewModel @Inject constructor(
 
     fun addToQueuePlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId)
+            val tracks = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value)
                          else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo }
 
             addToQueueList(tracks)
@@ -573,7 +582,7 @@ class PlayerViewModel @Inject constructor(
 
     fun playNextPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId)
+            val tracks = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value)
                         else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo }
 
             playNextList(tracks)
@@ -584,7 +593,7 @@ class PlayerViewModel @Inject constructor(
     fun playPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
             val tracks = if (isSmart) null else playlistTracksRepository.getTracksInPlaylist(playlistId)
-            val trackInfos = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId) else tracks?.map { it.trackInfo }
+            val trackInfos = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value) else tracks?.map { it.trackInfo }
                 ?: emptyList()
             val selectedTrack = trackInfos[0]
             val startEntryId = tracks?.get(0)?.entryId

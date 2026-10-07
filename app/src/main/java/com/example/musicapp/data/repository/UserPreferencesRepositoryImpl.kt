@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.map
 class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences>) :
     UserPreferencesRepository {
     private companion object {
+        val INIT_COMPLETED = longPreferencesKey("initial_scan_completed")
+
         val ARTIST_SORT_FIELD = stringPreferencesKey("artist_sort_field")
         val ARTIST_SORT_ASC = booleanPreferencesKey("artist_sort_ascending")
 
@@ -46,6 +49,16 @@ class UserPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences
         val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
         val PLAY_THRESHOLD = doublePreferencesKey("play_threshold")
         val MIN_SIMILARITY_SCORE = doublePreferencesKey("min_similarity_score")
+    }
+
+    override val initialScanCompleted: Flow<Long> = dataStore.data.map { prefs ->
+        prefs[INIT_COMPLETED] ?: 0
+    }.distinctUntilChanged()
+
+    override suspend fun setInitialScanCompleted(timestamp: Long){
+        dataStore.edit { prefs ->
+            prefs[INIT_COMPLETED] = timestamp
+        }
     }
 
     override val artistsSortOption: Flow<SortOption> = dataStore.data.map { prefs ->

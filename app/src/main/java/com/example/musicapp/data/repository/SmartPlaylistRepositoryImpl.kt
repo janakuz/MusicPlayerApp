@@ -38,22 +38,22 @@ class SmartPlaylistRepositoryImpl(
         smartPlaylistDao.deleteById(playlistId)
     }
 
-    private fun getFilter(filterJson: String): SimpleSQLiteQuery {
+    private fun getFilter(filterJson: String, initialTimestamp: Long): SimpleSQLiteQuery {
         val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
-        val rawQuery = filterRepository.buildLibraryQuery(filter, FilterSection.GLOBAL)
+        val rawQuery = filterRepository.buildLibraryQuery(filter, FilterSection.GLOBAL, initialTimestamp)
 
         return rawQuery
     }
 
-    override fun getSmartPlaylistTracks(filterJson: String): Flow<List<TrackInfo>> {
+    override fun getSmartPlaylistTracks(filterJson: String, initialTimestamp: Long): Flow<List<TrackInfo>> {
         val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
 
-        return filterRepository.getGlobalTracks(filter)
+        return filterRepository.getGlobalTracks(filter, initialTimestamp)
     }
 
-    override suspend fun getSmartPlaylistTracksFromId(playlistId: Int): List<TrackInfo> {
+    override suspend fun getSmartPlaylistTracksFromId(playlistId: Int, initialTimestamp: Long): List<TrackInfo> {
         val playlist = smartPlaylistDao.getSmartPlaylistById(playlistId)
-        val query = getFilter(playlist.filterJson)
+        val query = getFilter(playlist.filterJson, initialTimestamp)
 
         return smartPlaylistDao.getFilteredTracksSuspend(query)
     }
@@ -70,9 +70,9 @@ class SmartPlaylistRepositoryImpl(
         return smartPlaylistDao.getSmartPlaylistById(playlistId)
     }
 
-    override fun getSmartPlaylistStats(filterJson: String): Flow<PlaylistStats> {
+    override fun getSmartPlaylistStats(filterJson: String, initialTimestamp: Long): Flow<PlaylistStats> {
         val filter = smartPlaylistGson.fromJson(filterJson, LibraryFilter::class.java)
-        val rawQuery = filterRepository.buildLibraryQueryParts(filter, FilterSection.GLOBAL)
+        val rawQuery = filterRepository.buildLibraryQueryParts(filter, FilterSection.GLOBAL, initialTimestamp)
 
         val statsSql = """
                         SELECT COUNT(sub.trackId) AS trackCount, SUM(sub.duration) AS duration 

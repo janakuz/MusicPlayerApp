@@ -30,6 +30,7 @@ import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
 import com.example.musicapp.data.local.database.ALL_MIGRATIONS
 import com.example.musicapp.data.local.database.AppDatabase
+import com.example.musicapp.data.local.database.createPresetSmartPlaylists
 import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
@@ -174,31 +175,7 @@ object AppModule {
         val databaseCallback = object : RoomDatabase.Callback() {
             override fun onOpen(db: SupportSQLiteDatabase) {
                 super.onOpen(db)
-
-                try {
-                    val cursor = db.query("SELECT COUNT(*) FROM smart_playlists WHERE name = 'Recently Added'")
-                    var exists = false
-                    if (cursor.moveToFirst()) {
-                        exists = cursor.getInt(0) > 0
-                    }
-                    cursor.close()
-
-                    if (!exists) {
-                        val recentlyAddedFilter = LibraryFilter(
-                            logic = FilterLogic.AND,
-                            addedInPastDays = 7
-                        )
-
-                        val recentlyAddedJson = smartPlaylistGson.toJson(recentlyAddedFilter)
-
-                        db.execSQL(
-                            "INSERT INTO smart_playlists (name, filterJson, createdAt) VALUES (?, ?, ?)",
-                            arrayOf("Recently Added", recentlyAddedJson, System.currentTimeMillis())
-                        )
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                createPresetSmartPlaylists(db, smartPlaylistGson)
             }
         }
 

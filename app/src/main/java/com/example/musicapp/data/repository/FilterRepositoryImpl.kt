@@ -55,7 +55,11 @@ class FilterRepositoryImpl(
     }
 
 
-    override fun buildLibraryQueryParts(filter: LibraryFilter, type: FilterSection, ): BoundQuery {
+    override fun buildLibraryQueryParts(
+        filter: LibraryFilter,
+        type: FilterSection,
+        initialTimestamp: Long
+    ): BoundQuery {
         val conditions = mutableListOf<String>()
         val bindArgs = mutableListOf<Any>()
 
@@ -368,8 +372,9 @@ class FilterRepositoryImpl(
 
         if (filter.addedInPastDays != null) {
             val cutoffTimestamp = System.currentTimeMillis() - (filter.addedInPastDays.toLong() * 24 * 60 * 60 * 1000L)
-            conditions.add("t.dateAdded >= ?")
-            bindArgs.add(cutoffTimestamp)
+            val finalThreshold = maxOf(cutoffTimestamp, initialTimestamp)
+            conditions.add("t.dateAdded > ?")
+            bindArgs.add(finalThreshold)
         }
 
         if (filter.playedInPastDays != null) {
@@ -388,6 +393,20 @@ class FilterRepositoryImpl(
             conditions.add("t.plays <= ?")
         }
 
+        if (filter.topPlaysPercentage != null){
+            bindArgs.add(filter.topPlaysPercentage)
+            conditions.add("t.plays > 0")
+            conditions.add(
+                """
+                t.plays >= (
+                        SELECT plays FROM tracks 
+                        WHERE plays > 0 
+                        ORDER BY plays DESC 
+                        LIMIT 1 OFFSET MAX(0, CAST(ROUND((SELECT COUNT(*) FROM tracks WHERE plays > 0) * ? / 100.0) AS INT) - 1)
+                    )
+                """)
+        }
+
 
         val baseQuery =
             when (type) {
@@ -399,7 +418,7 @@ class FilterRepositoryImpl(
                      JOIN artists ar ON ar.id=aa.artistId
                      LEFT JOIN album_genres ag ON ag.albumId=al.id
                      LEFT JOIN genres g2 ON ag.genreId=g2.id
-                 """.trimIndent()
+                    """.trimIndent()
 
                 FilterSection.ARTISTS ->
                     """
@@ -446,30 +465,34 @@ class FilterRepositoryImpl(
         return BoundQuery(sqlGrouped, bindArgs.toTypedArray())
     }
 
-    override fun buildLibraryQuery(filter: LibraryFilter, section: FilterSection, ): SimpleSQLiteQuery {
-        return buildLibraryQueryParts(filter, section).toSimpleSQLiteQuery()
+    override fun buildLibraryQuery(
+        filter: LibraryFilter,
+        section: FilterSection,
+        initialTimestamp: Long
+    ): SimpleSQLiteQuery {
+        return buildLibraryQueryParts(filter, section, initialTimestamp).toSimpleSQLiteQuery()
     }
 
-    override fun getFilteredAlbums(filter: LibraryFilter): Flow<List<AlbumInfo>> {
-        val rawQuery = buildLibraryQuery(filter, FilterSection.ALBUMS)
+    override fun getFilteredAlbums(filter: LibraryFilter, initialTimestamp: Long): Flow<List<AlbumInfo>> {
+        val rawQuery = buildLibraryQuery(filter, FilterSection.ALBUMS, initialTimestamp)
 
         return albumDao.getFilteredAlbums(rawQuery)
     }
 
-    override fun getFilteredArtists(filter: LibraryFilter): Flow<List<Artist>> {
-        val rawQuery = buildLibraryQuery(filter, FilterSection.ARTISTS)
+    override fun getFilteredArtists(filter: LibraryFilter, initialTimestamp: Long): Flow<List<Artist>> {
+        val rawQuery = buildLibraryQuery(filter, FilterSection.ARTISTS, initialTimestamp)
 
         return artistDao.getFilteredArtists(rawQuery)
     }
 
-    override fun getFilteredTracks(filter: LibraryFilter): Flow<List<TrackInfo>> {
-        val rawQuery = buildLibraryQuery(filter, FilterSection.TRACKS)
+    override fun getFilteredTracks(filter: LibraryFilter, initialTimestamp: Long): Flow<List<TrackInfo>> {
+        val rawQuery = buildLibraryQuery(filter, FilterSection.TRACKS, initialTimestamp)
 
         return trackDao.getFilteredTracks(rawQuery)
     }
 
-    override fun getGlobalTracks(filter: LibraryFilter): Flow<List<TrackInfo>> {
-        val rawQuery = buildLibraryQuery(filter, FilterSection.GLOBAL)
+    override fun getGlobalTracks(filter: LibraryFilter, initialTimestamp: Long): Flow<List<TrackInfo>> {
+        val rawQuery = buildLibraryQuery(filter, FilterSection.GLOBAL, initialTimestamp)
 
         return trackDao.getFilteredTracksGlobal(rawQuery)
     }
