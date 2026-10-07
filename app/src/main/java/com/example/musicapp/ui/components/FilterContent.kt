@@ -486,6 +486,7 @@ fun FilterDrawerContent(
                     RecentActivitySection(
                         days = draft.addedInPastDays,
                         label = "Added within last",
+                        trailingLabel = "days",
                         onDaysChange = { days ->  onDraftChange(draft.copy(addedInPastDays = days))}
                     )
                 }
@@ -494,7 +495,17 @@ fun FilterDrawerContent(
                     RecentActivitySection(
                         days = draft.playedInPastDays,
                         label = "Played within last",
+                        trailingLabel = "days",
                         onDaysChange = { days ->  onDraftChange(draft.copy(playedInPastDays = days))}
+                    )
+                }
+
+                item {
+                    RecentActivitySection(
+                        days = draft.topPlaysPercentage,
+                        label = "Top most played",
+                        trailingLabel = "%",
+                        onDaysChange = { percentage ->  onDraftChange(draft.copy(topPlaysPercentage = percentage))}
                     )
                 }
 
@@ -1185,6 +1196,7 @@ fun FloatRangePicker(
 fun RecentActivitySection(
     days: Int?,
     label: String,
+    trailingLabel: String,
     onDaysChange: (Int?) -> Unit
 ){
     Row(
@@ -1219,9 +1231,10 @@ fun RecentActivitySection(
             )
 
             Text(
-                text = "days",
+                text = trailingLabel,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(40.dp)
             )
         }
     }
