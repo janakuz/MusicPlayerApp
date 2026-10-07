@@ -80,6 +80,7 @@ import com.example.musicapp.ui.screens.ArtistEditScreen
 import com.example.musicapp.ui.screens.ArtistView
 import com.example.musicapp.ui.screens.CountriesScreen
 import com.example.musicapp.ui.screens.CountryDetailScreen
+import com.example.musicapp.ui.screens.FilterResultsScreen
 import com.example.musicapp.ui.screens.GenreDetailScreen
 import com.example.musicapp.ui.screens.GenresScreen
 import com.example.musicapp.ui.screens.LabelDetailScreen
@@ -331,7 +332,7 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                             currentRoute?.startsWith(
                                 it
                             ) == false
-                        } && currentRoute?.startsWith("search") == false) {
+                        } && currentRoute?.startsWith("search") == false && !currentRoute.startsWith("filter_results")) {
                         LibraryTopBar(
                             currentScreen = routeToLibraryScreen(currentRoute),
                             onFilterClick = { showFilterSheet = true },
@@ -841,11 +842,12 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                 composable(
                     route = "filter_results",
                     ) {
-                    SearchContent(
+                    FilterResultsScreen(
                         results = SearchResult(
                             albums = filterAlbumResults,
                             artists = filterArtistResults,
-                            tracks = if (isGlobal) filterGlobalResults else filterTrackResults),
+                            tracks = if (isGlobal) filterGlobalResults else filterTrackResults
+                        ),
                         onArtistClick = { id -> navController.navigate("artist/$id") },
                         onAlbumClick = { id -> navController.navigate("album/$id") },
                         onTrackClick = { tracks, track ->
@@ -854,7 +856,6 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                                 track
                             )
                         },
-                        padding = PaddingValues(0.dp),
                         onAddToPlaylist = { id -> playlistViewModel.onAdd(listOf(id)) },
                         onAddToPlaylistArtist = { album ->
                             playlistViewModel.onAddToPlaylistArtist(
@@ -872,11 +873,15 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onAddToQueueAlbum = { album -> playerViewModel.addToQueueAlbum(album.id) },
                         onEditArtist = { artist -> navController.navigate("artist/edit/${artist.id}") },
                         onEditAlbum = { album -> navController.navigate("album/edit/${album.id}/all_albums") },
-                        onPlayNextTrack = { track ->playerViewModel.playNext(track) },
+                        onPlayNextTrack = { track -> playerViewModel.playNext(track) },
                         onAddToQueueTrack = { track -> playerViewModel.addToQueue(track) },
                         onEditTrack = { track -> navController.navigate("track/edit/${track.trackId}") },
-                        isFilter = true,
-                        onSaveSmartPlaylist = { name -> filterViewModel.saveSmartPlaylist(name) }
+                        onSaveSmartPlaylist = { name -> filterViewModel.saveSmartPlaylist(name) },
+                        onBack = {
+                            navController.popBackStack()
+                            filterViewModel.resetAll()
+                        },
+                        onEditFilters = { showFilterSheet = true },
                     )
                 }
 
@@ -1100,7 +1105,9 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         onApply = {
                             filterViewModel.applyFilters()
                             showFilterSheet = false
-                            navController.navigate("filter_results")
+                            navController.navigate("filter_results") {
+                                launchSingleTop = true
+                            }
                         },
                         genreSuggestions = genreSuggestions,
                         onGenreQueryChange = { query -> filterViewModel.onGenreQueryChange(query) },

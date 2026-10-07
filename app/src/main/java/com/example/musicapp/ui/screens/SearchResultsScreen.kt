@@ -36,6 +36,7 @@ import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.data.repository.SearchResult
+import com.example.musicapp.ui.components.FilterTopBar
 import com.example.musicapp.ui.components.ImageWithTextColumn
 import com.example.musicapp.ui.components.SaveSmartPlaylistDialog
 import com.example.musicapp.ui.components.SearchTopBar
@@ -106,6 +107,62 @@ fun SearchResultsScreen(
 }
 
 @Composable
+fun FilterResultsScreen(
+    results: SearchResult,
+    onArtistClick: (Int) -> Unit,
+    onAlbumClick: (Int) -> Unit,
+    onTrackClick: (List<TrackInfo>, TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
+    onAddToPlaylistArtist: (GridItem) -> Unit,
+    onAddToPlaylistAlbum: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onPlayNextAlbum: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onAddToQueueAlbum: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onEditAlbum: (GridItem) -> Unit,
+    onPlayNextTrack: (TrackInfo) -> Unit,
+    onAddToQueueTrack: (TrackInfo) -> Unit,
+    onEditTrack: (TrackInfo) -> Unit,
+    onBack: () -> Unit,
+    onEditFilters: () -> Unit,
+    onSaveSmartPlaylist: ((String) -> Unit)? = null,
+) {
+    Scaffold(
+        topBar = {
+            FilterTopBar(
+                onBack = onBack,
+                onEditFilters = onEditFilters
+            )
+        },
+    ) { padding ->
+        SearchContent(
+            results = results,
+            onArtistClick = onArtistClick,
+            onAlbumClick = onAlbumClick,
+            onTrackClick = onTrackClick,
+            onAddToPlaylist = onAddToPlaylist,
+            onAddToPlaylistArtist = onAddToPlaylistArtist,
+            onAddToPlaylistAlbum = onAddToPlaylistAlbum,
+            onPlayNextArtist = onPlayNextArtist,
+            onPlayNextAlbum = onPlayNextAlbum,
+            onAddToQueueArtist = onAddToQueueArtist,
+            onAddToQueueAlbum = onAddToQueueAlbum,
+            onEditArtist = onEditArtist,
+            onEditAlbum = onEditAlbum,
+            onPlayNextTrack = onPlayNextTrack,
+            onAddToQueueTrack = onAddToQueueTrack,
+            onEditTrack = onEditTrack,
+            padding = padding,
+            isFilter = true,
+            onSaveSmartPlaylist = onSaveSmartPlaylist
+        )
+    }
+}
+
+
+
+    @Composable
 fun SearchContent(
     results: SearchResult,
     onArtistClick: (Int) -> Unit,
