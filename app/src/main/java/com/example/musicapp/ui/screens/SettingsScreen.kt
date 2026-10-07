@@ -137,7 +137,7 @@ fun SettingsScreen(
                 buttonText = "Export",
                 onClick = {
                     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                    exportLauncher.launch("music_app_backup.zip_$timeStamp")
+                    exportLauncher.launch("music_app_backup_$timeStamp.zip")
                 }
             )
 
