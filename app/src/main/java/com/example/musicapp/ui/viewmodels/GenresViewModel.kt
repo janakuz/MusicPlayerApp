@@ -29,12 +29,6 @@ class GenresViewModel @Inject constructor(
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateGenresSort(option)
-        }
-    }
-
     fun deleteGenre(genre: Genre){
         viewModelScope.launch {
             genreRepository.deleteGenre(genre)

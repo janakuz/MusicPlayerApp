@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -11,18 +12,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.ImportExport
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistRemove
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.RemoveFromQueue
+import androidx.compose.material.icons.filled.Reorder
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.musicapp.ui.LibraryScreen
 
 data class MenuActions(
     val onPlay: (() -> Unit)? = null,
@@ -54,7 +65,13 @@ data class MenuActions(
     val onMoveToAlbum: (() -> Unit)? = null,
     val onGoToArtist: (() -> Unit)? = null,
     val onGoToAlbum: (() -> Unit)? = null,
-)
+    val onImportM3u: (() -> Unit)? = null,
+    val onAddSimilar: (() -> Unit)? = null,
+    val onSort: (() -> Unit)? = null,
+    val onOpenSequencer: (() -> Unit)? = null,
+    val onDeduplicate: (() -> Unit)? = null,
+    val onEditSmartFilters: (() -> Unit)? = null
+    )
 
 val MenuActions.isEmpty: Boolean
     get() = this::class.java.declaredFields
@@ -68,13 +85,15 @@ val MenuActions.isEmpty: Boolean
         }
     }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActionMenu(
+fun BottomSheetMenu(
     title: String,
     subtitle: String? = null,
     onDismiss: () -> Unit,
-    actions: MenuActions
+    actions: MenuActions,
+    content: @Composable ColumnScope.() -> Unit
 ){
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -117,7 +136,78 @@ fun ActionMenu(
                     )
                 }
             } else {
+                content()
+            }
+        }
+    }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopActionsMenu(
+    title: String,
+    subtitle: String? = null,
+    onDismiss: () -> Unit,
+    actions: MenuActions,
+    showSortMenu: Boolean,
+    onSortClick: (SortOption) -> Unit,
+    currentScreen: LibraryScreen,
+    currentSortOption: SortOption
+    ){
+    BottomSheetMenu(
+        title = title,
+        subtitle = subtitle,
+        onDismiss = onDismiss,
+        actions = actions
+    ) {
+
+        if (!showSortMenu) {
+            MenuActionItem(
+                "Add Similar Artist",
+                Icons.Default.Link,
+                actions.onAddSimilar,
+                onDismiss
+            )
+            MenuActionItem("Import .m3u", Icons.Default.FileUpload, actions.onImportM3u, onDismiss)
+            MenuActionItem(
+                "Open Sequencer",
+                Icons.Default.Reorder,
+                actions.onOpenSequencer,
+                onDismiss
+            )
+            MenuActionItem(
+                "Remove Duplicates",
+                Icons.Default.Merge,
+                actions.onDeduplicate,
+                onDismiss
+            )
+            MenuActionItem("Sort", Icons.AutoMirrored.Filled.Sort, actions.onSort, {})
+        }
+        else {
+            SortMenuContent(
+                screen = currentScreen,
+                onSortOptionSelected = onSortClick,
+                onDismiss = onDismiss,
+                currentSortOption = currentSortOption
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ActionMenu(
+    title: String,
+    subtitle: String? = null,
+    onDismiss: () -> Unit,
+    actions: MenuActions
+){
+    BottomSheetMenu(
+        title = title,
+        subtitle = subtitle,
+        onDismiss = onDismiss,
+        actions = actions
+    ) {
                 MenuActionItem("Play", Icons.Default.PlayArrow, actions.onPlay, onDismiss)
                 MenuActionItem(
                     "Play Next",
@@ -159,6 +249,7 @@ fun ActionMenu(
                     MenuActionItem("Artist", Icons.Default.Groups, actions.onGoToArtist, onDismiss)
                     MenuActionItem("Album", Icons.Default.Album, actions.onGoToAlbum, onDismiss)
                     MenuActionItem("Edit Info", Icons.Default.Edit, actions.onEdit, onDismiss)
+                    MenuActionItem("Edit Rules", Icons.Default.FilterList, actions.onEditSmartFilters, onDismiss)
                     MenuActionItem("Rename", Icons.Default.Edit, actions.onRename, onDismiss)
                     MenuActionItem(
                         "Refetch Metadata",
@@ -199,8 +290,6 @@ fun ActionMenu(
                         }
                     )
                 }
-            }
-        }
     }
 }
 

@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,7 +27,7 @@ class AllTracksViewModel @Inject constructor(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    val currentSortOption: StateFlow<SortOption> = userPreferencesRepository.trackSortOption
+    val currentSortOption: StateFlow<SortOption> = userPreferencesRepository.tracksSortOption
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -36,7 +35,7 @@ class AllTracksViewModel @Inject constructor(
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val tracksUiState: StateFlow<TracksUiState> = userPreferencesRepository.trackSortOption
+    val tracksUiState: StateFlow<TracksUiState> = userPreferencesRepository.tracksSortOption
         .flatMapLatest { option ->
             trackRepository.getAllTracks(option)
                 .map { tracks -> TracksUiState(tracks = tracks, isLoading = false) }
@@ -48,14 +47,6 @@ class AllTracksViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = TracksUiState(isLoading = true)
         )
-
-
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateTrackSort(option)
-        }
-    }
-
 }
 
 data class TracksUiState(

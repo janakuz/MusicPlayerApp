@@ -51,19 +51,11 @@ import com.example.musicapp.util.toTitleCase
 @Composable
 fun GenresScreen(
     onGenreClick: (Int) -> Unit,
-    sortRequest: SortOption?,
     ) {
     val genresViewModel: GenresViewModel = hiltViewModel()
     val genresList by genresViewModel.genresWithCounts.collectAsState()
 
     val visibleGenres = genresList.filter { it.countArtists > 0 || it.countAlbums > 0 }
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            genresViewModel.setSort(it)
-        }
-    }
-
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),

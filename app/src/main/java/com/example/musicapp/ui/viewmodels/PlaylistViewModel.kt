@@ -1,26 +1,34 @@
 package com.example.musicapp.ui.viewmodels
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapp.data.local.entity.Playlist
 import com.example.musicapp.data.local.entity.PlaylistTracks
+import com.example.musicapp.data.local.entity.SmartPlaylist
+import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.repository.PlaylistRepository
 import com.example.musicapp.data.repository.PlaylistTracksRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepository
 import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -33,7 +41,8 @@ class PlaylistViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val playlistTracksRepository: PlaylistTracksRepository,
     private val trackRepository: TrackRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val smartPlaylistRepository: SmartPlaylistRepository
 ) : ViewModel() {
 
     private val _createInfo = MutableStateFlow<CreatePlaylistState>(CreatePlaylistState())
@@ -52,6 +61,13 @@ class PlaylistViewModel @Inject constructor(
     private val _deduplicateConfirmation = MutableStateFlow(DeduplicateState())
     val deduplicateConfirmation = _deduplicateConfirmation.asStateFlow()
 
+    private val _initialTimestamp = userPreferencesRepository.initialScanCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0L
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val playlists: StateFlow<List<PlaylistUiModel>> = userPreferencesRepository.playlistsSortOption
         .flatMapLatest { option ->
@@ -68,6 +84,24 @@ class PlaylistViewModel @Inject constructor(
                 }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val smartPlaylists: StateFlow<List<PlaylistUiModel>> =
+        smartPlaylistRepository.getAll()
+            .flatMapLatest { playlists ->
+                val individualUiModelFlows: List<Flow<PlaylistUiModel>> = playlists.map { smartPlaylist ->
+                    smartPlaylistRepository.getSmartPlaylistStats(smartPlaylist.filterJson, _initialTimestamp.value).map { stats ->
+                        PlaylistUiModel(
+                            playlist = Playlist(id = smartPlaylist.id, name = smartPlaylist.name, description = smartPlaylist.description, image = smartPlaylist.image),
+                            trackCount = stats.trackCount,
+                            totalDuration = stats.duration,
+                            top4Images = stats.images
+                        )
+                    }
+                }
+                combine(individualUiModelFlows) { array -> array.toList() }
+            }
+            .flowOn(Dispatchers.IO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val playlistsForAdd: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists(
         SortOption(SortField.NAME, true)
@@ -89,12 +123,6 @@ class PlaylistViewModel @Inject constructor(
             playlistTracksRepository.addTracksToPlaylist(newId, tracks)
 
             _eventChannel.send("Added ${tracks.size} tracks to ${newPlaylist.name}")
-        }
-    }
-
-    fun setSort(option: SortOption) {
-        viewModelScope.launch {
-            userPreferencesRepository.updatePlaylistsSort(option)
         }
     }
 
@@ -189,10 +217,10 @@ class PlaylistViewModel @Inject constructor(
     }
 
 
-    fun onAddToPlaylistPlaylist(playlistId: Int) {
+    fun onAddToPlaylistPlaylist(playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks = playlistTracksRepository.getTracksInPlaylist(playlistId)
-            val trackIds = tracks.map { it.trackInfo.trackId }
+            val trackIds = if (isSmart) smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value).map { it.trackId }
+                        else playlistTracksRepository.getTracksInPlaylist(playlistId).map { it.trackInfo.trackId }
             _createInfo.update { it.copy(name = playlistRepository.getPlaylistById(playlistId).name) }
             onAdd(trackIds)
         }
@@ -224,9 +252,10 @@ class PlaylistViewModel @Inject constructor(
         _createInfo.update { it.copy(name = newName) }
     }
 
-    fun deletePlaylist(id: Int) {
+    fun deletePlaylist(id: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            playlistRepository.deleteById(id)
+            if (isSmart) smartPlaylistRepository.delete(id)
+            else playlistRepository.deleteById(id)
         }
     }
 
@@ -248,11 +277,18 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    fun exportM3u(uri: Uri, playlistId: Int) {
+    fun exportM3u(uri: Uri, playlistId: Int, isSmart: Boolean = false) {
         viewModelScope.launch {
-            val tracks =
-                playlistTracksRepository.getAllTracksInPlaylist(playlistId, "position", true)
-                    .first()
+            val tracks = if (isSmart) {
+                smartPlaylistRepository.getSmartPlaylistTracksFromId(playlistId, _initialTimestamp.value).mapIndexed { index, track ->
+                    PlaylistTrack(
+                        entryId = index,
+                        position = index,
+                        playlistId = playlistId,
+                        trackInfo = track
+                    )
+                }
+            } else playlistTracksRepository.getTracksInPlaylist(playlistId)
             playlistRepository.exportPlaylist(uri, tracks)
         }
     }

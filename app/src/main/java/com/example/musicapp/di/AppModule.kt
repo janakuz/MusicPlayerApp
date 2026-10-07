@@ -25,10 +25,12 @@ import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
 import com.example.musicapp.data.local.dao.SequencerDao
+import com.example.musicapp.data.local.dao.SmartPlaylistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
 import com.example.musicapp.data.local.database.ALL_MIGRATIONS
 import com.example.musicapp.data.local.database.AppDatabase
+import com.example.musicapp.data.local.database.createPresetSmartPlaylists
 import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.remote.service.CoverArtArchiveApiService
 import com.example.musicapp.data.remote.service.DiscogsApiService
@@ -50,10 +52,15 @@ import com.example.musicapp.data.repository.AreaRepository
 import com.example.musicapp.data.repository.AreaRepositoryImpl
 import com.example.musicapp.data.repository.DynamicThemeRepository
 import com.example.musicapp.data.repository.DynamicThemeRepositoryImpl
+import com.example.musicapp.data.repository.FilterLogic
 import com.example.musicapp.data.repository.FilterRepository
 import com.example.musicapp.data.repository.FilterRepositoryImpl
+import com.example.musicapp.data.repository.FloatRangeAdapter
 import com.example.musicapp.data.repository.GenreRepository
 import com.example.musicapp.data.repository.GenreRepositoryImpl
+import com.example.musicapp.data.repository.IntRangeAdapter
+import com.example.musicapp.data.repository.LibraryFilter
+import com.example.musicapp.data.repository.LongRangeAdapter
 import com.example.musicapp.data.repository.MetadataRepository
 import com.example.musicapp.data.repository.MoodRepository
 import com.example.musicapp.data.repository.MoodRepositoryImpl
@@ -68,6 +75,8 @@ import com.example.musicapp.data.repository.SearchRepository
 import com.example.musicapp.data.repository.SearchRepositoryImpl
 import com.example.musicapp.data.repository.SequencerRepository
 import com.example.musicapp.data.repository.SequencerRepositoryImpl
+import com.example.musicapp.data.repository.SmartPlaylistRepository
+import com.example.musicapp.data.repository.SmartPlaylistRepositoryImpl
 import com.example.musicapp.data.repository.TrackMoodRepository
 import com.example.musicapp.data.repository.TrackMoodRepositoryImpl
 import com.example.musicapp.data.repository.TrackRepository
@@ -76,12 +85,19 @@ import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.example.musicapp.data.repository.UserPreferencesRepositoryImpl
 import com.example.musicapp.data.repository.WorkerManagerRepository
 import com.example.musicapp.data.repository.WorkerManagerRepositoryImpl
+import com.example.musicapp.service.DatabaseBackupManager
 import com.example.musicapp.service.ImageStorageManager
+import com.example.musicapp.service.InternalCoverMapper
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -140,10 +156,28 @@ object AppModule {
     @Retention(AnnotationRetention.BINARY)
     annotation class EssentiaRetrofit
 
+
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+    fun provideSmartPlaylistGson(): Gson {
+        return GsonBuilder()
+            .registerTypeAdapter(IntRange::class.java, IntRangeAdapter())
+            .registerTypeAdapter(LongRange::class.java, LongRangeAdapter())
+            .registerTypeAdapter(ClosedFloatingPointRange::class.java, FloatRangeAdapter())
+            .create()
+    }
 
+    @Provides
+    @Singleton
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+        smartPlaylistGson: Gson): AppDatabase {
+        val databaseCallback = object : RoomDatabase.Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
+                createPresetSmartPlaylists(db, smartPlaylistGson)
+            }
+        }
 
         return Room.databaseBuilder(
             context,
@@ -151,20 +185,7 @@ object AppModule {
             "music_app_db"
         )
             .addMigrations(*ALL_MIGRATIONS)
-            .addCallback(object : RoomDatabase.Callback() {
-                override fun onOpen(db: SupportSQLiteDatabase) {
-                    super.onOpen(db)
-
-                    val cursor = db.query("SELECT COUNT(*) FROM area_hierarchy")
-                    cursor.moveToFirst()
-                    val count = cursor.getInt(0)
-                    cursor.close()
-
-                    if (count == 0) {
-                        populateMetadataFromAsset(context, db)
-                    }
-                }
-            })
+            .addCallback(databaseCallback)
             .build()
     }
 
@@ -173,6 +194,9 @@ object AppModule {
     @Singleton
     fun provideCoilImageLoader(@ApplicationContext context: Context): ImageLoader {
         return ImageLoader.Builder(context)
+            .components {
+                add(InternalCoverMapper(context))
+            }
             .memoryCache {
                 MemoryCache.Builder(context)
                     .maxSizePercent(0.25)
@@ -600,6 +624,16 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideDatabaseBackupManager(
+        @ApplicationContext context: Context,
+        db: AppDatabase,
+    ): DatabaseBackupManager {
+        return DatabaseBackupManager(context, db)
+    }
+
+
+    @Provides
+    @Singleton
     fun providePlaylistRepository(
         playlistDao: PlaylistDao,
         playlistTracksDao: PlaylistTracksDao,
@@ -642,7 +676,9 @@ object AppModule {
         trackMoodRepository: TrackMoodRepository,
         albumArtistRepository: AlbumArtistRepository,
         albumGenreRepository: AlbumGenreRepository,
-        artistGenreRepository: ArtistGenreRepository
+        artistGenreRepository: ArtistGenreRepository,
+        db: AppDatabase,
+        @ApplicationContext context: Context
     ): MetadataRepository {
         return OfflineMetadataRepository(
             albumRepository,
@@ -651,7 +687,9 @@ object AppModule {
             trackMoodRepository,
             albumArtistRepository,
             albumGenreRepository,
-            artistGenreRepository
+            artistGenreRepository,
+            db,
+            context
         )
     }
 
@@ -663,6 +701,21 @@ object AppModule {
     @Singleton
     fun provideSequencerRepository(sequencerDao: SequencerDao, playlistTracksDao: PlaylistTracksDao): SequencerRepository {
         return SequencerRepositoryImpl(sequencerDao, playlistTracksDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideSmartPlaylistDao(db: AppDatabase): SmartPlaylistDao = db.smartPlaylistDao()
+
+    @Provides
+    @Singleton
+    fun provideSmartPlaylistRepository(
+        smartPlaylistDao: SmartPlaylistDao,
+        filterRepository: FilterRepository,
+        smartPlaylistGson: Gson
+    ): SmartPlaylistRepository {
+        return SmartPlaylistRepositoryImpl(smartPlaylistDao, filterRepository, smartPlaylistGson)
     }
 
 

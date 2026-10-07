@@ -11,8 +11,14 @@ import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
+import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.AlbumGenre
+import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.ArtistGenre
+import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackLyrics
+import com.example.musicapp.data.local.entity.TrackMood
 import com.example.musicapp.data.local.model.PlaylistTrack
 import com.example.musicapp.data.local.model.TrackInfo
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +36,14 @@ interface TrackDao {
 
     @Update
     suspend fun updateAll(tracks: List<Track>)
+
+    @Query("""
+        UPDATE tracks 
+        SET plays = plays + 1, 
+            lastPlayed = :timestamp 
+        WHERE id = :trackId
+        """)
+    suspend fun incrementPlayStats(trackId: Int, timestamp: Long)
 
     @Delete
     suspend fun delete(track: Track)
@@ -63,65 +77,8 @@ interface TrackDao {
         }
     }
 
-    @Query(
-        """
-        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
-        FROM tracks t
-        JOIN artists ar on t.artistId=ar.id
-        JOIN albums al on t.albumId=al.id
-        ORDER BY 
-        CASE 
-            WHEN t.title LIKE 'The %' THEN SUBSTR(t.title, 5)
-            WHEN t.title LIKE 'A %' THEN SUBSTR(t.title, 3)
-            WHEN t.title LIKE 'An %' THEN SUBSTR(t.title, 4)
-            WHEN t.title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(t.title, 2)
-            ELSE t.title 
-        END COLLATE NOCASE ASC"""
-    )
-    fun getAllTracksByName(): Flow<List<TrackInfo>>
-
-    @Query(
-        """
-        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
-        FROM tracks t
-        JOIN artists ar on t.artistId=ar.id
-        JOIN albums al on t.albumId=al.id
-        ORDER BY 
-        CASE 
-            WHEN t.title LIKE 'The %' THEN SUBSTR(t.title, 5)
-            WHEN t.title LIKE 'A %' THEN SUBSTR(t.title, 3)
-            WHEN t.title LIKE 'An %' THEN SUBSTR(t.title, 4)
-            WHEN t.title GLOB '[^a-zA-Z0-9]*' THEN SUBSTR(t.title, 2)
-            ELSE t.title 
-        END COLLATE NOCASE DESC"""
-    )
-    fun getAllTracksByNameDesc(): Flow<List<TrackInfo>>
-
-    @Query(
-        """
-        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
-        FROM tracks t
-        JOIN artists ar on t.artistId=ar.id
-        JOIN albums al on t.albumId=al.id
-        ORDER BY duration ASC
-        """
-    )
-    fun getAllTracksByDuration(): Flow<List<TrackInfo>>
-
-    @Query(
-        """
-        SELECT t.id as trackId, t.title as title, ar.name as artistName, al.title as albumTitle, 
-        al.image as albumArt, t.trackNumber as trackNum, t.duration as duration, t.fileUri as fileUri, t.filePath as filePath, t.albumId as albumId, t.artistId as artistId 
-        FROM tracks t
-        JOIN artists ar on t.artistId=ar.id
-        JOIN albums al on t.albumId=al.id
-        ORDER BY duration DESC
-        """
-    )
-    fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>>
+    @RawQuery(observedEntities = [Track::class, Album::class, Artist::class])
+    fun getTracksSorted(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
 
     @Query("SELECT * FROM tracks WHERE id=:id")
     fun getTrack(id: Int): Flow<Track>
@@ -323,6 +280,24 @@ interface TrackDao {
     )
     fun searchAlbumTracks(query: String, albumId: Int): Flow<List<TrackInfo>>
 
-    @RawQuery(observedEntities = [Track::class])
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        TrackMood::class,
+        Mood::class,
+    ])
     fun getFilteredTracks(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
+
+    @RawQuery(observedEntities = [
+        Track::class,
+        Artist::class,
+        Album::class,
+        AlbumGenre::class,
+        ArtistGenre::class,
+        TrackMood::class,
+        Mood::class,
+    ])
+    fun getFilteredTracksGlobal(query: SupportSQLiteQuery): Flow<List<TrackInfo>>
+
 }

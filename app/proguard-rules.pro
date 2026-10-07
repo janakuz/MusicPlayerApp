@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.example.musicapp.data.** { *; }
+
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-dontwarn com.google.gson.**
+-dontwarn androidx.room.**
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**

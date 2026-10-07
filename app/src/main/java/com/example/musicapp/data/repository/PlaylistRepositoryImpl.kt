@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.room.withTransaction
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.database.AppDatabase
@@ -16,12 +17,11 @@ import com.example.musicapp.service.ImageStorageManager
 import com.example.musicapp.service.ImageTarget
 import com.example.musicapp.ui.components.SortField
 import com.example.musicapp.ui.components.SortOption
+import com.example.musicapp.ui.components.characteristics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import java.io.File
-import java.util.UUID
 
 class PlaylistRepositoryImpl(
     private val playlistDao: PlaylistDao,
@@ -31,17 +31,50 @@ class PlaylistRepositoryImpl(
     @ApplicationContext private val context: Context
 ) : PlaylistRepository {
 
+    private fun characteristicSort(characteristic: String): String{
+        return "AVG($characteristic)"
+    }
+
     private fun getPlaylists(
-        sortBy: SortOption
+        orderBy: SortOption
     ): Flow<List<PlaylistWithStats>> {
-        return when (sortBy.field) {
-            SortField.NAME -> playlistDao.getAllPlaylists("name", sortBy.ascending)
-            SortField.DATE_CREATED -> playlistDao.getAllPlaylists("createdAt", sortBy.ascending)
-            SortField.DATE_UPDATED -> playlistDao.getAllPlaylists("lastUpdated", sortBy.ascending)
-            SortField.DURATION -> playlistDao.getAllPlaylistsByDuration(sortBy.ascending)
-            SortField.TRACK_NUM -> playlistDao.getAllPlaylistsByNumTracks(sortBy.ascending)
-            else -> playlistDao.getAllPlaylists("name", sortBy.ascending)
-        }
+
+        val sqlOrderBy =
+            when (orderBy.field) {
+                SortField.NAME -> "LOWER(p.name)"
+                SortField.DURATION -> "playlistDuration"
+                SortField.NUMBER_OF_TRACKS -> "trackCount"
+                SortField.DATE_CREATED -> "createdAt"
+                SortField.DATE_UPDATED -> "lastUpdated"
+                SortField.ENGAGEMENT -> characteristicSort("engagement")
+                SortField.APPROACHABILITY -> characteristicSort("approachability")
+                SortField.DANCEABILITY -> characteristicSort("danceability")
+                SortField.MOOD_AGGRESSIVE -> characteristicSort("moodAggressive")
+                SortField.MOOD_RELAXED -> characteristicSort("moodRelaxed")
+                SortField.MOOD_SAD -> characteristicSort("moodSad")
+                SortField.MOOD_HAPPY -> characteristicSort("moodHappy")
+                SortField.MOOD_PARTY -> characteristicSort("moodParty")
+                SortField.BPM -> characteristicSort("bpm")
+                SortField.LOUDNESS -> characteristicSort("loudness")
+                SortField.DYNAMIC_RANGE -> characteristicSort("dynamicComplexity")
+                else -> "p.name"
+            }
+
+        val direction = if (orderBy.ascending) "ASC" else "DESC"
+
+        val sqlString = """
+                         SELECT p.*, SUM(t.duration) AS playlistDuration, COUNT(pt.id) as trackCount
+                         FROM playlists p
+                         LEFT JOIN playlist_tracks pt on p.id=pt.playlistId
+                         LEFT JOIN tracks t on pt.trackId=t.id
+                         GROUP BY p.id
+                         ORDER BY $sqlOrderBy $direction 
+                         ${if (orderBy.field in characteristics) "NULLS LAST" else ""}
+                        """.trimIndent()
+
+        val query = SimpleSQLiteQuery(sqlString)
+
+        return playlistDao.getPlaylistsSorted(query)
     }
 
 

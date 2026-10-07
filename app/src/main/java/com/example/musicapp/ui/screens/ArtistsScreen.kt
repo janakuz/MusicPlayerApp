@@ -46,7 +46,6 @@ fun AllArtistsScreen(
     onAddToQueue: (GridItem) -> Unit,
     onAddToPlaylist: (GridItem) -> Unit,
     onEdit: (GridItem) -> Unit,
-    sortRequest: SortOption?,
 ) {
     val artistViewModel: AllArtistsViewModel = hiltViewModel()
 
@@ -62,12 +61,6 @@ fun AllArtistsScreen(
             artistViewModel.finalizeDeletion(pendingDeletion!!.id)
         } else {
             artistViewModel.clearPendingDeletion()
-        }
-    }
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            artistViewModel.setSort(it)
         }
     }
 
@@ -165,10 +158,10 @@ fun AllArtistsScreen(
 }
 
 
-@Preview(showBackground = true)
-@Composable
-fun ArtistsPreview() {
-    MusicAppTheme {
-    }
-
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun ArtistsPreview() {
+//    MusicAppTheme {
+//    }
+//
+//}

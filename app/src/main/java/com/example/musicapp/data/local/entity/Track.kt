@@ -22,7 +22,13 @@ import com.google.gson.annotations.SerializedName
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("albumId"), Index("artistId")]
+    indices = [
+        Index("albumId"),
+        Index("artistId"),
+        Index("dateAdded"),
+        Index("plays"),
+        Index("lastPlayed")
+    ]
 )
 data class Track(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -33,7 +39,8 @@ data class Track(
     val plays: Int = 0,
     val mbId: String?,
     val trackNumber: Int?,
-    val lastPlayed: Long?,
+    val lastPlayed: Long? = null,
+    val dateAdded: Long = System.currentTimeMillis(),
     val fileUri: String,
     val filePath: String,
     val key: String? = null,

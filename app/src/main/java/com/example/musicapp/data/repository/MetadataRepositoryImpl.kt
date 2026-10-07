@@ -10,6 +10,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.Transformer
+import com.example.musicapp.data.local.database.AppDatabase
+import com.example.musicapp.data.local.database.populateMetadataFromAsset
 import com.example.musicapp.data.local.entity.Album
 import com.example.musicapp.data.local.entity.AlbumArtist
 import com.example.musicapp.data.local.entity.Artist
@@ -23,6 +25,7 @@ import com.example.musicapp.data.remote.dto.Release
 import com.example.musicapp.data.remote.dto.Tag
 import com.example.musicapp.util.isSimilar
 import com.example.musicapp.util.normalizeForMatching
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +51,8 @@ class OfflineMetadataRepository(
     private val albumArtistRepository: AlbumArtistRepository,
     private val albumGenreRepository: AlbumGenreRepository,
     private val artistGenreRepository: ArtistGenreRepository,
+    private val db: AppDatabase,
+    @ApplicationContext private val context: Context
 ) : MetadataRepository {
 
 
@@ -934,7 +939,20 @@ class OfflineMetadataRepository(
         }
     }
 
+    private fun ensureAreaMetadataPopulated(){
+        val sqliteDb = db.openHelper.writableDatabase
+
+        val cursor = sqliteDb.query("SELECT COUNT(*) FROM area_hierarchy")
+        val count = if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        cursor.close()
+
+        if (count == 0) {
+            populateMetadataFromAsset(context, sqliteDb)
+        }
+    }
+
     override suspend fun enrichMetadata(isManual: Boolean): Flow<ScanProgress> = flow {
+        ensureAreaMetadataPopulated()
         val currentAlbumArtists =
             if (isManual) albumArtistRepository.getAllUnenriched() else albumArtistRepository.getAllUnattempted()
 

@@ -159,6 +159,10 @@ fun CountryPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+
     val currentSelectionDisplay = remember(selectedCountryCode) {
         CountryProvider.allCountries.find { it.code == selectedCountryCode }?.let {
             "${it.flag}  ${it.name}"
@@ -211,6 +215,8 @@ fun CountryPicker(
                             searchQuery = "${country.flag}  ${country.name}"
                             onCountrySelected(country.code)
                             expanded = false
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -345,7 +351,6 @@ fun CityPicker(
 
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val dummyFocusRequester = remember { FocusRequester() }
 
     var userHasInteracted by remember { mutableStateOf(false) }
 
@@ -408,6 +413,8 @@ fun CityPicker(
                             textFieldValue = suggestionText
                             onSelected(suggestion)
                             expanded = false
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
                         }
                     }
                 )

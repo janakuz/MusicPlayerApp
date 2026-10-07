@@ -12,14 +12,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface TrackRepository {
 
-    fun getAllTracksByName(): Flow<List<TrackInfo>>
-
-    fun getAllTracksByNameDesc(): Flow<List<TrackInfo>>
-
-    fun getAllTracksByDuration(): Flow<List<TrackInfo>>
-
-    fun getAllTracksByDurationDesc(): Flow<List<TrackInfo>>
-
     fun getAllTracks(orderBy: SortOption): Flow<List<TrackInfo>>
 
     fun getAllTracksFull(): Flow<List<Track>>
@@ -52,6 +44,8 @@ interface TrackRepository {
 
     suspend fun updateAll(tracks: List<Track>)
 
+    suspend fun updateStats(trackId: Int)
+
     suspend fun getTrackWithLyrics(): List<Int>
 
     suspend fun delete(track: Track)
@@ -61,7 +55,6 @@ interface TrackRepository {
     suspend fun deleteByUri(uris: List<String>)
 
     suspend fun getAll(): List<Track>
-
 
     suspend fun getLyrics(trackInfo: TrackInfo): LRCLibResponse?
 

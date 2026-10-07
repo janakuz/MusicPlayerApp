@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,8 +20,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -28,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,9 +41,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -47,6 +53,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.musicapp.R
 import com.example.musicapp.data.local.entity.Playlist
+import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.ui.components.ActionMenu
 import com.example.musicapp.ui.components.CreatePlaylistDialog
 import com.example.musicapp.ui.components.MenuActions
@@ -59,30 +66,24 @@ import com.example.musicapp.util.formatDuration
 @Composable
 fun PlaylistsScreen(
     playlistStates: List<PlaylistUiModel>,
+    smartPlaylists: List<PlaylistUiModel>,
     createInfo: CreatePlaylistState,
     onNameChange: (String) -> Unit,
     onClick: (Int) -> Unit,
+    onSmartPlaylistClick: (Int) -> Unit,
     onCreateNewPlaylist: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    onPlay: (Int) -> Unit,
-    onDelete: (Int) -> Unit,
+    onPlay: (Int, Boolean) -> Unit,
+    onDelete: (Int, Boolean) -> Unit,
     onEdit: (Int) -> Unit,
-    onPlayNext: (Int) -> Unit,
-    onAddToQueue: (Int) -> Unit,
-    onAddToPlaylist: (Int) -> Unit,
-    onExport: (Uri, Int) -> Unit,
-    sortRequest: SortOption?,
-    onSort: (SortOption) -> Unit,
+    onSmartPlaylistEdit: (Int) -> Unit,
+    onPlayNext: (Int, Boolean) -> Unit,
+    onAddToQueue: (Int, Boolean) -> Unit,
+    onAddToPlaylist: (Int, Boolean) -> Unit,
+    onExport: (Uri, Int, Boolean) -> Unit,
+    onEditFilters: ((Int) -> Unit),
 ) {
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            onSort(it)
-        }
-    }
-
-
     if (createInfo.isShowing) {
         CreatePlaylistDialog(
             createInfo = createInfo,
@@ -105,20 +106,58 @@ fun PlaylistsScreen(
             )
         ) {
 
+            stickyHeader {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    SectionHeader(
+                        title = "Your Playlists",
+                        count = playlistStates.size,
+                        icon = Icons.Default.Person
+                    )
+                }
+            }
+
             items(playlistStates) { playlistModel ->
                 PlaylistRow(
                     playlist = playlistModel.playlist,
                     onClick = { onClick(playlistModel.playlist.id) },
                     onEdit = onEdit,
-                    onDelete = onDelete,
+                    onDelete = { id -> onDelete(id, false) },
                     trackCount = playlistModel.trackCount,
                     duration = playlistModel.totalDuration,
                     images = playlistModel.top4Images,
-                    onExport = onExport,
-                    onPlayNext = onPlayNext,
-                    onAddToQueue = onAddToQueue,
-                    onPlay = onPlay,
-                    onAddToPlaylist = onAddToPlaylist
+                    onExport = { uri, id -> onExport(uri, id, false) },
+                    onPlayNext = { id -> onPlayNext(id, false)},
+                    onAddToQueue = { id -> onAddToQueue(id, false) },
+                    onPlay = { id -> onPlay(id, false) },
+                    onAddToPlaylist = { id -> onAddToPlaylist(id, false) }
+                )
+            }
+
+            stickyHeader {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    SectionHeader(
+                        title = "Smart Playlists",
+                        count = smartPlaylists.size,
+                        icon = Icons.Default.FilterList
+                    )
+                }
+            }
+
+            items(smartPlaylists) { playlist ->
+                PlaylistRow(
+                    playlist = playlist.playlist,
+                    onClick = { onSmartPlaylistClick(playlist.playlist.id) },
+                    onEdit = onSmartPlaylistEdit,
+                    onDelete = { id -> onDelete(id, true) },
+                    trackCount = playlist.trackCount,
+                    duration = playlist.totalDuration,
+                    images = playlist.top4Images,
+                    onExport = { uri, id -> onExport(uri, id, true) },
+                    onPlayNext = { id -> onPlayNext(id, true)},
+                    onAddToQueue = { id -> onAddToQueue(id, true) },
+                    onPlay = { id -> onPlay(id, true) },
+                    onAddToPlaylist = { id -> onAddToPlaylist(id, true) },
+                    onEditFilters = onEditFilters
                 )
             }
         }
@@ -139,7 +178,8 @@ fun PlaylistRow(
     onDelete: (Int) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onExport: (Uri, Int) -> Unit,
-) {
+    onEditFilters: ((Int) -> Unit)? = null,
+    ) {
 
     val exportM3uLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("audio/x-mpegurl")
@@ -230,7 +270,14 @@ fun PlaylistRow(
             onExportM3u = {
                 exportM3uLauncher.launch("${playlist.name}.m3u")
                 expanded = false
-            }
+            },
+            onEditSmartFilters =
+                if (onEditFilters != null) {
+                    {
+                        onEditFilters(playlist.id)
+                        expanded = false
+                    }
+                } else null
         )
 
         if (expanded) {
@@ -241,6 +288,40 @@ fun PlaylistRow(
                 onDismiss = { expanded = false }
             )
         }
+    }
+}
+
+@Composable
+fun SectionHeader(
+    title: String,
+    icon: ImageVector,
+    count: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "($count)",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

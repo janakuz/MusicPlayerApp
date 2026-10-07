@@ -4,6 +4,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
+import com.example.musicapp.data.repository.FilterLogic
+import com.example.musicapp.data.repository.LibraryFilter
+import com.google.gson.Gson
 
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -491,6 +494,34 @@ val MIGRATION_23_24 = object : Migration(23,24) {
     }
 }
 
+val MIGRATION_24_25 = object : Migration(24,25) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tracks ADD COLUMN dateAdded INTEGER NOT NULL DEFAULT 0")
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tracks_dateAdded ON tracks(dateAdded)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tracks_plays ON tracks(plays)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tracks_lastPlayed ON tracks(lastPlayed)")
+    }
+}
+
+val MIGRATION_25_26 = object : Migration(25,26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `smart_playlists` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `filterJson` TEXT NOT NULL,
+                `image` TEXT,
+                `description` TEXT,
+                `createdAt` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("ALTER TABLE playlists DROP COLUMN isSmart")
+    }
+}
+
 
 val ALL_MIGRATIONS = arrayOf(
     MIGRATION_4_5,
@@ -512,7 +543,9 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_20_21,
     MIGRATION_21_22,
     MIGRATION_22_23,
-    MIGRATION_23_24
+    MIGRATION_23_24,
+    MIGRATION_24_25,
+    MIGRATION_25_26
 )
 
 //fun getAllMigrations(context: Context): Array<Migration> {
@@ -568,5 +601,55 @@ fun populateMetadataFromAsset(context: Context, db: SupportSQLiteDatabase) {
     catch (e: Exception) {
         e.printStackTrace()
         throw e
+    }
+}
+
+data class DefaultSmartPlaylist(
+    val name: String,
+    val description: String,
+    val filter: LibraryFilter
+)
+
+val defaultPlaylists = listOf(
+    DefaultSmartPlaylist(
+        name = "Recently Added",
+        description = "Tracks added in the last 30 days",
+        filter = LibraryFilter(logic = FilterLogic.AND, addedInPastDays = 30)
+    ),
+    DefaultSmartPlaylist(
+        name = "Unplayed Additions",
+        description = "Tracks added in the last 90 days that haven't been played yet",
+        filter = LibraryFilter(logic = FilterLogic.AND, maxPlays = 0, addedInPastDays = 90)
+    ),
+    DefaultSmartPlaylist(
+        name = "Most Played",
+        description = "Most played 20% of tracks",
+        filter = LibraryFilter(logic = FilterLogic.AND, topPlaysPercentage = 20)
+    ),
+)
+
+fun createPresetSmartPlaylists(db: SupportSQLiteDatabase, smartPlaylistGson: Gson){
+    db.beginTransaction()
+    try {
+        for (preset in defaultPlaylists) {
+            val cursor = db.query(
+                "SELECT COUNT(*) FROM smart_playlists WHERE name = ?",
+                arrayOf(preset.name)
+            )
+            val exists = cursor.use {
+                it.moveToFirst() && it.getInt(0) > 0
+            }
+
+            if (!exists) {
+                val json = smartPlaylistGson.toJson(preset.filter)
+                db.execSQL(
+                    "INSERT INTO smart_playlists (name, description, filterJson, createdAt) VALUES (?, ?, ?, ?)",
+                    arrayOf(preset.name, preset.description, json, System.currentTimeMillis())
+                )
+            }
+        }
+        db.setTransactionSuccessful()
+    } finally {
+        db.endTransaction()
     }
 }

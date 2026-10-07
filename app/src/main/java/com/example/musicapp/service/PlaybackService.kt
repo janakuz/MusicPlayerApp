@@ -11,13 +11,16 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.example.musicapp.data.repository.TrackRepository
 import com.example.musicapp.data.repository.UserPreferencesRepository
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,14 +31,27 @@ class PlaybackService : MediaSessionService() {
 
     @Inject
     lateinit var preferencesRepository: UserPreferencesRepository
+    @Inject
+    lateinit var trackRepository: TrackRepository
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
+
+    private var currentTrackId: Int? = null
+    private var hasMarkedPlayed: Boolean = false
+    private var trackerJob: Job? = null
+
+    private var playThresholdRatio: Double = 0.5
 
     @OptIn(UnstableApi::class)
     private fun observePreferences() {
         serviceScope.launch {
             preferencesRepository.skipSilenceToggle.collect { isEnabled ->
                 player.skipSilenceEnabled = isEnabled
+            }
+        }
+        serviceScope.launch {
+            preferencesRepository.playThreshold.collect { value ->
+                playThresholdRatio = value
             }
         }
     }
@@ -51,6 +67,22 @@ class PlaybackService : MediaSessionService() {
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build()
+
+        player.addListener(object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                currentTrackId = mediaItem?.mediaMetadata?.extras?.getInt("ID")
+                hasMarkedPlayed = false
+                startPositionTracker()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) {
+                    startPositionTracker()
+                } else {
+                    trackerJob?.cancel()
+                }
+            }
+        })
 
         val callback = object : MediaSession.Callback {
             @OptIn(UnstableApi::class)
@@ -102,6 +134,36 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         observePreferences()
+    }
+
+
+    private fun startPositionTracker() {
+        trackerJob?.cancel()
+        trackerJob = serviceScope.launch {
+            while (player.isPlaying) {
+                checkPlayThreshold()
+                delay(1000)
+            }
+        }
+    }
+
+    private suspend fun checkPlayThreshold() {
+        val trackId = currentTrackId ?: return
+        if (hasMarkedPlayed) return
+
+        val duration = player.duration
+        val currentPosition = player.currentPosition
+
+        if (duration > 0) {
+            val targetMs = (duration * playThresholdRatio).toLong()
+            if (currentPosition >= targetMs) {
+                hasMarkedPlayed = true
+
+                trackRepository.updateStats(
+                    trackId = trackId,
+                )
+            }
+        }
     }
 
     override fun onGetSession(

@@ -26,19 +26,11 @@ import com.example.musicapp.util.getFlagEmoji
 @Composable
 fun AreasScreen(
     onAreaClick: (String, String, String) -> Unit,
-    sortRequest: SortOption?,
 ) {
     val areaDashboardViewModel: AreaDashboardViewModel = hiltViewModel()
     val areasList by areaDashboardViewModel.areasWithCounts.collectAsState()
 
     val visibleAreas = areasList.filter { it.artistCount > 0 || it.albumCount > 0 }
-
-    LaunchedEffect(sortRequest) {
-        sortRequest?.let {
-            areaDashboardViewModel.setSort(it)
-        }
-    }
-
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 140.dp),
