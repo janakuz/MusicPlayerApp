@@ -13,13 +13,21 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,7 +36,9 @@ import com.example.musicapp.data.local.model.GridItem
 import com.example.musicapp.data.local.model.TrackInfo
 import com.example.musicapp.data.local.model.VisualTrack
 import com.example.musicapp.data.repository.SearchResult
+import com.example.musicapp.ui.components.FilterTopBar
 import com.example.musicapp.ui.components.ImageWithTextColumn
+import com.example.musicapp.ui.components.SaveSmartPlaylistDialog
 import com.example.musicapp.ui.components.SearchTopBar
 import com.example.musicapp.ui.components.TrackRow
 import com.example.musicapp.ui.viewmodels.SearchViewModel
@@ -74,8 +84,6 @@ fun SearchResultsScreen(
             }
         },
     ) { padding ->
-
-
         SearchContent(
             results = results,
             onArtistClick = onArtistClick,
@@ -99,6 +107,62 @@ fun SearchResultsScreen(
 }
 
 @Composable
+fun FilterResultsScreen(
+    results: SearchResult,
+    onArtistClick: (Int) -> Unit,
+    onAlbumClick: (Int) -> Unit,
+    onTrackClick: (List<TrackInfo>, TrackInfo) -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
+    onAddToPlaylistArtist: (GridItem) -> Unit,
+    onAddToPlaylistAlbum: (GridItem) -> Unit,
+    onPlayNextArtist: (GridItem) -> Unit,
+    onPlayNextAlbum: (GridItem) -> Unit,
+    onAddToQueueArtist: (GridItem) -> Unit,
+    onAddToQueueAlbum: (GridItem) -> Unit,
+    onEditArtist: (GridItem) -> Unit,
+    onEditAlbum: (GridItem) -> Unit,
+    onPlayNextTrack: (TrackInfo) -> Unit,
+    onAddToQueueTrack: (TrackInfo) -> Unit,
+    onEditTrack: (TrackInfo) -> Unit,
+    onBack: () -> Unit,
+    onEditFilters: () -> Unit,
+    onSaveSmartPlaylist: ((String) -> Unit)? = null,
+) {
+    Scaffold(
+        topBar = {
+            FilterTopBar(
+                onBack = onBack,
+                onEditFilters = onEditFilters
+            )
+        },
+    ) { padding ->
+        SearchContent(
+            results = results,
+            onArtistClick = onArtistClick,
+            onAlbumClick = onAlbumClick,
+            onTrackClick = onTrackClick,
+            onAddToPlaylist = onAddToPlaylist,
+            onAddToPlaylistArtist = onAddToPlaylistArtist,
+            onAddToPlaylistAlbum = onAddToPlaylistAlbum,
+            onPlayNextArtist = onPlayNextArtist,
+            onPlayNextAlbum = onPlayNextAlbum,
+            onAddToQueueArtist = onAddToQueueArtist,
+            onAddToQueueAlbum = onAddToQueueAlbum,
+            onEditArtist = onEditArtist,
+            onEditAlbum = onEditAlbum,
+            onPlayNextTrack = onPlayNextTrack,
+            onAddToQueueTrack = onAddToQueueTrack,
+            onEditTrack = onEditTrack,
+            padding = padding,
+            isFilter = true,
+            onSaveSmartPlaylist = onSaveSmartPlaylist
+        )
+    }
+}
+
+
+
+    @Composable
 fun SearchContent(
     results: SearchResult,
     onArtistClick: (Int) -> Unit,
@@ -118,133 +182,164 @@ fun SearchContent(
     onEditTrack: (TrackInfo) -> Unit,
     padding: PaddingValues,
     header: (@Composable () -> Unit)? = null,
+    isFilter: Boolean = false,
+    onSaveSmartPlaylist: ((String) -> Unit)? = null,
 ) {
-    LazyColumn(
-        modifier = Modifier.padding(padding),
-//        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    var showSaveDialog by remember { mutableStateOf(false) }
 
-        if (header != null) {
-            item{header()}
+    Scaffold (
+        floatingActionButton = {
+            if (isFilter)
+                ExtendedFloatingActionButton(
+                    text = { Text("Save Smart Playlist") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = { showSaveDialog = true }
+            )
         }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .padding(innerPadding),
+        ) {
 
-        if (results.artists.isNotEmpty()) {
-            item { SearchSectionHeader("Artists") }
-            val artistRows = results.artists.chunked(3)
+            if (header != null) {
+                item { header() }
+            }
 
-            items(artistRows) { row ->
-                Row(
-                    modifier = Modifier.padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    for (artist in row) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            ImageWithTextColumn(
-                                item = GridItem.ArtistItem(
-                                    id = artist.id,
-                                    displayName = artist.name,
-                                    imageRes = artist.image ?: "",
-                                    description = artist.bio ?: ""
-                                ),
-                                image = artist.image ?: "",
-                                text = artist.name,
-                                isAlbum = false,
-                                onPlayNext = onPlayNextArtist,
-                                imageShape = CircleShape,
-                                imageModifier = Modifier.size(80.dp),
-                                textStyle = MaterialTheme.typography.bodyMedium,
-                                onAddToQueue = onAddToQueueArtist,
-                                onEdit = onEditArtist,
-                                onClick = { artistItem -> onArtistClick(artistItem.id) },
-                                onAddToPlaylist = onAddToPlaylistArtist
-                            )
+            if (results.artists.isNotEmpty()) {
+                item { SearchSectionHeader("Artists") }
+                val artistRows = results.artists.chunked(3)
+
+                items(artistRows) { row ->
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        for (artist in row) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                ImageWithTextColumn(
+                                    item = GridItem.ArtistItem(
+                                        id = artist.id,
+                                        displayName = artist.name,
+                                        imageRes = artist.image ?: "",
+                                        description = artist.bio ?: ""
+                                    ),
+                                    image = artist.image ?: "",
+                                    text = artist.name,
+                                    isAlbum = false,
+                                    onPlayNext = onPlayNextArtist,
+                                    imageShape = CircleShape,
+                                    imageModifier = Modifier.size(80.dp),
+                                    textStyle = MaterialTheme.typography.bodyMedium,
+                                    onAddToQueue = onAddToQueueArtist,
+                                    onEdit = onEditArtist,
+                                    onClick = { artistItem -> onArtistClick(artistItem.id) },
+                                    onAddToPlaylist = onAddToPlaylistArtist
+                                )
+                            }
+
+                        }
+                        val emptySlots = 3 - (row.size)
+                        if (emptySlots < 3) {
+                            repeat(emptySlots) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
 
                     }
-                    val emptySlots = 3 - (row.size)
-                    if (emptySlots < 3) {
-                        repeat(emptySlots) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+                }
+            }
 
+            if (results.albums.isNotEmpty()) {
+                item { SearchSectionHeader("Albums") }
+                val albumRows = results.albums.chunked(3)
+
+                items(albumRows) { row ->
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        for (album in row) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                ImageWithTextColumn(
+                                    item = GridItem.AlbumItem(
+                                        id = album.albumId,
+                                        displayName = album.title,
+                                        imageRes = album.image ?: "",
+                                        duration = album.duration.toInt(),
+                                        numTracks = album.numTracks,
+                                        releaseYear = album.releaseDate?.take(4) ?: ""
+                                    ),
+                                    image = album.image ?: "",
+                                    text = album.title,
+                                    isAlbum = true,
+                                    albumArtist = album.releaseDate?.take(4) ?: "",
+                                    imageModifier = Modifier.size(80.dp),
+                                    textStyle = MaterialTheme.typography.bodyMedium,
+                                    onPlayNext = onPlayNextAlbum,
+                                    onAddToQueue = onAddToQueueAlbum,
+                                    onEdit = onEditAlbum,
+                                    onClick = { gridItem -> onAlbumClick(gridItem.id) },
+                                    onAddToPlaylist = onAddToPlaylistAlbum
+                                )
+                            }
+                        }
+                        val emptySlots = 3 - (row.size)
+                        if (emptySlots < 3) {
+                            repeat(emptySlots) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            if (results.tracks.isNotEmpty()) {
+                item { SearchSectionHeader("Tracks") }
+
+                itemsIndexed(results.tracks, key = { index, track -> track.trackId }) { id, track ->
+                    TrackRow(
+                        artwork = track.albumArt.toString(),
+                        title = track.title,
+                        artist = track.artistName,
+                        isPlaying = false,
+                        onClick = { track -> onTrackClick(results.tracks, track.data) },
+                        onPlayNext = onPlayNextTrack,
+                        onAddToQueue = onAddToQueueTrack,
+                        showArtwork = true,
+                        showTrackNum = false,
+                        showReorderIconStart = false,
+                        showReorderIconEnd = false,
+                        trackNum = track.trackNum ?: 0,
+                        duration = track.duration.formatDuration(),
+                        track = VisualTrack(key = track.trackId, data = track),
+                        useQueueId = false,
+                        trackIndex = id,
+                        onEdit = onEditTrack,
+                        onAddToPlaylist = onAddToPlaylist,
+                        onDelete = null,
+                        onGoToAlbum = onAlbumClick,
+                        onGoToArtist = onArtistClick
+                    )
                 }
             }
         }
 
-        if (results.albums.isNotEmpty()) {
-            item { SearchSectionHeader("Albums") }
-            val albumRows = results.albums.chunked(3)
-
-            items(albumRows) { row ->
-                Row(
-                    modifier = Modifier.padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    for (album in row) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            ImageWithTextColumn(
-                                item = GridItem.AlbumItem(
-                                    id = album.albumId,
-                                    displayName = album.title,
-                                    imageRes = album.image ?: "",
-                                    duration = album.duration.toInt(),
-                                    numTracks = album.numTracks,
-                                    releaseYear = album.releaseDate?.take(4) ?: ""
-                                ),
-                                image = album.image ?: "",
-                                text = album.title,
-                                isAlbum = true,
-                                albumArtist = album.releaseDate?.take(4) ?: "",
-                                imageModifier = Modifier.size(80.dp),
-                                textStyle = MaterialTheme.typography.bodyMedium,
-                                onPlayNext = onPlayNextAlbum,
-                                onAddToQueue = onAddToQueueAlbum,
-                                onEdit = onEditAlbum,
-                                onClick = { gridItem -> onAlbumClick(gridItem.id) },
-                                onAddToPlaylist = onAddToPlaylistAlbum
-                            )
-                        }
-                    }
-                    val emptySlots = 3 - (row.size)
-                    if (emptySlots < 3) {
-                        repeat(emptySlots) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-
+        if (showSaveDialog && onSaveSmartPlaylist != null) {
+            SaveSmartPlaylistDialog(
+                onDismiss = { showSaveDialog = false },
+                onConfirm = { playlistName ->
+                    onSaveSmartPlaylist(playlistName)
+                    showSaveDialog = false
                 }
-            }
-        }
-
-        if (results.tracks.isNotEmpty()) {
-            item { SearchSectionHeader("Tracks") }
-
-            itemsIndexed(results.tracks, key = { index, track -> track.trackId }) { id, track ->
-                TrackRow(
-                    artwork = track.albumArt.toString(),
-                    title = track.title,
-                    artist = track.artistName,
-                    isPlaying = false,
-                    onClick = { track -> onTrackClick(results.tracks, track.data) },
-                    onPlayNext = onPlayNextTrack,
-                    onAddToQueue = onAddToQueueTrack,
-                    showArtwork = true,
-                    showTrackNum = false,
-                    showReorderIconStart = false,
-                    showReorderIconEnd = false,
-                    trackNum = track.trackNum ?: 0,
-                    duration = track.duration.formatDuration(),
-                    track = VisualTrack(key = track.trackId, data = track),
-                    useQueueId = false,
-                    trackIndex = id,
-                    onEdit = onEditTrack,
-                    onAddToPlaylist = onAddToPlaylist,
-                    onDelete = null,
-                    onGoToAlbum = onAlbumClick,
-                    onGoToArtist = onArtistClick
-                )
-            }
+            )
         }
     }
 }

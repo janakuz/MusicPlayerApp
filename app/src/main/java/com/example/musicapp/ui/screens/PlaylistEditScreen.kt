@@ -51,6 +51,7 @@ import com.example.musicapp.ui.viewmodels.PlaylistEditViewModel
 @Composable
 fun PlaylistEditScreen(
     onNavigateBack: () -> Unit,
+    onEditRules: ((Int) -> Unit)? = null
 ) {
     val playlistEditViewModel: PlaylistEditViewModel = hiltViewModel()
 

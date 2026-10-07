@@ -60,14 +60,15 @@ class LibraryScanViewModel @Inject constructor(
         observeEnrichment()
     }
 
-    fun startScan(context: Context) {
+    fun startScan(context: Context, isInitial: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isScanning = true, error = null) }
             _workflowState.value = Phase.Scanning
             try {
-                scanner.scanAll(context) { progress ->
+                scanner.scanAll(context, isInitial = isInitial, onProgress =  { progress ->
                     _uiState.update { it.copy(scanProgress = progress) }
-                }
+                    }
+                )
 
                 _uiState.update { it.copy(isScanning = false, isEnriching = true) }
                 _workflowState.value = Phase.Enriching

@@ -167,7 +167,7 @@ fun ScanLibraryScreen(
                         contract = ActivityResultContracts.RequestPermission(),
                         onResult = { granted ->
                             if (granted) {
-                                libraryScanViewModel.startScan(context)
+                                libraryScanViewModel.startScan(context, isInitial)
                             } else {
                                 Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT)
                                     .show()

@@ -14,6 +14,7 @@ import com.example.musicapp.data.local.dao.PlaylistDao
 import com.example.musicapp.data.local.dao.PlaylistTracksDao
 import com.example.musicapp.data.local.dao.QueueDao
 import com.example.musicapp.data.local.dao.SequencerDao
+import com.example.musicapp.data.local.dao.SmartPlaylistDao
 import com.example.musicapp.data.local.dao.TrackDao
 import com.example.musicapp.data.local.dao.TrackMoodDao
 import com.example.musicapp.data.local.entity.Album
@@ -33,6 +34,7 @@ import com.example.musicapp.data.local.entity.PlaylistTracks
 import com.example.musicapp.data.local.entity.QueueItem
 import com.example.musicapp.data.local.entity.SequencerBlock
 import com.example.musicapp.data.local.entity.SimilarArtists
+import com.example.musicapp.data.local.entity.SmartPlaylist
 import com.example.musicapp.data.local.entity.Track
 import com.example.musicapp.data.local.entity.TrackLyrics
 import com.example.musicapp.data.local.entity.TrackMood
@@ -58,9 +60,10 @@ import com.example.musicapp.data.local.entity.TrackMood
         SimilarArtists::class,
         KeyCompatibility::class,
         SequencerBlock::class,
-        TrackLyrics::class
+        TrackLyrics::class,
+        SmartPlaylist::class
     ],
-    version = 24,
+    version = 26,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -78,5 +81,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun artistGenreDao(): ArtistGenreDao
     abstract fun areaDao(): AreaDao
     abstract fun sequencerDao(): SequencerDao
-
+    abstract fun smartPlaylistDao(): SmartPlaylistDao
 }

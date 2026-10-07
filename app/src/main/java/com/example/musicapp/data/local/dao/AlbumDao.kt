@@ -9,8 +9,14 @@ import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.musicapp.data.local.entity.Album
+import com.example.musicapp.data.local.entity.AlbumArtist
+import com.example.musicapp.data.local.entity.AlbumGenre
 import com.example.musicapp.data.local.entity.Artist
+import com.example.musicapp.data.local.entity.ArtistGenre
+import com.example.musicapp.data.local.entity.Genre
+import com.example.musicapp.data.local.entity.Mood
 import com.example.musicapp.data.local.entity.Track
+import com.example.musicapp.data.local.entity.TrackMood
 import com.example.musicapp.data.local.model.AlbumInfo
 import com.example.musicapp.data.local.model.GenreInfo
 import com.example.musicapp.data.local.model.LabelInfo
@@ -104,7 +110,13 @@ interface AlbumDao {
     )
     fun searchArtistAlbums(query: String, artistId: Int): Flow<List<AlbumInfo>>
 
-    @RawQuery(observedEntities = [Album::class])
+    @RawQuery(observedEntities = [
+        Artist::class,
+        Album::class,
+        AlbumGenre::class,
+        Genre::class,
+        AlbumArtist::class
+    ])
     fun getFilteredAlbums(query: SupportSQLiteQuery): Flow<List<AlbumInfo>>
 
     @Query("SELECT MIN(CAST(SUBSTR(releaseDate, 1, 4) AS INTEGER)) FROM albums WHERE releaseDate > 0 AND releaseDate IS NOT NULL AND releaseDate != ''")

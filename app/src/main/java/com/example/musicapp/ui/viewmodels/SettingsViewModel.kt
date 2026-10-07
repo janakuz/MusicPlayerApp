@@ -37,6 +37,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val playThreshold: StateFlow<Double> = userPreferencesRepository.playThreshold
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0.5
+        )
+
     val minSimilarityScore: StateFlow<Double> = userPreferencesRepository.minVisibleSimilarityScore
         .stateIn(
             scope = viewModelScope,
@@ -48,6 +55,12 @@ class SettingsViewModel @Inject constructor(
     fun updateSkipSilence(enabled: Boolean){
         viewModelScope.launch {
             userPreferencesRepository.updateSkipSilence(enabled)
+        }
+    }
+
+    fun updatePlayThreshold(new: Int){
+        viewModelScope.launch {
+            userPreferencesRepository.updatePlayThreshold(new/100.0)
         }
     }
 

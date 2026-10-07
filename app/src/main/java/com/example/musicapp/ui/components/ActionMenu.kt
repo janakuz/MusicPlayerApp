@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ImportExport
 import androidx.compose.material.icons.filled.Link
@@ -69,7 +70,7 @@ data class MenuActions(
     val onSort: (() -> Unit)? = null,
     val onOpenSequencer: (() -> Unit)? = null,
     val onDeduplicate: (() -> Unit)? = null,
-
+    val onEditSmartFilters: (() -> Unit)? = null
     )
 
 val MenuActions.isEmpty: Boolean
@@ -248,6 +249,7 @@ fun ActionMenu(
                     MenuActionItem("Artist", Icons.Default.Groups, actions.onGoToArtist, onDismiss)
                     MenuActionItem("Album", Icons.Default.Album, actions.onGoToAlbum, onDismiss)
                     MenuActionItem("Edit Info", Icons.Default.Edit, actions.onEdit, onDismiss)
+                    MenuActionItem("Edit Rules", Icons.Default.FilterList, actions.onEditSmartFilters, onDismiss)
                     MenuActionItem("Rename", Icons.Default.Edit, actions.onRename, onDismiss)
                     MenuActionItem(
                         "Refetch Metadata",

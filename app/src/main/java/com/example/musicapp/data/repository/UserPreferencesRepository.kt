@@ -4,6 +4,7 @@ import com.example.musicapp.ui.components.SortOption
 import kotlinx.coroutines.flow.Flow
 
 interface UserPreferencesRepository {
+    val initialScanCompleted: Flow<Long>
 
     val artistsSortOption: Flow<SortOption>
     val albumsSortOption: Flow<SortOption>
@@ -17,7 +18,10 @@ interface UserPreferencesRepository {
     val moodsSortOption: Flow<SortOption>
 
     val skipSilenceToggle: Flow<Boolean>
+    val playThreshold: Flow<Double>
     val minVisibleSimilarityScore: Flow<Double>
+
+    suspend fun setInitialScanCompleted(timestamp: Long)
 
     suspend fun updateArtistsSort(option: SortOption)
     suspend fun updateAlbumsSort(option: SortOption)
@@ -31,6 +35,7 @@ interface UserPreferencesRepository {
     suspend fun updateMoodsSort(option: SortOption)
 
     suspend fun updateSkipSilence(enabled: Boolean)
+    suspend fun updatePlayThreshold(newValue: Double)
     suspend fun updateMinSimilarityScore(newValue: Double)
 
 }

@@ -65,6 +65,8 @@ fun PlaylistDetailScreen(
     val info by playlistDetailViewModel.playlistInfo.collectAsState()
     val stats by playlistDetailViewModel.playlistStats.collectAsState()
 
+    val isSmart = playlistDetailViewModel.isSmartPlaylist
+
     val trackInfos = tracks.map { it.trackInfo }
     val entryIds = tracks.map { it.entryId }
 
@@ -109,7 +111,7 @@ fun PlaylistDetailScreen(
             onPlayNext = onPlayNext,
             onAddToQueue = onAddToQueue,
             showTrackNum = false,
-            playlistHighlight = true,
+            playlistHighlight = !isSmart,
             header = {
                 PlaylistHeader(
                     info,
