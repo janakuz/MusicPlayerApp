@@ -995,7 +995,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         navArgument("isSmart") { type = NavType.BoolType; defaultValue = true }
                     )) {
                     PlaylistEditScreen(
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        onEditRules = { id -> navController.navigate("smart_playlist/edit_filters/$id") }
                     )
                 }
 
@@ -1090,6 +1091,8 @@ fun MusicApp(playerViewModel: PlayerViewModel, isLibraryInitialized: Boolean) {
                         showFilterSheet = false
                         if (currentRoute != null && !currentRoute.startsWith("filter_results"))
                             filterViewModel.resetDraft()
+                        else if (currentRoute != null && currentRoute.startsWith("filter_results"))
+                            filterViewModel.reset()
                     },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 ) {

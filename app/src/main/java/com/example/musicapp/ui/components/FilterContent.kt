@@ -70,6 +70,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.FilterChip
@@ -122,6 +123,7 @@ fun FilterDrawerContent(
     areaSuggestions: List<AreaHierarchy>,
     onAreaQueryChange: (String) -> Unit,
     onGlobalChange: () -> Unit,
+    modifier: Modifier = Modifier,
     isEditingSmart: Boolean = false,
 ) {
     val dummyFocusRequester = remember { FocusRequester() }
@@ -135,7 +137,7 @@ fun FilterDrawerContent(
     var selectedTabIndex by remember(filterType) { mutableIntStateOf(index) }
     var acousticSectionExpanded by remember { mutableStateOf(false) }
 
-    Column() {
+    Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,

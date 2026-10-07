@@ -249,7 +249,7 @@ fun ActionMenu(
                     MenuActionItem("Artist", Icons.Default.Groups, actions.onGoToArtist, onDismiss)
                     MenuActionItem("Album", Icons.Default.Album, actions.onGoToAlbum, onDismiss)
                     MenuActionItem("Edit Info", Icons.Default.Edit, actions.onEdit, onDismiss)
-                    MenuActionItem("Edit Filters", Icons.Default.FilterList, actions.onEditSmartFilters, onDismiss)
+                    MenuActionItem("Edit Rules", Icons.Default.FilterList, actions.onEditSmartFilters, onDismiss)
                     MenuActionItem("Rename", Icons.Default.Edit, actions.onRename, onDismiss)
                     MenuActionItem(
                         "Refetch Metadata",
