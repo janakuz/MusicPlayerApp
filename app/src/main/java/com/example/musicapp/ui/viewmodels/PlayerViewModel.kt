@@ -431,8 +431,8 @@ class PlayerViewModel @Inject constructor(
     fun addToQueue(track: TrackInfo) {
         val queueItem = PlayQueueItemFull(
             track = track,
-            originalOrder = controller!!.mediaItemCount - 1,
-            shuffledOrder = controller!!.mediaItemCount - 1
+            originalOrder = controller!!.mediaItemCount,
+            shuffledOrder = controller!!.mediaItemCount
         )
 
         val newList = queue.value.toMutableList().apply {
