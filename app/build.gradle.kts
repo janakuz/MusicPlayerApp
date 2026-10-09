@@ -15,6 +15,10 @@ val apikeyPropertiesFile = rootProject.file("secrets.properties")
 val apikeyProperties = Properties()
 apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
 
+val keystorePropertiesFile = rootProject.file("local.properties")
+val keystoreProperties = Properties()
+keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+
 android {
     namespace = "com.example.musicapp"
     compileSdk = 36
@@ -39,6 +43,16 @@ android {
 
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProperties.getProperty("keystore.path"))
+            storePassword = keystoreProperties.getProperty("keystore.password")
+            keyAlias = keystoreProperties.getProperty("keystore.alias")
+            keyPassword = keystoreProperties.getProperty("keystore.alias.password")
+
+        }
+    }
+
     buildFeatures{
         buildConfig = true
     }
@@ -50,6 +64,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            signingConfig = signingConfigs.getByName("release")
         }
 
         debug {
